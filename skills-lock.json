@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "nemo-retriever": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemo-retriever/SKILL.md",
+      "computedHash": "ebe51c445968d86f28cfae062051c8baaf37561c5e982c79b40343b77fabb500"
+    },
+    "nemotron-retrieval-recipes": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nemotron-retrieval-recipes/SKILL.md",
+      "computedHash": "15d4e2489ae8625b9132f8b6fa386fe02d6c2ce7d7e7163077c060473ee62f8b"
+    },
+    "rag-blueprint": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rag-blueprint/SKILL.md",
+      "computedHash": "4621085caf70c1ab91cf321dcd97ed432e44150565c30f9b2d87bbb4a2b62dfe"
+    },
+    "rag-eval": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rag-eval/SKILL.md",
+      "computedHash": "3c8d0780708a1d4d40a9286b77ff34f79ae8b2a62f4ca685cee21a154762f916"
+    },
+    "rag-perf": {
+      "source": "nvidia/skills",
+      "sourceType": "github",
+      "skillPath": "skills/rag-perf/SKILL.md",
+      "computedHash": "f669e5c80e2adbc49e9de24e19c97751c5b56d78884b94142adac73343b6d213"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "f99ef49d9909d380ca683ceb8dc8c25775c20ee38140112c394e037d8c11ee18"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "stage-2026-desktop",
+  "version": "1.0.0",
+  "description": "Desktop AI Assistant using Electron",
+  "main": "electron/main.js",
+  "scripts": {
+    "frontend:dev": "npm --prefix frontend run dev",
+    "electron:dev": "cross-env NODE_ENV=development electron .",
+    "dev": "concurrently \"npm run frontend:dev\" \"npm run electron:dev\"",
+    "build": "npm --prefix frontend run build",
+    "package": "npm run build && electron-builder"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.antigravity.desktop-assistant",
+    "productName": "Desktop Assistant",
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/dist/**/*",
+      "backend/**/*",
+      "package.json"
+    ],
+    "asar": true
+  }
+}

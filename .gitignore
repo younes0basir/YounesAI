@@ -79,6 +79,9 @@ web_modules/
 .env.production.local
 .env.local
 
+# Cursor MCP configuration may contain local connection settings
+.cursor/mcp.json
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
