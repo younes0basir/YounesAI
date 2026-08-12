@@ -1,0 +1,26 @@
+[build]
+  command = "true"
+  functions = "netlify/functions"
+  publish = "public"
+
+# zisi keeps node_modules intact on the function runtime. Required here because
+# swagger-ui-express serves static assets out of node_modules and packages like
+# googleapis/groq-sdk do dynamic requires that esbuild's tree-shaking breaks.
+[functions]
+  node_bundler = "zisi"
+
+# All API traffic is rewritten to the Express wrapper function so the app keeps
+# its /api/* routes exactly as written.
+[[redirects]]
+  force = true
+  from = "/api/*"
+  status = 200
+  to = "/.netlify/functions/api/:splat"
+
+# --- Scheduled Functions (replaces node-cron) ---
+# Cadence is capped by your Netlify plan: free/Starter permits limited daily
+# schedules; paid plans allow expressions like every 5 minutes. Uncomment and
+# adjust the schedule for your plan.
+#
+# [functions."cron"]
+#   schedule = "@daily"
