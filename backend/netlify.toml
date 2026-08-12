@@ -8,6 +8,7 @@
 # googleapis/groq-sdk do dynamic requires that esbuild's tree-shaking breaks.
 [functions]
   node_bundler = "zisi"
+  node_version = "20"
 
 [build.environment]
   # These are not credentials: GOOGLE_GMAIL_REDIRECT_URI is a documented
