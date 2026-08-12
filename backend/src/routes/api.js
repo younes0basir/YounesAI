@@ -1,16 +1,15 @@
 const { Router } = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const os = require('os');
 const pool = require('../db');
 const { createCrudRouter } = require('../lib/crud');
 const { authMiddleware } = require('../middleware/auth');
 const { generateImage } = require('../services/imageGenerator');
 const { getNews } = require('../services/news');
 
-const uploadDir = path.join(__dirname, '..', '..', 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-const upload = multer({ dest: uploadDir });
+// Write uploads to the OS temp dir — writable on Vercel serverless functions
+// (the repo dir is read-only there). Vercel mounts /tmp per instance.
+const upload = multer({ dest: os.tmpdir() });
 
 const router = Router();
 

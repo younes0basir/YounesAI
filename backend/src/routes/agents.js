@@ -1,7 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const os = require('os');
 const router = express.Router();
 const agentCoordinator = require('../agents');
 const voiceAgent = require('../agents/voiceAgent');
@@ -10,11 +9,10 @@ const { authMiddleware } = require('../middleware/auth');
 const { buildContext } = require('../agents/context');
 const { getAgentMetrics, getAgentSummary, getAgentBenchmarkMetrics, getAgentPerformanceTrends } = require('../agents/metricsLogger');
 
-const uploadDir = path.join(__dirname, '..', '..', 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-const upload = multer({ dest: uploadDir });
+// Uploads go to the OS temp dir so file routes work on Vercel serverless too.
+const upload = multer({ dest: os.tmpdir() });
 const uploadVoice = multer({
-  dest: uploadDir,
+  dest: os.tmpdir(),
   limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB audio cap
   fileFilter: (req, file, cb) => {
     const allowed = /audio\/(mp3|mp4|mpeg|mpga|wav|webm|m4a|ogg|flac)/.test(file.mimetype);
