@@ -121,7 +121,7 @@ export default function Voice() {
 
             {audioUrl && (
               <div className="w-full space-y-3">
-                <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-3">
+                <div className="bg-white/70 backdrop-blur-sm border border-slate-200/60 rounded-xl p-3 flex items-center gap-3">
                   <Play size={16} className="text-slate-400" />
                   <audio src={audioUrl} controls className="flex-1 h-8" />
                 </div>

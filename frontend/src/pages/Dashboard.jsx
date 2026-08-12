@@ -21,7 +21,7 @@ function greeting() {
 
 function StatPill({ icon: Icon, value, label, onClick, tone }) {
   return (
-    <button type="button" onClick={onClick} className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-slate-200/70 bg-white/60 hover:bg-white hover:border-slate-300 transition-all text-left">
+    <button type="button" onClick={onClick} className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border border-slate-200/60 bg-white/70 hover:bg-white hover:border-violet-200 hover:shadow-md backdrop-blur-sm transition-all text-left">
       <span className={`nav-icon ${tone}`}><Icon size={16} /></span>
       <span>
         <span className="block text-base font-bold text-slate-900 leading-none">{value}</span>
@@ -126,7 +126,7 @@ export default function Dashboard() {
             ) : (
               <div className="space-y-2">
                 {todayEvents.map((e) => (
-                  <button key={e.id} type="button" onClick={() => nav('/events')} className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-primary-200 hover:bg-primary-50/40 transition-all text-left">
+                  <button key={e.id} type="button" onClick={() => nav('/events')} className="w-full flex items-center gap-3 p-3 rounded-2xl border border-slate-200/50 hover:border-violet-200 hover:bg-violet-50/40 bg-white/60 backdrop-blur-sm transition-all text-left">
                     <div className="w-1 h-10 rounded-full shrink-0" style={{ backgroundColor: e.color || '#10b99a' }} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-slate-800">{e.title}</div>

@@ -37,10 +37,10 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center p-6 sm:p-10 bg-[#fafafa]">
-        <form onSubmit={submit} className="w-full max-w-sm surface-elevated p-8 space-y-5 animate-fade-up">
+      <div className="flex items-center justify-center p-6 sm:p-10">
+        <form onSubmit={submit} className="w-full max-w-sm surface-elevated rounded-2xl p-8 space-y-5 animate-fade-up">
           <div className="text-center lg:text-left">
-            <div className="w-10 h-10 lg:hidden mx-auto rounded-xl bg-accent-600 flex items-center justify-center text-white font-bold">AI</div>
+            <div className="w-10 h-10 lg:hidden mx-auto rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white font-bold shadow-md">AI</div>
             <h2 className="text-2xl font-bold text-slate-900 mt-3">Welcome back</h2>
             <p className="text-sm text-slate-500 mt-1">Sign in to your workspace</p>
           </div>

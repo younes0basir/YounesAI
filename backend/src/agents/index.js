@@ -8,7 +8,7 @@ const generalAgent = require('./generalAgent');
 const desktopAgent = require('./desktopAgent');
 const gemmaAgent   = require('./gemmaAgent');
 const imageAgent   = require('./imageAgent');
-const emailAgent   = require('./emailAgent');
+const { emailAgent } = require('./email');
 
 class AgentCoordinator {
   constructor() {

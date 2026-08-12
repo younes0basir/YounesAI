@@ -1,6 +1,6 @@
-const pool = require('../db');
-const { applyRules } = require('./rules/engine');
-const { predictFromLearning } = require('./learning/senderProfiles');
+const pool = require('../../db');
+const { applyRules } = require('../../email/rules/engine');
+const { predictFromLearning } = require('../../email/learning/senderProfiles');
 const { classifyWithLlm } = require('./classifier');
 
 async function loadRules(userId) {

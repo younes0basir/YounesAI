@@ -4,9 +4,11 @@ const ALGO = 'aes-256-gcm';
 const IV_LEN = 12;
 
 function getKey() {
-  const hex = process.env.OAUTH_TOKEN_ENCRYPTION_KEY;
-  if (!hex || hex.length !== 64) {
-    throw new Error('OAUTH_TOKEN_ENCRYPTION_KEY must be 64 hex characters (32 bytes)');
+  const raw = process.env.OAUTH_TOKEN_ENCRYPTION_KEY;
+  const hex = raw?.trim().replace(/^['"]|['"]$/g, '');
+  if (!hex || hex.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(hex)) {
+    const hint = raw ? ` (loaded length: ${raw.trim().length})` : ' (not set — add to backend/.env and restart the backend)';
+    throw new Error(`OAUTH_TOKEN_ENCRYPTION_KEY must be 64 hex characters (32 bytes)${hint}`);
   }
   return Buffer.from(hex, 'hex');
 }

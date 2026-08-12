@@ -30,7 +30,7 @@ export default function SearchPage() {
       <PageHeader title="Search" description="Find tasks, files, and places across your workspace." />
 
       <div className="surface-elevated p-4">
-        <div className="flex items-center gap-3 border border-slate-200 rounded-xl px-4 py-3 focus-within:border-primary-300 focus-within:ring-2 focus-within:ring-primary-100 transition-all bg-white">
+        <div className="flex items-center gap-3 border border-slate-200/70 rounded-2xl px-4 py-3 focus-within:border-violet-300 focus-within:ring-2 focus-within:ring-violet-100 transition-all bg-white/80 backdrop-blur-sm">
           <SearchIcon size={18} className="text-slate-400 shrink-0" />
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search anything..." className="w-full outline-none text-sm text-slate-800 placeholder:text-slate-400" autoFocus />
         </div>

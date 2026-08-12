@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, Loader, Bot, User, Trash2, AlertTriangle, Folder, X } from 'lucide-react'
+import { Send, Loader, Bot, User, Trash2, Folder, X } from 'lucide-react'
 import { useConversations, useSendMessage } from '../hooks/useChat'
 import { useIndexedFolders } from '../hooks/useFiles'
+import ConfirmModal from '../components/ui/ConfirmModal'
 import api from '../lib/api'
 import toast from 'react-hot-toast'
 
@@ -118,7 +119,7 @@ export default function Chat() {
                 <button
                   key={suggestion}
                   onClick={() => { setInput(suggestion); inputRef.current?.focus() }}
-                  className="text-xs px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+                  className="text-xs px-3 py-1.5 rounded-full bg-white/70 border border-slate-200/60 text-slate-600 hover:bg-white hover:border-violet-200 hover:text-violet-700 transition-colors"
                 >
                   {suggestion}
                 </button>
@@ -135,7 +136,7 @@ export default function Chat() {
                     {isUser ? <User size={15} /> : <Bot size={15} />}
                   </div>
                   <div className={`max-w-[75%] ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
-                    <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${isUser ? 'bg-primary-500 text-white rounded-tr-md' : 'bg-slate-100 text-slate-800 rounded-tl-md'}`}>
+                    <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${isUser ? 'bg-gradient-to-br from-violet-500 to-indigo-500 text-white rounded-tr-md shadow-md' : 'bg-white/80 backdrop-blur-sm border border-slate-200/60 text-slate-800 rounded-tl-md shadow-sm'}`}>
                       {msg.content}
                     </div>
                     {msg.intent && !isUser && (
@@ -160,7 +161,7 @@ export default function Chat() {
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-violet-100 text-violet-700">
                   <Bot size={15} />
                 </div>
-                <div className="bg-slate-100 rounded-2xl rounded-tl-md px-4 py-3">
+                <div className="bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -205,7 +206,7 @@ export default function Chat() {
               </button>
 
               {folderSelectorOpen && (
-                <div className="absolute bottom-full mb-1 left-0 w-64 bg-white rounded-xl shadow-md border border-slate-200 py-1 max-h-60 overflow-y-auto z-10">
+                <div className="absolute bottom-full mb-1 left-0 w-64 surface-elevated rounded-xl py-1 max-h-60 overflow-y-auto z-10">
                   {watchedFolders.length === 0 ? (
                     <div className="px-3 py-4 text-xs text-slate-400 text-center">No indexed folders</div>
                   ) : (
@@ -213,7 +214,7 @@ export default function Chat() {
                       <button
                         key={f.id}
                         onClick={() => { setSelectedFolderId(f.id); setFolderSelectorOpen(false) }}
-                        className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 ${selectedFolderId === f.id ? 'text-indigo-600 bg-indigo-50' : 'text-slate-700'}`}
+                        className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-violet-50/60 ${selectedFolderId === f.id ? 'text-violet-700 bg-violet-50' : 'text-slate-700'}`}
                       >
                         <Folder size={14} className="shrink-0 text-amber-500" />
                         <span className="truncate">{displayFolderName(f)}</span>
@@ -225,7 +226,7 @@ export default function Chat() {
                       <div className="border-t border-slate-100 my-1" />
                       <button
                         onClick={() => { setSelectedFolderId(null); setFolderSelectorOpen(false) }}
-                        className="w-full text-left px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 flex items-center gap-2"
+                        className="w-full text-left px-3 py-2 text-sm text-slate-500 hover:bg-violet-50/60 flex items-center gap-2"
                       >
                         <X size={14} />
                         Clear folder scope
@@ -254,33 +255,14 @@ export default function Chat() {
       </div>
 
       {showClearConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-lg">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <AlertTriangle size={20} className="text-red-600" />
-              </div>
-              <h3 className="font-semibold text-slate-800">Clear all conversations?</h3>
-            </div>
-            <p className="text-sm text-slate-600 mb-6">
-              This will permanently delete all your conversations. This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowClearConfirm(false)}
-                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleClearAll}
-                className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                Clear all
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          open
+          title="Clear all conversations?"
+          description="This will permanently delete all your conversations. This action cannot be undone."
+          confirmLabel="Clear all"
+          onConfirm={handleClearAll}
+          onCancel={() => setShowClearConfirm(false)}
+        />
       )}
     </div>
   )

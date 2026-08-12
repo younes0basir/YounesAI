@@ -11,6 +11,8 @@ export const EMAIL_CATEGORIES = [
   { id: 'UNKNOWN', label: 'Unknown', tone: 'bg-slate-50 text-slate-500' },
 ]
 
+export const AI_INBOX_FILTER = 'AI_INBOX'
+
 export function useGmailAccounts() {
   return useQuery({
     queryKey: ['gmail-accounts'],
@@ -60,11 +62,18 @@ export function useSyncGmail() {
   })
 }
 
-export function useEmails(category) {
+export function useEmails(category, page = 1, limit = 50) {
   return useQuery({
-    queryKey: ['emails', category],
-    queryFn: () =>
-      api.get('/email', { params: category && category !== 'ALL' ? { category } : {} }).then((r) => r.data),
+    queryKey: ['emails', category, page, limit],
+    queryFn: () => {
+      const params = { page, limit }
+      if (category === AI_INBOX_FILTER) {
+        params.view = 'ai'
+      } else if (category && category !== 'ALL') {
+        params.category = category
+      }
+      return api.get('/email', { params }).then((r) => r.data)
+    },
   })
 }
 

@@ -6,6 +6,8 @@ import { MapPin, Plus, Trash2, CheckCircle, Search, Compass } from 'lucide-react
 import PageHeader from '../components/ui/PageHeader'
 import LoadingState from '../components/ui/LoadingState'
 import ErrorState from '../components/ui/ErrorState'
+import EmptyState from '../components/ui/EmptyState'
+import ConfirmModal from '../components/ui/ConfirmModal'
 import 'leaflet/dist/leaflet.css'
 
 function normalizeText(value) {
@@ -169,6 +171,7 @@ export default function Places() {
   const [searchResults, setSearchResults] = useState([])
   const [searching, setSearching] = useState(false)
   const [selectedLocation, setSelectedLocation] = useState(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
   const { data, isLoading, isError, refetch } = usePlaces()
   const create = useCreatePlace()
@@ -387,15 +390,15 @@ export default function Places() {
       </div>
 
       {showForm && (
-        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3">
-          <input autoFocus className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" value={name} onChange={(e) => setName(e.target.value)} placeholder="Place name" onKeyDown={(e) => e.key === 'Enter' && onCreate()} />
+        <div className="surface-elevated rounded-2xl p-4 space-y-3 animate-fade-up">
+          <input autoFocus className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Place name" onKeyDown={(e) => e.key === 'Enter' && onCreate()} />
           <div className="flex flex-col gap-3 md:flex-row">
-            <input className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address (optional)" />
-            <input className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category (optional)" />
-            <button onClick={onCreate} disabled={create.isPending || !name} className="bg-primary-500 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50">Add</button>
+            <input className="input flex-1" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address (optional)" />
+            <input className="input flex-1" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category (optional)" />
+            <button onClick={onCreate} disabled={create.isPending || !name} className="btn btn-primary px-4">Add</button>
           </div>
           {selectedLocation && (
-            <div className="text-xs text-gray-500">Coordinates: {selectedLocation[0].toFixed(4)}, {selectedLocation[1].toFixed(4)}</div>
+            <div className="text-xs text-slate-400">Coordinates: {selectedLocation[0].toFixed(4)}, {selectedLocation[1].toFixed(4)}</div>
           )}
         </div>
       )}
@@ -405,17 +408,19 @@ export default function Places() {
       ) : isLoading ? (
         <LoadingState message="Loading places..." />
       ) : places.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
-          <MapPin size={40} className="mx-auto mb-3 opacity-30" />
-          <p>No places yet</p>
-        </div>
+        <EmptyState
+          icon={MapPin}
+          title="No places yet"
+          description="Search for a place to save it to your map."
+          action={<button onClick={() => setShowForm(true)} className="btn btn-primary text-sm"><Plus size={14} /> Add place</button>}
+        />
       ) : (
         <>
           {unvisited.length > 0 && (
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-3 uppercase tracking-wide">To Visit</h3>
               <div className="space-y-2">
-                {unvisited.map((p) => <PlaceCard key={p.id} place={p} onToggle={toggleVisited} onDelete={(id) => { if (confirm('Delete this place?')) del.mutate(id) }} onFocus={focusPlace} />)}
+                {unvisited.map((p) => <PlaceCard key={p.id} place={p} onToggle={toggleVisited} onDelete={(id) => setConfirmDeleteId(id)} onFocus={focusPlace} />)}
               </div>
             </div>
           )}
@@ -423,35 +428,44 @@ export default function Places() {
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-3 uppercase tracking-wide">Visited</h3>
               <div className="space-y-2 opacity-60">
-                {visited.map((p) => <PlaceCard key={p.id} place={p} onToggle={toggleVisited} onDelete={(id) => { if (confirm('Delete this place?')) del.mutate(id) }} onFocus={focusPlace} />)}
+                {visited.map((p) => <PlaceCard key={p.id} place={p} onToggle={toggleVisited} onDelete={(id) => setConfirmDeleteId(id)} onFocus={focusPlace} />)}
               </div>
             </div>
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Delete this place?"
+        description="This will permanently remove the place. This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => { if (confirmDeleteId) del.mutate(confirmDeleteId); setConfirmDeleteId(null) }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   )
 }
 
 function PlaceCard({ place: p, onToggle, onDelete, onFocus }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-start gap-4 group hover:shadow-md transition-shadow">
-      <button onClick={() => onFocus(p)} className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${p.is_visited ? 'bg-green-50 text-green-600' : 'bg-primary-50 text-primary-600'}`}>
+    <div className="surface surface-interactive rounded-2xl p-4 flex items-start gap-4 group">
+      <button onClick={() => onFocus(p)} className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${p.is_visited ? 'bg-green-50 text-green-600' : 'bg-primary-50 text-primary-600'}`}>
         <MapPin size={18} />
       </button>
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-gray-900">{p.name}</div>
-        {p.address && <div className="text-sm text-gray-500 mt-0.5">{p.address}</div>}
+        <div className="font-medium text-slate-800">{p.name}</div>
+        {p.address && <div className="text-sm text-slate-500 mt-0.5">{p.address}</div>}
         <div className="flex items-center gap-2 mt-1.5">
-          {p.category && <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{p.category}</span>}
-          {p.urgency && <span className="text-xs text-gray-400">Urgency {p.urgency}</span>}
+          {p.category && <span className="badge badge-muted">{p.category}</span>}
+          {p.urgency && <span className="text-xs text-slate-400">Urgency {p.urgency}</span>}
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
         {!p.is_visited && (
-          <button type="button" onClick={() => onToggle(p)} className="p-2 text-gray-400 hover:text-green-600" aria-label="Mark visited"><CheckCircle size={16} /></button>
+          <button type="button" onClick={() => onToggle(p)} className="btn-icon hover:text-green-600" aria-label="Mark visited"><CheckCircle size={16} /></button>
         )}
-        <button type="button" onClick={() => onDelete(p.id)} className="p-2 text-gray-400 hover:text-red-500" aria-label="Delete place"><Trash2 size={14} /></button>
+        <button type="button" onClick={() => onDelete(p.id)} className="btn-icon hover:text-red-500" aria-label="Delete place"><Trash2 size={14} /></button>
       </div>
     </div>
   )

@@ -152,6 +152,13 @@ async function runMigration() {
 
     if (skipped.length) console.warn('Skipping unavailable extensions:', skipped.join(', '));
 
+    const hasVectorType =
+      (await client.query("SELECT 1 FROM pg_type WHERE typname = 'vector' LIMIT 1")).rowCount > 0;
+    if (skipped.includes('vector') || !hasVectorType) {
+      console.log('pgvector not available; removing VECTOR column definitions from SQL.');
+      adjustedSql = adjustedSql.replace(/^\s*embedding\s+VECTOR\(\d+\),?\s*\r?\n/gim, '');
+    }
+
     // Ensure UUID helper is available or adapt SQL
     const hasUuidGenerate = (await client.query("SELECT 1 FROM pg_proc WHERE proname = 'uuid_generate_v4' LIMIT 1")).rowCount > 0;
     const hasGenRandom = (await client.query("SELECT 1 FROM pg_proc WHERE proname = 'gen_random_uuid' LIMIT 1")).rowCount > 0;

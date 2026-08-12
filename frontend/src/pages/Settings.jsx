@@ -77,7 +77,7 @@ export default function Settings() {
             {accountList.map((acc) => {
               const st = statusList.find((s) => s.id === acc.id)
               return (
-                <div key={acc.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-slate-50">
+                <div key={acc.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/60 border border-slate-200/60">
                   <div>
                     <div className="text-sm font-semibold text-slate-800">{acc.email_address}</div>
                     <div className="text-xs text-slate-500">

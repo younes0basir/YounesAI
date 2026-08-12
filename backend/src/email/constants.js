@@ -1,12 +1,4 @@
-const EMAIL_CATEGORIES = [
-  'IMPORTANT',
-  'ACTION_REQUIRED',
-  'PERSONAL',
-  'NEWSLETTER',
-  'PROMOTION',
-  'SPAM',
-  'UNKNOWN',
-];
+const { EMAIL_CATEGORIES, AI_INBOX_CATEGORIES } = require('../agents/email/constants');
 
 const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
@@ -25,6 +17,7 @@ function getSyncIntervalMinutes() {
 
 module.exports = {
   EMAIL_CATEGORIES,
+  AI_INBOX_CATEGORIES,
   GMAIL_SCOPES,
   getMaxAccountsPerUser,
   getSyncIntervalMinutes,

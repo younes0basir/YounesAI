@@ -128,7 +128,7 @@ export default function ImageGenerator() {
             </div>
           )}
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-2xl border border-slate-200/60 bg-white/70 backdrop-blur-md p-3">
             <div className="mb-2 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               <span>Generation status</span>
               {loading && <span className="text-violet-600">Working...</span>}
@@ -141,7 +141,7 @@ export default function ImageGenerator() {
                   className={`rounded-lg border px-2.5 py-2 text-xs ${
                     loading && index === statusLog.length - 1
                       ? 'border-violet-200 bg-violet-50 text-violet-700'
-                      : 'border-slate-200 bg-white text-slate-600'
+                      : 'border-slate-200/70 bg-white/80 text-slate-600'
                   }`}
                 >
                   {entry}
@@ -169,15 +169,15 @@ export default function ImageGenerator() {
               <img
                 src={result.image}
                 alt={prompt}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 object-cover shadow-sm"
+                className="w-full rounded-2xl border border-slate-200/60 bg-white/70 object-cover shadow-md"
                 style={{ aspectRatio: `${width} / ${height}` }}
               />
-              <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600">
+              <div className="rounded-xl bg-white/70 backdrop-blur-sm border border-slate-200/60 p-3 text-xs text-slate-600">
                 {result.width} × {result.height} • seed {result.seed} • {result.steps} steps
               </div>
             </div>
           ) : (
-            <div className="empty-state-bare surface border-dashed border-slate-200 bg-white/40">
+            <div className="empty-state-bare surface border-dashed border-violet-200/70 bg-white/50">
               <div className="empty-state-icon">
                 <ImagePlus size={28} />
               </div>

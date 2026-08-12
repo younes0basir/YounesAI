@@ -2,7 +2,7 @@ const pool = require('../../db');
 const { getGmailClient } = require('./client');
 const { normalizeGmailMessage } = require('./parseMessage');
 const { sanitizeEmailBody } = require('../../email/security/sanitize');
-const { classifyEmail } = require('../../email/pipeline');
+const { classifyEmail } = require('../../agents/email/pipeline');
 
 async function upsertThread(client, account, normalized) {
   const result = await client.query(
@@ -87,6 +87,26 @@ async function processMessage(gmail, account, messageId) {
   } finally {
     dbClient.release();
   }
+}
+
+async function reclassifyPending(userId, accountId, limit = 25) {
+  const result = await pool.query(
+    `SELECT e.* FROM emails e
+     LEFT JOIN email_classifications ec ON ec.email_id = e.id
+     WHERE e.user_id = $1 AND e.account_id = $2
+       AND (ec.category IS NULL OR ec.category = 'UNKNOWN')
+     ORDER BY e.received_at DESC
+     LIMIT $3`,
+    [userId, accountId, limit]
+  );
+  for (const email of result.rows) {
+    try {
+      await classifyEmail(userId, email);
+    } catch (err) {
+      console.error(`[Gmail Sync] Reclassify failed ${email.id}:`, err.message);
+    }
+  }
+  return result.rowCount;
 }
 
 async function syncAccount(accountId, userId) {
@@ -174,7 +194,7 @@ async function syncAccount(accountId, userId) {
       [accountId, currentHistoryId]
     );
 
-    return { synced, historyId: currentHistoryId };
+    return { synced, historyId: currentHistoryId, reclassified: await reclassifyPending(account.user_id, accountId) };
   } catch (err) {
     await pool.query(
       `UPDATE email_accounts SET sync_status = 'error', last_sync_error = $2, updated_at = NOW() WHERE id = $1`,

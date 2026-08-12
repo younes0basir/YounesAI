@@ -1,5 +1,5 @@
 const Joi = require('joi');
-const fallbackManager = require('../agents/fallbackManager');
+const fallbackManager = require('../fallbackManager');
 const { EMAIL_CATEGORIES } = require('./constants');
 const { wrapUntrustedEmailContent, guardLlmOutput, EMAIL_DATA_ONLY_PROMPT } = require('./security/promptGuard');
 

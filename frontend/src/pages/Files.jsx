@@ -6,6 +6,7 @@ import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import LoadingState from '../components/ui/LoadingState'
 import ErrorState from '../components/ui/ErrorState'
+import ConfirmModal from '../components/ui/ConfirmModal'
 import { File, Trash2, FileText, Image, Music, Film, Archive, FolderPlus, Folder, RefreshCw, Upload, Search, ArrowUpDown, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -59,6 +60,8 @@ export default function Files() {
   const [expandedFolderId, setExpandedFolderId] = useState(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [folderOp, setFolderOp] = useState({ active: false, step: '', message: '' })
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false)
+  const [deleteFolderConfirm, setDeleteFolderConfirm] = useState(null)
   const fileInputRef = useRef(null)
   const folderInputRef = useRef(null)
   const dropRef = useRef(null)
@@ -288,7 +291,7 @@ export default function Files() {
             placeholder="Search files by name or path..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200/70 text-sm focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300 bg-white/80 backdrop-blur-sm"
           />
         </div>
         <div className="relative">
@@ -296,7 +299,7 @@ export default function Files() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="appearance-none pl-8 pr-8 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="appearance-none pl-8 pr-8 py-2 rounded-xl border border-slate-200/70 text-sm bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-300"
           >
             <option value="name">Name</option>
             <option value="date">Newest</option>
@@ -310,10 +313,10 @@ export default function Files() {
           <button
             key={chip.key}
             onClick={() => setTypeFilter(typeFilter === chip.key ? '' : chip.key)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               typeFilter === chip.key
-                ? 'bg-indigo-100 text-indigo-700 ring-1 ring-indigo-300'
-                : 'bg-slate-50 text-slate-500 hover:bg-slate-100 ring-1 ring-slate-200'
+                ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-md'
+                : 'bg-white/70 text-slate-500 hover:bg-white hover:text-violet-700 ring-1 ring-slate-200/70'
             }`}
           >
             <chip.icon size={12} />
@@ -338,13 +341,7 @@ export default function Files() {
             )}
             {!isLoading && files.length > 0 && (
               <button
-                onClick={() => {
-                  if (confirm(`Delete all ${files.length} indexed file(s) including those inside folders?`)) {
-                    deleteAllFiles.mutate(undefined, {
-                      onSuccess: () => toast.success('All files deleted'),
-                    })
-                  }
-                }}
+                onClick={() => setShowDeleteAllConfirm(true)}
                 className="ml-auto text-xs text-rose-500 hover:text-rose-700 font-medium flex items-center gap-1"
               >
                 <Trash2 size={12} />
@@ -354,9 +351,9 @@ export default function Files() {
           </h3>
 
           {isDragOver && (
-            <div className="border-2 border-dashed border-indigo-400 bg-indigo-50/60 rounded-2xl p-10 text-center">
-              <Upload size={32} className="mx-auto text-indigo-400 mb-2" />
-              <p className="text-sm font-medium text-indigo-600">Drop files to upload</p>
+            <div className="border-2 border-dashed border-violet-300 bg-violet-50/50 rounded-2xl p-10 text-center">
+              <Upload size={32} className="mx-auto text-violet-400 mb-2" />
+              <p className="text-sm font-medium text-violet-600">Drop files to upload</p>
             </div>
           )}
 
@@ -373,7 +370,7 @@ export default function Files() {
                 const Icon = getFileIcon(ext)
                 const tone = extTones[ext?.toLowerCase()] || 'bg-slate-100 text-slate-600'
                 return (
-                  <div key={f.id} className="flex items-center gap-4 px-4 py-3.5 group hover:bg-slate-50/80 transition-colors">
+                  <div key={f.id} className="flex items-center gap-4 px-4 py-3.5 group hover:bg-violet-50/40 transition-colors">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>
                       <Icon size={17} />
                     </div>
@@ -430,7 +427,7 @@ export default function Files() {
                   <div key={folder.id} className="surface overflow-hidden">
                     <button
                       onClick={() => setExpandedFolderId(isExpanded ? null : folder.id)}
-                      className="w-full flex items-center gap-3 p-4 hover:bg-slate-50/60 transition-colors text-left"
+                      className="w-full flex items-center gap-3 p-4 hover:bg-violet-50/40 transition-colors text-left"
                     >
                       <div className={`text-xs font-bold ${isExpanded ? 'text-indigo-500' : 'text-slate-400'} transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
                         ▶
@@ -449,7 +446,7 @@ export default function Files() {
                           const Icon = getFileIcon(ext)
                           const tone = extTones[ext?.toLowerCase()] || 'bg-slate-100 text-slate-600'
                           return (
-                            <div key={f.id} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-slate-50/60 transition-colors">
+                            <div key={f.id} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-violet-50/40 transition-colors">
                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${tone}`}>
                                 <Icon size={14} />
                               </div>
@@ -492,12 +489,7 @@ export default function Files() {
                         </button>
                       )}
                       <button
-                        onClick={() => {
-                          deleteFolder.mutate(folder.id, {
-                            onSuccess: (res) => toast.success(`Removed "${displayName}" and ${res.deletedFiles} file(s)`),
-                            onError: () => toast.error('Failed to remove folder'),
-                          })
-                        }}
+                        onClick={() => setDeleteFolderConfirm(folder)}
                         className="text-xs text-rose-600 hover:text-rose-800 font-medium flex items-center gap-1"
                       >
                         <Trash2 size={12} />
@@ -513,10 +505,10 @@ export default function Files() {
       </div>
 
       {folderOp.active && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full mx-4 shadow-lg text-center">
-            <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center mx-auto mb-4">
-              <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-lg text-center">
+            <div className="w-14 h-14 rounded-full bg-violet-100 flex items-center justify-center mx-auto mb-4">
+              <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
             </div>
             <p className="text-sm font-medium text-slate-800 mb-1">
               {folderOp.step === 'selecting' && 'Selecting folder...'}
@@ -527,6 +519,36 @@ export default function Files() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={showDeleteAllConfirm}
+        title="Delete all files?"
+        description={`This will permanently delete all ${files.length} indexed file(s), including those inside folders. This action cannot be undone.`}
+        confirmLabel="Delete all"
+        onConfirm={() => {
+          setShowDeleteAllConfirm(false)
+          deleteAllFiles.mutate(undefined, {
+            onSuccess: () => toast.success('All files deleted'),
+          })
+        }}
+        onCancel={() => setShowDeleteAllConfirm(false)}
+      />
+
+      <ConfirmModal
+        open={!!deleteFolderConfirm}
+        title={`Remove "${deleteFolderConfirm?.folder_path?.split(/[\\/]/).pop() || 'this folder'}"?`}
+        description="This will permanently remove the monitored folder and all files inside it. This action cannot be undone."
+        confirmLabel="Remove"
+        onConfirm={() => {
+          const folder = deleteFolderConfirm
+          setDeleteFolderConfirm(null)
+          deleteFolder.mutate(folder.id, {
+            onSuccess: (res) => toast.success(`Removed "${folder.folder_path.split(/[\\/]/).pop()}" and ${res.deletedFiles} file(s)`),
+            onError: () => toast.error('Failed to remove folder'),
+          })
+        }}
+        onCancel={() => setDeleteFolderConfirm(null)}
+      />
     </div>
   )
 }

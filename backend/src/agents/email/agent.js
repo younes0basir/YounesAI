@@ -1,7 +1,7 @@
-const fallbackManager = require('./fallbackManager');
-const { logAgentCall } = require('./metricsLogger');
-const { buildSystemPromptContext, prefixWithSourceCheck } = require('./context');
-const tools = require('../tools');
+const fallbackManager = require('../fallbackManager');
+const { logAgentCall } = require('../metricsLogger');
+const { buildSystemPromptContext, prefixWithSourceCheck } = require('../context');
+const tools = require('../../tools');
 
 const EMAIL_ACTIONS = new Set(['list', 'classify', 'archive', 'summarize', 'create_task', 'chat']);
 

@@ -1,5 +1,5 @@
 const pool = require('../db');
-const { classifyEmail } = require('../email/pipeline');
+const { classifyEmail } = require('../agents/email/pipeline');
 
 async function classifyEmailTool({ userId, emailId }) {
   const result = await pool.query(

@@ -12,7 +12,7 @@ export default function TaskList({ tasks = [] }) {
   return (
     <div className="space-y-2">
       {tasks.map((t) => (
-        <div key={t.id} className="surface-interactive flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-100 bg-white">
+        <div key={t.id} className="surface-interactive flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200/50 bg-white/70 backdrop-blur-sm">
           <div className="flex items-center gap-3 min-w-0">
             <div className={`w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${t.status === 'done' ? 'bg-primary-500 border-primary-500' : 'border-slate-300'}`}>
               {t.status === 'done' ? <span className="text-[8px] text-white">✓</span> : null}

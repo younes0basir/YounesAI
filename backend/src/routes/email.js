@@ -7,25 +7,27 @@ const {
   markImportant,
   muteSender,
 } = require('../integrations/gmail/actions');
-const { classifyEmail } = require('../email/pipeline');
+const { classifyEmail } = require('../agents/email/pipeline');
 const { executeOrRequestApproval, listPending, resolveApproval } = require('../email/approvals');
-const { EMAIL_CATEGORIES } = require('../email/constants');
-const fallbackManager = require('../agents/fallbackManager');
-const { wrapUntrustedEmailContent, guardLlmOutput, EMAIL_DATA_ONLY_PROMPT } = require('../email/security/promptGuard');
+const { EMAIL_CATEGORIES, AI_INBOX_CATEGORIES } = require('../email/constants');
+const { summarizeEmailContent } = require('../agents/email');
 
 const router = Router();
 
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { category, accountId, page = '1', limit = '50' } = req.query;
+    const { category, view, accountId, page = '1', limit = '50' } = req.query;
     const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
 
     const where = ['e.user_id = $1'];
     const params = [userId];
     let idx = 2;
 
-    if (category && EMAIL_CATEGORIES.includes(category)) {
+    if (view === 'ai') {
+      where.push(`ec.category = ANY($${idx++})`);
+      params.push(AI_INBOX_CATEGORIES);
+    } else if (category && EMAIL_CATEGORIES.includes(category)) {
       where.push(`ec.category = $${idx++}`);
       params.push(category);
     }
@@ -174,13 +176,7 @@ router.post('/:id/actions', authMiddleware, async (req, res) => {
       summarize: async (uid, eid) => {
         const row = await pool.query('SELECT * FROM emails WHERE id = $1 AND user_id = $2', [eid, uid]);
         if (row.rowCount === 0) throw new Error('Email not found');
-        const wrapped = wrapUntrustedEmailContent(row.rows[0]);
-        const llm = await fallbackManager.generateText('email', [
-          { role: 'system', content: `${EMAIL_DATA_ONLY_PROMPT}\nSummarize the email in 2-3 sentences. Return plain text only.` },
-          { role: 'user', content: wrapped },
-        ], { temperature: 0.3, maxTokens: 300 });
-        const guarded = guardLlmOutput(llm.content || '');
-        return { success: llm.success, summary: guarded.safe ? guarded.content : 'Summary unavailable' };
+        return summarizeEmailContent(row.rows[0]);
       },
       create_task: async (uid, eid) => {
         const createTaskFromEmail = require('../tools/createTaskFromEmail');

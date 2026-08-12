@@ -56,6 +56,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ## Features
 
+- **AI Inbox (default view)** — shows only **Important** and **Action Required** emails; newsletters, promotions, and spam are hidden
 - Up to 2 Gmail accounts per user
 - Incremental sync every 5 minutes (configurable via `GMAIL_SYNC_INTERVAL_MINUTES`)
 - AI classification into 7 categories
@@ -71,6 +72,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 | `OAUTH_TOKEN_ENCRYPTION_KEY must be 64 hex characters` | Generate a 32-byte hex key |
 | `No refresh token received` | Revoke app in Google Account → Security → Third-party access, reconnect with `prompt=consent` |
 | Empty inbox after sync | Check sync status in Settings; verify Gmail API is enabled |
+| Empty AI Inbox after sync | Set `NVIDIA_EMAIL_API_KEY` in `backend/.env`, restart backend, sync again |
 | Classification fails | Set `NVIDIA_NIM_API_KEY` or `NVIDIA_EMAIL_API_KEY` |
 
 ## API endpoints

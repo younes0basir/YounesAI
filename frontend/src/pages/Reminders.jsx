@@ -4,6 +4,7 @@ import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import LoadingState from '../components/ui/LoadingState'
 import ErrorState from '../components/ui/ErrorState'
+import ConfirmModal from '../components/ui/ConfirmModal'
 import toast from 'react-hot-toast'
 import { Bell, Plus, Trash2, CheckCircle, Clock3, CircleOff } from 'lucide-react'
 
@@ -14,6 +15,7 @@ export default function Reminders() {
   const [recurrenceRule, setRecurrenceRule] = useState('')
   const [warnMinutes, setWarnMinutes] = useState('5')
   const [showForm, setShowForm] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
   const { data, isLoading, isError, refetch } = useReminders()
   const create = useCreateReminder()
@@ -43,7 +45,7 @@ export default function Reminders() {
   const markRead = (id) => update.mutate({ id, is_read: true })
   const snoozeReminder = (id, minutes) => snooze.mutate({ id, minutes })
   const dismissReminder = (id) => dismiss.mutate(id)
-  const deleteReminder = (id) => { if (confirm('Delete this reminder?')) del.mutate(id) }
+  const deleteReminder = (id) => { setConfirmDeleteId(id) }
 
   return (
     <div className="space-y-5">
@@ -113,13 +115,22 @@ export default function Reminders() {
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Delete this reminder?"
+        description="This will permanently remove the reminder. This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => { if (confirmDeleteId) del.mutate(confirmDeleteId); setConfirmDeleteId(null) }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   )
 }
 
 function ReminderCard({ reminder: r, onMarkRead, onDelete, onSnooze, onDismiss, muted = false }) {
   return (
-    <div className={`surface surface-interactive p-4 flex items-start gap-4 group ${muted ? 'bg-slate-50/60' : ''}`}>
+    <div className={`surface surface-interactive p-4 flex items-start gap-4 group ${muted ? 'bg-slate-200/20' : ''}`}>
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${r.is_read || r.dismissed_at ? 'bg-slate-100 text-slate-400' : 'bg-amber-50 text-amber-600'}`}>
         <Bell size={18} />
       </div>

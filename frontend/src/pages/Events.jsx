@@ -4,6 +4,7 @@ import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import LoadingState from '../components/ui/LoadingState'
 import ErrorState from '../components/ui/ErrorState'
+import ConfirmModal from '../components/ui/ConfirmModal'
 import toast from 'react-hot-toast'
 import { Calendar, Plus, Trash2 } from 'lucide-react'
 
@@ -15,6 +16,7 @@ export default function Events() {
   const [endsAt, setEndsAt] = useState('')
   const [color, setColor] = useState(colors[0])
   const [showForm, setShowForm] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
   const { data, isLoading, isError, refetch } = useEvents()
   const create = useCreateEvent()
@@ -60,7 +62,7 @@ export default function Events() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-medium text-slate-500 mr-1">Color</span>
             {colors.map((c) => (
-              <button key={c} type="button" onClick={() => setColor(c)} aria-label={`Select color ${c}`} className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${color === c ? 'border-slate-800 ring-2 ring-offset-2 ring-slate-300' : 'border-white shadow-sm'}`} style={{ backgroundColor: c }} />
+              <button key={c} type="button" onClick={() => setColor(c)} aria-label={`Select color ${c}`} className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${color === c ? 'border-violet-500 ring-2 ring-offset-2 ring-violet-300' : 'border-white shadow-sm'}`} style={{ backgroundColor: c }} />
             ))}
             <button onClick={onCreate} disabled={create.isPending} className="btn btn-primary ml-auto">Add event</button>
           </div>
@@ -76,18 +78,27 @@ export default function Events() {
       ) : (
         <>
           <div className="space-y-3">
-            {upcoming.map((e) => <EventCard key={e.id} event={e} onDelete={(id) => del.mutate(id)} />)}
+            {upcoming.map((e) => <EventCard key={e.id} event={e} onDelete={(id) => setConfirmDeleteId(id)} />)}
           </div>
           {past.length > 0 && (
             <section className="space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-widest text-slate-400 px-1">Past · {past.length}</h3>
               <div className="space-y-3 opacity-70">
-                {past.map((e) => <EventCard key={e.id} event={e} onDelete={(id) => del.mutate(id)} />)}
+                {past.map((e) => <EventCard key={e.id} event={e} onDelete={(id) => setConfirmDeleteId(id)} />)}
               </div>
             </section>
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Delete this event?"
+        description="This will permanently remove the event. This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => { if (confirmDeleteId) del.mutate(confirmDeleteId); setConfirmDeleteId(null) }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   )
 }
@@ -100,7 +111,7 @@ function EventCard({ event: e, onDelete }) {
 
   return (
     <div className="surface surface-interactive p-4 flex items-start gap-4 group">
-      <div className="flex flex-col items-center w-12 shrink-0 rounded-xl bg-slate-50 py-2">
+      <div className="flex flex-col items-center w-12 shrink-0 rounded-2xl bg-gradient-to-b from-violet-50 to-primary-50 border border-violet-100/60 py-2">
         <span className="text-[10px] font-semibold text-slate-400 uppercase">{startDate?.toLocaleString('en', { month: 'short' })}</span>
         <span className="text-xl font-bold text-slate-800 leading-none mt-0.5">{startDate?.getDate()}</span>
       </div>
@@ -113,7 +124,7 @@ function EventCard({ event: e, onDelete }) {
         </div>
         {e.location_text ? <div className="text-xs text-slate-400 mt-1">{e.location_text}</div> : null}
       </div>
-      <button type="button" onClick={() => { if (confirm('Delete this event?')) onDelete(e.id) }} className="btn-icon hover:text-rose-500 shrink-0" aria-label="Delete event"><Trash2 size={15} /></button>
+      <button type="button" onClick={() => onDelete(e.id)} className="btn-icon hover:text-rose-500 shrink-0" aria-label="Delete event"><Trash2 size={15} /></button>
     </div>
   )
 }

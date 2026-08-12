@@ -54,7 +54,7 @@ module.exports = {
     memory:      nvidiaProfile('memory',      'baai/bge-large-en-v1.5'),
     general:     nvidiaProfile('general',     'meta/llama-3.1-8b-instruct'),
     desktop:     nvidiaProfile('desktop',     'meta/llama-3.1-8b-instruct'),
-    email:       nvidiaProfile('email',       'meta/llama-3.1-8b-instruct'),
+    email:       nvidiaProfile('email',       'nvidia/nemotron-3-super-120b-a12b'),
   },
 
   openrouter: {

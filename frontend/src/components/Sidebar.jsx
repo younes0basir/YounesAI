@@ -97,7 +97,7 @@ export default function Sidebar({ onNavigate }) {
         <button onClick={() => { nav('/chat'); onNavigate?.() }} className="w-full flex items-center gap-2.5 nav-item text-slate-600">
           <Bot size={15} className="shrink-0" />
           <span className="flex-1 text-left">Ask AI anything…</span>
-          <kbd className="text-[10px] font-medium text-slate-500 bg-white/70 border border-slate-200 rounded px-1.5 py-0.5 shrink-0">/</kbd>
+          <kbd className="text-[10px] font-medium text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-0.5 shrink-0">/</kbd>
         </button>
 
         <NavLink to="/notifications" onClick={onNavigate} className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>

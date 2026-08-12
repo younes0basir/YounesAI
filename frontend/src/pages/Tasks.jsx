@@ -6,6 +6,7 @@ import FilterPills from '../components/ui/FilterPills'
 import EmptyState from '../components/ui/EmptyState'
 import LoadingState from '../components/ui/LoadingState'
 import ErrorState from '../components/ui/ErrorState'
+import ConfirmModal from '../components/ui/ConfirmModal'
 import toast from 'react-hot-toast'
 import { CheckSquare, Plus, Trash2, Star } from 'lucide-react'
 
@@ -36,6 +37,7 @@ export default function Tasks() {
   const [priority, setPriority] = useState(3)
   const [isFavorite, setIsFavorite] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
   const { data, isLoading, isError, refetch } = useTasks()
   const { data: smartData, isLoading: isSmartLoading, isError: isSmartError, refetch: refetchSmart } = useSmartTasks(smartFilter)
@@ -87,7 +89,7 @@ export default function Tasks() {
   }
 
   const deleteTask = (id) => {
-    if (confirm('Delete this task?')) del.mutate(id)
+    setConfirmDeleteId(id)
   }
 
   const statusFilters = [
@@ -244,6 +246,15 @@ export default function Tasks() {
           )
         })}
       </div>
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Delete this task?"
+        description="This will permanently remove the task. This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => { if (confirmDeleteId) del.mutate(confirmDeleteId); setConfirmDeleteId(null) }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   )
 }

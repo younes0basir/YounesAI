@@ -17,7 +17,7 @@ export default function Layout() {
 
       <div className="shell-layout">
         {sidebarOpen && (
-          <div className="fixed inset-0 bg-slate-900/25 backdrop-blur-[2px] z-20 xl:hidden" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-20 xl:hidden" onClick={() => setSidebarOpen(false)} />
         )}
 
         <aside className={`sidebar-shell fixed xl:sticky top-14 z-20 xl:z-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'}`}>
