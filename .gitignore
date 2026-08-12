@@ -91,7 +91,10 @@ web_modules/
 out
 
 # electron-builder output (installers + unpacked build)
-dist-desktop/
+dist-desktop*/
+
+# Compiled binaries / installers
+*.exe
 
 # Nuxt.js build / generate output
 .nuxt
