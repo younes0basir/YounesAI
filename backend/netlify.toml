@@ -1,5 +1,5 @@
 [build]
-  command = "true"
+  command = "node -e 0"
   functions = "netlify/functions"
   publish = "public"
 
@@ -8,6 +8,13 @@
 # googleapis/groq-sdk do dynamic requires that esbuild's tree-shaking breaks.
 [functions]
   node_bundler = "zisi"
+
+[build.environment]
+  # These are not credentials: GOOGLE_GMAIL_REDIRECT_URI is a documented
+  # localhost template value and NEON_BRANCH is a branch name that also appears
+  # in committed Neon skill docs. Omit them from secrets scanning so the build
+  # is not blocked. Real keys must never be committed (see .env.example).
+  SECRETS_SCAN_OMIT_KEYS = "GOOGLE_GMAIL_REDIRECT_URI,NEON_BRANCH"
 
 # All API traffic is rewritten to the Express wrapper function so the app keeps
 # its /api/* routes exactly as written.

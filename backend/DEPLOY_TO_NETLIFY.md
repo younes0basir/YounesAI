@@ -114,7 +114,31 @@ Set the cadence in `netlify.toml`:
 > schedule you're entitled to. Also note each engine should finish well under
 > Netlify's execution-time cap (see docs for current value).
 
-## 5. Verifying the deploy
+## 6. Secret scanning (why a build may fail)
+
+Netlify blocks builds when it detects values of your *secret* env vars (or
+High-Entropy secrets) inside the repo. Two gotchas specific to this backend:
+
+- `backend/.env` and real keys must **never** be committed. The committed
+  `backend/.env.example` is a template — only placeholders live there.
+  (Real credentials that once lived in it were scrubbed; rotate them in the
+  provider dashboards if they were ever public.)
+- `GOOGLE_GMAIL_REDIRECT_URI` (a `localhost` template value) and `NEON_BRANCH`
+  (a branch name that appears in committed Neon skill docs) are **not**
+  credentials but trigger false positives. `netlify.toml` already omits them:
+
+  ```toml
+  [build.environment]
+    SECRETS_SCAN_OMIT_KEYS = "GOOGLE_GMAIL_REDIRECT_URI,NEON_BRANCH"
+  ```
+
+If you still get a `Secrets scanning found secrets` failure, check the log for
+the exact key/value location and either scrub the real value or add its key to
+`SECRETS_SCAN_OMIT_KEYS` (only for non-credential config). For paths, use
+`SECRETS_SCAN_OMIT_PATHS`. Never disable scanning entirely
+(`SECRETS_SCAN_ENABLED = "false"`) as a first resort.
+
+## 7. Verifying the deploy
 
 ```bash
 # Health (checks DB connectivity)
