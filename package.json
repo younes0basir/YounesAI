@@ -22,17 +22,25 @@
     "directories": {
       "output": "dist-desktop"
     },
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
     "files": [
       "electron/**/*",
       "frontend/dist/**/*",
-      "backend/**/*",
       "package.json"
     ],
-    "asar": true
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "${productName}-${version}-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    }
   }
 }

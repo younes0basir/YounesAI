@@ -8,10 +8,16 @@ const { authLimiter, apiLimiter, agentLimiter } = require('./middleware/rateLimi
 const app = express();
 
 // ── Security ──────────────────────────────────────────────────────────────────
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8081'];
+// The packaged Electron desktop app loads the build from file://, which
+// Chromium sends as the "null" origin. Allow it so installed clients can reach
+// the API. (Do not remove — the distributed desktop build depends on it.)
+allowedOrigins.push('null');
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8081'],
+  origin: allowedOrigins,
   credentials: true,
 }));
 

@@ -1,7 +1,5 @@
 import { useState, useRef, useMemo, useCallback } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import { useFiles, useDeleteFile, useIndexedFolders, useUploadFile, useRegisterFolder, useDeleteAllFiles, useCascadeDeleteFolder } from '../hooks/useFiles'
-import { useAuth } from '../stores/useAuth'
 import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import LoadingState from '../components/ui/LoadingState'
@@ -41,10 +39,6 @@ function formatSize(bytes) {
 }
 
 export default function Files() {
-  const user = useAuth((s) => s.user)
-  const userId = user?.id
-  const queryClient = useQueryClient()
-
   const { data, isLoading, isError, refetch } = useFiles()
   const del = useDeleteFile()
 
@@ -52,14 +46,13 @@ export default function Files() {
   const deleteFolder = useCascadeDeleteFolder()
   const deleteAllFiles = useDeleteAllFiles()
 
-  const [syncFolderId, setSyncFolderId] = useState(null)
+  const [folderOp, setFolderOp] = useState({ active: false, step: '', message: '' })
   const [searchQuery, setSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [sortBy, setSortBy] = useState('name')
   const [isImportingFolder, setIsImportingFolder] = useState(false)
   const [expandedFolderId, setExpandedFolderId] = useState(null)
   const [isDragOver, setIsDragOver] = useState(false)
-  const [folderOp, setFolderOp] = useState({ active: false, step: '', message: '' })
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false)
   const [deleteFolderConfirm, setDeleteFolderConfirm] = useState(null)
   const fileInputRef = useRef(null)
@@ -148,39 +141,8 @@ export default function Files() {
   const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true) }
   const handleDragLeave = (e) => { if (!dropRef.current?.contains(e.relatedTarget)) setIsDragOver(false) }
 
-  const handleSelectFolder = async () => {
-    if (window.electron) {
-      let pickedPath = null
-      try {
-        setFolderOp({ active: true, step: 'selecting', message: 'Opening folder picker...' })
-        const selectResult = await window.electron.selectFolder()
-        if (selectResult.cancelled || !selectResult.folderPath) {
-          setFolderOp({ active: false, step: '', message: '' })
-          return
-        }
-        pickedPath = selectResult.folderPath
-
-        setFolderOp({ active: true, step: 'scanning', message: 'Scanning folder contents...' })
-        setSyncFolderId('new')
-
-        const scanResult = await window.electron.scanFolder({ folderPath: pickedPath, userId })
-        if (!scanResult.success) {
-          throw new Error(scanResult.error)
-        }
-
-        queryClient.invalidateQueries({ queryKey: ['files'] })
-        queryClient.invalidateQueries({ queryKey: ['indexed-folders'] })
-        toast.success(`Folder indexed and monitored. ${scanResult.filesCount} file(s) processed.`)
-      } catch (err) {
-        console.error(err)
-        toast.error(`Folder selection failed: ${err.message}`)
-      } finally {
-        setSyncFolderId(null)
-        setFolderOp({ active: false, step: '', message: '' })
-      }
-    } else {
-      folderInputRef.current?.click()
-    }
+  const handleSelectFolder = () => {
+    folderInputRef.current?.click()
   }
 
   const handleWebFolderSelect = async (e) => {
@@ -213,22 +175,6 @@ export default function Files() {
     }
   }
 
-  const handleSyncFolder = async (folder) => {
-    if (!window.electron) return
-    setSyncFolderId(folder.id)
-    try {
-      const scanResult = await window.electron.scanFolder({ folderPath: folder.folder_path, userId })
-      if (!scanResult.success) throw new Error(scanResult.error)
-      queryClient.invalidateQueries({ queryKey: ['files'] })
-      queryClient.invalidateQueries({ queryKey: ['indexed-folders'] })
-      toast.success(`Rescanned folder. Indexed ${scanResult.filesCount} files.`)
-    } catch (err) {
-      toast.error(`Sync failed: ${err.message}`)
-    } finally {
-      setSyncFolderId(null)
-    }
-  }
-
   const handleFileUpload = async (e) => {
     const selectedFiles = e.target.files
     if (!selectedFiles || selectedFiles.length === 0) return
@@ -252,11 +198,11 @@ export default function Files() {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             onClick={handleSelectFolder}
-            disabled={folderOp.active || syncFolderId === 'new' || isImportingFolder}
+            disabled={folderOp.active || isImportingFolder}
             className="btn btn-primary flex items-center gap-2"
           >
-            {folderOp.active || syncFolderId === 'new' || isImportingFolder ? <RefreshCw className="animate-spin" size={16} /> : <FolderPlus size={16} />}
-            <span>{isImportingFolder ? 'Importing...' : folderOp.active ? folderOp.step === 'scanning' ? 'Scanning...' : folderOp.step === 'registering' ? 'Registering...' : 'Please wait...' : 'Select Folder'}</span>
+            {folderOp.active || isImportingFolder ? <RefreshCw className="animate-spin" size={16} /> : <FolderPlus size={16} />}
+            <span>{isImportingFolder ? 'Importing...' : folderOp.active ? 'Please wait...' : 'Import Folder'}</span>
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -479,14 +425,7 @@ export default function Files() {
                       {isWeb ? (
                         <span className="text-xs text-slate-400">Web import</span>
                       ) : (
-                        <button
-                          onClick={() => handleSyncFolder(folder)}
-                          disabled={syncFolderId === folder.id}
-                          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1 disabled:opacity-50"
-                        >
-                          <RefreshCw size={12} className={syncFolderId === folder.id ? 'animate-spin' : ''} />
-                          {syncFolderId === folder.id ? 'Syncing...' : 'Sync Now'}
-                        </button>
+                        <span className="text-xs text-slate-400">Local folder</span>
                       )}
                       <button
                         onClick={() => setDeleteFolderConfirm(folder)}

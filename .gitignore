@@ -90,6 +90,9 @@ web_modules/
 .next
 out
 
+# electron-builder output (installers + unpacked build)
+dist-desktop/
+
 # Nuxt.js build / generate output
 .nuxt
 dist

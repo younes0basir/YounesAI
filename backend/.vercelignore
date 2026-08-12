@@ -1,7 +1,0 @@
-node_modules
-uploads
-.env
-**/.env
-db.sql
-.db
-.git
