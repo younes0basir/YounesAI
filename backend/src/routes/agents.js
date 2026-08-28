@@ -311,22 +311,55 @@ router.post('/voice/transcribe', authMiddleware, uploadVoice.single('audio'), as
   }
 });
 
-router.post('/voice/process', authMiddleware, upload.single('audio'), async (req, res) => {
+router.post('/voice/process', authMiddleware, uploadVoice.single('audio'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: 'Audio file is required' });
 
-    // Multer strips the file extension — restore it so Groq can detect the type
     const ext = path.extname(req.file.originalname) || '.m4a';
     const typedPath = req.file.path + ext;
-    fs.renameSync(req.file.path, typedPath);
+    try {
+      fs.renameSync(req.file.path, typedPath);
+    } catch {
+      // already renamed or missing
+    }
 
-    const context = await buildContext(req);
     const transcription = await voiceAgent.transcribe(typedPath, req.body);
     fs.unlink(typedPath, () => {});
     if (!transcription.success) return res.status(500).json(transcription);
+
+    // Build full orchestrator context with session + conversation memory parity to /chat
+    const context = await buildContext(req);
+    const sid = req.body.sessionId || req.query.sessionId || crypto.randomUUID();
+    context.sessionId = sid;
+    context.conversationSession = await ConversationContext.load(context.userId, sid);
+
+    const recent = await pool.query(
+      `SELECT role, content FROM conversations WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5`,
+      [context.userId]
+    );
+    context.recentMessages = recent.rows
+      .reverse()
+      .map((r) => ({ role: r.role, content: r.content }));
+
+    // Persist user turn as transcribed audio
+    await pool.query(
+      `INSERT INTO conversations (user_id, role, content, created_at) VALUES ($1, 'user', $2, NOW())`,
+      [context.userId, transcription.text]
+    );
+
     const result = await agentCoordinator.processRequest(transcription.text, context);
-    res.json({ success: true, transcription: transcription.text, agentResponse: result });
+
+    const responseText = result.response || result.message || '';
+    const entitiesJson = result.entities ? JSON.stringify(result.entities) : null;
+    await pool.query(
+      `INSERT INTO conversations (user_id, role, content, intent, entities, created_at) VALUES ($1, 'assistant', $2, $3, $4, NOW())`,
+      [context.userId, responseText, result.agents?.join(',') || 'general', entitiesJson]
+    );
+
+    // Flatten to same shape as /chat so mobile can handle voice == text identically, plus transcription
+    res.json({ ...result, transcription: transcription.text, sessionId: sid });
   } catch (error) {
+    console.error('❌ Voice process error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

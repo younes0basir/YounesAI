@@ -1,5 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Loader, Bot, User, Trash2, Folder, X } from 'lucide-react';
+import {
+  Send,
+  Loader,
+  Bot,
+  User,
+  Trash2,
+  Folder,
+  X,
+  Download,
+  Expand,
+  AlertTriangle,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { useConversations, useSendMessage } from '../hooks/useChat';
 import { useIndexedFolders } from '../hooks/useFiles';
 import ConfirmModal from '../components/ui/ConfirmModal';
@@ -26,21 +38,138 @@ function parseEntities(raw) {
   }
 }
 
-function MessageAttachments({ entities }) {
+function ChatImage({ url, prompt }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  const handleDownload = () => {
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `younesai-${Date.now()}.png`;
+      a.click();
+    } catch {
+      toast.error('Download failed');
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="mt-2 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
+        <AlertTriangle size={16} className="shrink-0" />
+        <span className="flex-1">
+          Image failed to load — base64 may be truncated or model timed out.
+        </span>
+        <button
+          onClick={() => {
+            setError(false);
+            setLoaded(false);
+          }}
+          className="rounded-full bg-white px-3 py-1 text-xs font-medium text-amber-800 border border-amber-200 hover:bg-amber-100"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="group relative mt-2 overflow-hidden rounded-xl border border-slate-200/60 bg-slate-50 shadow-sm">
+        {!loaded && (
+          <div className="flex h-56 w-full items-center justify-center bg-gradient-to-br from-violet-50 to-indigo-50">
+            <Loader size={18} className="animate-spin text-violet-400" />
+            <span className="ml-2 text-xs text-violet-600">Loading image…</span>
+          </div>
+        )}
+        <img
+          src={url}
+          alt={prompt || 'Generated image'}
+          onLoad={() => setLoaded(true)}
+          onError={() => setError(true)}
+          className={`max-h-[420px] w-full object-contain bg-white ${loaded ? 'block' : 'hidden'}`}
+          loading="lazy"
+        />
+        {loaded && (
+          <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              onClick={() => setFullscreen(true)}
+              className="rounded-full bg-white/90 p-1.5 shadow hover:bg-white"
+              title="Fullscreen"
+            >
+              <Expand size={14} className="text-slate-700" />
+            </button>
+            <button
+              onClick={handleDownload}
+              className="rounded-full bg-white/90 p-1.5 shadow hover:bg-white"
+              title="Download PNG"
+            >
+              <Download size={14} className="text-slate-700" />
+            </button>
+          </div>
+        )}
+        {prompt && loaded && (
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-2 text-xs text-white line-clamp-2">
+            {prompt}
+          </div>
+        )}
+      </div>
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/90 p-4"
+          onClick={() => setFullscreen(false)}
+        >
+          <div className="flex justify-end">
+            <button
+              onClick={() => setFullscreen(false)}
+              className="rounded-full bg-white/20 p-2 text-white hover:bg-white/30"
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div
+            className="flex flex-1 items-center justify-center p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={url}
+              alt={prompt || 'Generated'}
+              className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
+            />
+          </div>
+          <div className="flex justify-center gap-2 pb-2">
+            <button
+              onClick={handleDownload}
+              className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 flex items-center gap-2"
+            >
+              <Download size={16} /> Download
+            </button>
+            <button
+              onClick={() => setFullscreen(false)}
+              className="rounded-full bg-white/20 px-4 py-2 text-sm text-white hover:bg-white/30"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function MessageAttachments({ entities, content }) {
   const parsed = parseEntities(entities);
   const attachments = parsed?.attachments || [];
   if (!attachments.length) return null;
-
+  // Try to extract prompt from adjacent text like Image generated: "prompt"
+  const promptMatch = content ? content.match(/Image generated:\s*"([^"]+)"/i) : null;
+  const prompt = promptMatch ? promptMatch[1] : null;
   return (
     <div className="mt-2 space-y-2">
       {attachments.map((att, i) =>
         att.type === 'image' && att.url ? (
-          <img
-            key={i}
-            src={att.url}
-            alt="Generated"
-            className="max-w-full rounded-xl border border-slate-200/60 shadow-sm"
-          />
+          <ChatImage key={i} url={att.url} prompt={prompt || att.prompt} />
         ) : null
       )}
     </div>
@@ -209,7 +338,9 @@ export default function Chat() {
                     >
                       {msg.content}
                       {!isUser && <MessageSteps entities={msg.entities} />}
-                      {!isUser && <MessageAttachments entities={msg.entities} />}
+                      {!isUser && (
+                        <MessageAttachments entities={msg.entities} content={msg.content} />
+                      )}
                     </div>
                     {msg.intent && !isUser && (
                       <div className="flex gap-1 mt-1 ml-1">
@@ -242,19 +373,24 @@ export default function Chat() {
                   <Bot size={15} />
                 </div>
                 <div className="bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
-                  <div className="flex gap-1">
-                    <span
-                      className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '0ms' }}
-                    />
-                    <span
-                      className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '150ms' }}
-                    />
-                    <span
-                      className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"
-                      style={{ animationDelay: '300ms' }}
-                    />
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <span
+                        className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"
+                        style={{ animationDelay: '0ms' }}
+                      />
+                      <span
+                        className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"
+                        style={{ animationDelay: '150ms' }}
+                      />
+                      <span
+                        className="w-2 h-2 bg-violet-400 rounded-full animate-bounce"
+                        style={{ animationDelay: '300ms' }}
+                      />
+                    </div>
+                    <span className="ml-2 text-xs text-violet-600 flex items-center gap-1">
+                      <ImageIcon size={12} /> Generating image or thinking…
+                    </span>
                   </div>
                 </div>
               </div>

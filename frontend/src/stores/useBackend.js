@@ -7,7 +7,7 @@ const DEFAULT_MODE = 'deployed';
 export const BACKEND_MODES = {
   deployed: {
     label: 'Deployed',
-    url: import.meta.env.VITE_API_URL || 'https://younesai.onrender.com/api',
+    url: import.meta.env.VITE_API_URL || 'http://84.8.220.241:3000/api',
     short: 'prod',
   },
   local: {
