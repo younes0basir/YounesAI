@@ -4,17 +4,40 @@
   "description": "Desktop AI Assistant using Electron",
   "main": "electron/main.js",
   "scripts": {
-    "frontend:dev": "npm --prefix frontend run dev",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\" \"npm run electron:dev\"",
+    "dev:api": "npm --prefix backend run dev",
+    "dev:web": "npm --prefix frontend run dev",
     "electron:dev": "cross-env NODE_ENV=development electron .",
-    "dev": "concurrently \"npm run frontend:dev\" \"npm run electron:dev\"",
-    "build": "npm --prefix frontend run build",
-    "package": "npm run build && electron-builder"
+    "build": "npm run build:api && npm run build:web",
+    "build:api": "npm --prefix backend run lint",
+    "build:web": "npm --prefix frontend run build",
+    "lint": "npm run lint:api && npm run lint:web",
+    "lint:api": "npm --prefix backend run lint",
+    "lint:web": "npm --prefix frontend run lint",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,css,html}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,css,html}\"",
+    "package": "npm run build && electron-builder",
+    "prepare": "husky"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "electron": "^43.4.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.9.6"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,md,css,html}": [
+      "prettier --write"
+    ],
+    "frontend/**/*.{js,jsx}": [
+      "npm --prefix frontend run lint"
+    ],
+    "backend/src/**/*.js": [
+      "npm --prefix backend run lint"
+    ]
   },
   "build": {
     "appId": "com.antigravity.desktop-assistant",

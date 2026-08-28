@@ -37,7 +37,7 @@ async function retrieveDocuments({ userId, query, limit = 5, folderPath }) {
          LIMIT 50`,
         [userId, like, ...fw.params]
       );
-      candidatePaths = pathRes.rows.map(r => r.file_path);
+      candidatePaths = pathRes.rows.map((r) => r.file_path);
     }
 
     // Step 2: If we have candidates, try vector search on the subset
@@ -48,8 +48,9 @@ async function retrieveDocuments({ userId, query, limit = 5, folderPath }) {
         const placeholders = candidatePaths.map((_, i) => `$${i + 3}`).join(',');
         const offset = candidatePaths.length + 3;
         const fw = folderWhereClause(offset, folderPath);
-        const res = await pool.query(
-        `SELECT id, file_path, content, summary, entities, file_type,
+        const res = await pool
+          .query(
+            `SELECT id, file_path, content, summary, entities, file_type,
                 (1 - (embedding <=> $2::vector)) AS similarity
          FROM document_embeddings
          WHERE user_id = $1
@@ -57,8 +58,9 @@ async function retrieveDocuments({ userId, query, limit = 5, folderPath }) {
            AND embedding IS NOT NULL${fw.sql}
          ORDER BY embedding <=> $2::vector
          LIMIT $${offset + (fw.params.length > 0 ? 1 : 0)}`,
-          [userId, vectorStr, ...candidatePaths, ...fw.params, limit]
-        ).catch(() => null);
+            [userId, vectorStr, ...candidatePaths, ...fw.params, limit]
+          )
+          .catch(() => null);
         if (res?.rows?.length) {
           results = res.rows;
         }
@@ -95,11 +97,13 @@ async function retrieveDocuments({ userId, query, limit = 5, folderPath }) {
     }
 
     // Log retrieval analytics
-    await pool.query(
-      `INSERT INTO retrieval_logs (user_id, query, source, result_count, latency_ms, had_results)
+    await pool
+      .query(
+        `INSERT INTO retrieval_logs (user_id, query, source, result_count, latency_ms, had_results)
        VALUES ($1,$2,'documents',$3,$4,$5)`,
-      [userId, query, results.length, Date.now() - start, results.length > 0]
-    ).catch(() => {});
+        [userId, query, results.length, Date.now() - start, results.length > 0]
+      )
+      .catch(() => {});
 
     return results;
   } catch (err) {

@@ -7,7 +7,11 @@ class VoiceAgent {
   async transcribe(filePath, options = {}) {
     try {
       if (!process.env.GROQ_API_KEY) {
-        return { success: false, error: 'GROQ_API_KEY is not set in environment. Voice transcription requires a Groq API key.' };
+        return {
+          success: false,
+          error:
+            'GROQ_API_KEY is not set in environment. Voice transcription requires a Groq API key.',
+        };
       }
       const transcription = await groq.audio.transcriptions.create({
         file: fs.createReadStream(filePath),

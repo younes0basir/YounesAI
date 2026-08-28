@@ -2,9 +2,22 @@ const pool = require('../db');
 
 // Whitelist of allowed columns for task updates
 const ALLOWED_FIELDS = new Set([
-  'title', 'description', 'details', 'priority', 'urgency', 'due_at',
-  'status', 'checklist', 'is_favorite', 'recurrence_rule', 'recurrence_interval',
-  'next_run_at', 'completed_at', 'parent_task_id', 'project_id', 'quadrant',
+  'title',
+  'description',
+  'details',
+  'priority',
+  'urgency',
+  'due_at',
+  'status',
+  'checklist',
+  'is_favorite',
+  'recurrence_rule',
+  'recurrence_interval',
+  'next_run_at',
+  'completed_at',
+  'parent_task_id',
+  'project_id',
+  'quadrant',
 ]);
 
 async function updateTask(context, id, data) {

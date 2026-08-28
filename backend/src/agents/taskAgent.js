@@ -63,10 +63,14 @@ Only use action "chat" if the message is purely conversational with zero task in
           : '(no prior messages)'
       }`;
 
-      const result = await fallbackManager.generateText('task', [
-        { role: 'system', content: this.systemPrompt },
-        { role: 'user', content: userContent },
-      ], { temperature: 0.3, maxTokens: 600, json: true });
+      const result = await fallbackManager.generateText(
+        'task',
+        [
+          { role: 'system', content: this.systemPrompt },
+          { role: 'user', content: userContent },
+        ],
+        { temperature: 0.3, maxTokens: 600, json: true }
+      );
 
       if (!result.success) {
         console.error('[TaskAgent] LLM call failed:', result.error);
@@ -83,7 +87,14 @@ Only use action "chat" if the message is purely conversational with zero task in
       if (context.parameters?.dueAt && parsed.task) {
         parsed.task.due_at = context.parameters.dueAt;
       }
-      console.log('[TaskAgent] Parsed action:', parsed.action, '| title:', parsed.task?.title, '| due_at:', parsed.task?.due_at);
+      console.log(
+        '[TaskAgent] Parsed action:',
+        parsed.action,
+        '| title:',
+        parsed.task?.title,
+        '| due_at:',
+        parsed.task?.due_at
+      );
       const tokensUsed = result.usage?.total_tokens || 0;
       let actionResult;
 
@@ -94,46 +105,173 @@ Only use action "chat" if the message is purely conversational with zero task in
             context.requestId = generateMessageHash(context.userId, context.message, 'create_task');
           }
           actionResult = await tools.createTask(context, parsed.task);
-          await logAgentCall({ agentName: 'task', provider: result.provider, model: result.model, latency: Date.now() - start, success: true, tokensUsed, context });
+          await logAgentCall({
+            agentName: 'task',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: true,
+            tokensUsed,
+            context,
+          });
           if (actionResult.idempotent) {
-            return { success: true, content: prefixWithSourceCheck(`Task already created (duplicate request prevented): "${actionResult.task.title}".`, context, ['task tool output']), metadata: { provider: result.provider, model: result.model } };
+            return {
+              success: true,
+              content: prefixWithSourceCheck(
+                `Task already created (duplicate request prevented): "${actionResult.task.title}".`,
+                context,
+                ['task tool output']
+              ),
+              metadata: { provider: result.provider, model: result.model },
+            };
           }
-          const dueInfo = actionResult.task.due_at ? `, due: ${new Date(actionResult.task.due_at).toLocaleDateString()}` : '';
-          return { success: true, content: prefixWithSourceCheck(`Task created successfully: "${actionResult.task.title}" (id: ${actionResult.task.id}, priority: ${actionResult.task.priority}${dueInfo}).`, context, ['task tool output']), metadata: { provider: result.provider, model: result.model } };
+          const dueInfo = actionResult.task.due_at
+            ? `, due: ${new Date(actionResult.task.due_at).toLocaleDateString()}`
+            : '';
+          return {
+            success: true,
+            content: prefixWithSourceCheck(
+              `Task created successfully: "${actionResult.task.title}" (id: ${actionResult.task.id}, priority: ${actionResult.task.priority}${dueInfo}).`,
+              context,
+              ['task tool output']
+            ),
+            action: 'create',
+            toolResult: actionResult,
+            metadata: { provider: result.provider, model: result.model },
+          };
 
         case 'update':
           if (!parsed.taskId) {
-            await logAgentCall({ agentName: 'task', provider: result.provider, model: result.model, latency: Date.now() - start, success: false, error: 'No taskId provided', context });
-            return { success: true, content: prefixWithSourceCheck('I could not identify which task to update. Please specify the task name or show your tasks first.', context, ['task agent reasoning']), metadata: { provider: result.provider, model: result.model } };
+            await logAgentCall({
+              agentName: 'task',
+              provider: result.provider,
+              model: result.model,
+              latency: Date.now() - start,
+              success: false,
+              error: 'No taskId provided',
+              context,
+            });
+            return {
+              success: true,
+              content: prefixWithSourceCheck(
+                'I could not identify which task to update. Please specify the task name or show your tasks first.',
+                context,
+                ['task agent reasoning']
+              ),
+              metadata: { provider: result.provider, model: result.model },
+            };
           }
           actionResult = await tools.updateTask(context, parsed.taskId, parsed.task);
-          await logAgentCall({ agentName: 'task', provider: result.provider, model: result.model, latency: Date.now() - start, success: actionResult.success, tokensUsed, context });
-          return { success: true, content: prefixWithSourceCheck(actionResult.success ? `Task updated successfully: "${actionResult.task.title}" (status: ${actionResult.task.status}).` : `Task not found or update failed.`, context, ['task tool output']), metadata: { provider: result.provider, model: result.model } };
+          await logAgentCall({
+            agentName: 'task',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: actionResult.success,
+            tokensUsed,
+            context,
+          });
+          return {
+            success: true,
+            content: prefixWithSourceCheck(
+              actionResult.success
+                ? `Task updated successfully: "${actionResult.task.title}" (status: ${actionResult.task.status}).`
+                : `Task not found or update failed.`,
+              context,
+              ['task tool output']
+            ),
+            metadata: { provider: result.provider, model: result.model },
+          };
 
         case 'delete':
           if (!parsed.taskId) {
-            await logAgentCall({ agentName: 'task', provider: result.provider, model: result.model, latency: Date.now() - start, success: false, error: 'No taskId provided', context });
-            return { success: true, content: prefixWithSourceCheck('I could not identify which task to delete. Please specify the task name or show your tasks first.', context, ['task agent reasoning']), metadata: { provider: result.provider, model: result.model } };
+            await logAgentCall({
+              agentName: 'task',
+              provider: result.provider,
+              model: result.model,
+              latency: Date.now() - start,
+              success: false,
+              error: 'No taskId provided',
+              context,
+            });
+            return {
+              success: true,
+              content: prefixWithSourceCheck(
+                'I could not identify which task to delete. Please specify the task name or show your tasks first.',
+                context,
+                ['task agent reasoning']
+              ),
+              metadata: { provider: result.provider, model: result.model },
+            };
           }
           actionResult = await tools.deleteTask(context, parsed.taskId);
-          await logAgentCall({ agentName: 'task', provider: result.provider, model: result.model, latency: Date.now() - start, success: actionResult.success, tokensUsed, context });
-          return { success: true, content: prefixWithSourceCheck(actionResult.success ? `Task deleted.` : `Task not found.`, context, ['task tool output']), metadata: { provider: result.provider, model: result.model } };
+          await logAgentCall({
+            agentName: 'task',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: actionResult.success,
+            tokensUsed,
+            context,
+          });
+          return {
+            success: true,
+            content: prefixWithSourceCheck(
+              actionResult.success ? `Task deleted.` : `Task not found.`,
+              context,
+              ['task tool output']
+            ),
+            metadata: { provider: result.provider, model: result.model },
+          };
 
         case 'list':
           actionResult = await tools.listTasks(context, parsed.filters || {});
-          await logAgentCall({ agentName: 'task', provider: result.provider, model: result.model, latency: Date.now() - start, success: true, tokensUsed, context });
+          await logAgentCall({
+            agentName: 'task',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: true,
+            tokensUsed,
+            context,
+          });
           const count = actionResult.tasks.length;
-          const summary = count === 0
-            ? 'No tasks found.'
-            : `Found ${count} task(s):\n${actionResult.tasks.map((t) => `- ${t.title} (${t.status})`).join('\n')}`;
-          return { success: true, content: prefixWithSourceCheck(summary, context, ['task tool output']), metadata: { provider: result.provider, model: result.model } };
+          const summary =
+            count === 0
+              ? 'No tasks found.'
+              : `Found ${count} task(s):\n${actionResult.tasks.map((t) => `- ${t.title} (${t.status})`).join('\n')}`;
+          return {
+            success: true,
+            content: prefixWithSourceCheck(summary, context, ['task tool output']),
+            metadata: { provider: result.provider, model: result.model },
+          };
 
         default:
-          await logAgentCall({ agentName: 'task', provider: result.provider, model: result.model, latency: Date.now() - start, success: true, tokensUsed, context });
-          return { success: true, content: prefixWithSourceCheck(parsed.response || result.content, context, ['task agent reasoning']), metadata: { provider: result.provider, model: result.model } };
+          await logAgentCall({
+            agentName: 'task',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: true,
+            tokensUsed,
+            context,
+          });
+          return {
+            success: true,
+            content: prefixWithSourceCheck(parsed.response || result.content, context, [
+              'task agent reasoning',
+            ]),
+            metadata: { provider: result.provider, model: result.model },
+          };
       }
     } catch (error) {
-      await logAgentCall({ agentName: 'task', latency: Date.now() - start, success: false, error: error.message, context });
+      await logAgentCall({
+        agentName: 'task',
+        latency: Date.now() - start,
+        success: false,
+        error: error.message,
+        context,
+      });
       return { success: false, error: error.message };
     }
   }
@@ -142,7 +280,10 @@ Only use action "chat" if the message is purely conversational with zero task in
     // 1. Try to extract and parse valid JSON from the LLM response
     try {
       // Strip markdown code fences if present
-      let cleaned = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      let cleaned = content
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim();
       const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
@@ -154,7 +295,10 @@ Only use action "chat" if the message is purely conversational with zero task in
           if (parsed.action === 'chat') {
             const fallback = this.fallbackParse(originalMessage || content);
             if (fallback && fallback.action !== 'chat') {
-              console.log('[TaskAgent] LLM returned action=chat but creation intent detected — overriding:', JSON.stringify(fallback));
+              console.log(
+                '[TaskAgent] LLM returned action=chat but creation intent detected — overriding:',
+                JSON.stringify(fallback)
+              );
               return fallback;
             }
           }
@@ -194,14 +338,19 @@ Only use action "chat" if the message is purely conversational with zero task in
 
     // Check for delete intent
     if (/\b(?:delete|remove|cancel)\s+(?:the\s+)?(?:task|todo)\b/i.test(lower)) {
-      return { action: 'delete', taskId: null, response: 'I need to know which task to delete. Please show your tasks first.' };
+      return {
+        action: 'delete',
+        taskId: null,
+        response: 'I need to know which task to delete. Please show your tasks first.',
+      };
     }
 
     // Check for creation intent
-    const hasCreateIntent = /(?:create|make|add|new)\s+(?:a\s+)?(?:task|todo)/i.test(lower)
-      || /task\s+(?:named|called|titled)/i.test(lower)
-      || /(?:remind\s+me|set\s+a\s+reminder|add\s+a\s+reminder)/i.test(lower)
-      || /(?:create|make|add|new)\s+.+\s+(?:task|todo)/i.test(lower);
+    const hasCreateIntent =
+      /(?:create|make|add|new)\s+(?:a\s+)?(?:task|todo)/i.test(lower) ||
+      /task\s+(?:named|called|titled)/i.test(lower) ||
+      /(?:remind\s+me|set\s+a\s+reminder|add\s+a\s+reminder)/i.test(lower) ||
+      /(?:create|make|add|new)\s+.+\s+(?:task|todo)/i.test(lower);
 
     if (!hasCreateIntent) return null;
 
@@ -210,9 +359,14 @@ Only use action "chat" if the message is purely conversational with zero task in
 
     // Strategy 1: Look for "named/called/titled [X]" anywhere in the message
     // This handles both "create task named X for Y" and "create task for Y named X"
-    const namedMatch = message.match(/(?:named|called|titled)\s+["']?(.+?)["']?(?:\s+(?:for|due|by|on|at|with|priority|$)|$)/i);
+    const namedMatch = message.match(
+      /(?:named|called|titled)\s+["']?(.+?)["']?(?:\s+(?:for|due|by|on|at|with|priority|$)|$)/i
+    );
     if (namedMatch && namedMatch[1]) {
-      title = namedMatch[1].trim().replace(/["'.]$/, '').replace(/^["'.,]/, '');
+      title = namedMatch[1]
+        .trim()
+        .replace(/["'.]$/, '')
+        .replace(/^["'.,]/, '');
       title = title.charAt(0).toUpperCase() + title.slice(1);
     }
 
@@ -228,7 +382,10 @@ Only use action "chat" if the message is purely conversational with zero task in
       for (const pattern of createPatterns) {
         const match = message.match(pattern);
         if (match && match[1]) {
-          title = match[1].trim().replace(/["'.]$/, '').replace(/^["'.,]/, '');
+          title = match[1]
+            .trim()
+            .replace(/["'.]$/, '')
+            .replace(/^["'.,]/, '');
           title = title.charAt(0).toUpperCase() + title.slice(1);
           break;
         }

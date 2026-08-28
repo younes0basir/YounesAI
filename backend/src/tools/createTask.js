@@ -16,7 +16,8 @@ async function createTask(context, data) {
     if (existing) return { success: true, task: existing, idempotent: true };
   } catch {}
 
-  const { title, description, priority, due_at, details, checklist, status, is_favorite, urgency } = value;
+  const { title, description, priority, due_at, details, checklist, status, is_favorite, urgency } =
+    value;
 
   try {
     const result = await pool.query(
@@ -57,7 +58,16 @@ async function createTask(context, data) {
           `INSERT INTO tasks (user_id, title, description, priority, due_at, details, checklist, status)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
            RETURNING id, title, status, priority, due_at, created_at`,
-          [context.userId, title, description, priority, due_at, details, JSON.stringify(checklist || []), status]
+          [
+            context.userId,
+            title,
+            description,
+            priority,
+            due_at,
+            details,
+            JSON.stringify(checklist || []),
+            status,
+          ]
         );
         return { success: true, task: result.rows[0] };
       } catch (err2) {
@@ -70,12 +80,22 @@ async function createTask(context, data) {
         `INSERT INTO tasks (user_id, title, priority, status, due_at)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING id, title, status, priority, due_at, created_at`,
-        [context.userId, title || 'Untitled Task', priority || 3, status || 'pending', due_at || null]
+        [
+          context.userId,
+          title || 'Untitled Task',
+          priority || 3,
+          status || 'pending',
+          due_at || null,
+        ]
       );
       console.log('[createTask] Minimal INSERT succeeded:', result.rows[0]?.id);
       return { success: true, task: result.rows[0] };
     } catch (err3) {
-      console.error('[createTask] All INSERT attempts failed. Last error:', err3.code, err3.message);
+      console.error(
+        '[createTask] All INSERT attempts failed. Last error:',
+        err3.code,
+        err3.message
+      );
       throw err3;
     }
   }

@@ -4,7 +4,16 @@ const pool = require('../db');
  * Log a single agent call to the agent_metrics table.
  * Never throws — metrics must not crash the main request flow.
  */
-async function logAgentCall({ agentName, provider, model, latency, success, error, tokensUsed, context }) {
+async function logAgentCall({
+  agentName,
+  provider,
+  model,
+  latency,
+  success,
+  error,
+  tokensUsed,
+  context,
+}) {
   try {
     await pool.query(
       `INSERT INTO agent_metrics
@@ -13,13 +22,13 @@ async function logAgentCall({ agentName, provider, model, latency, success, erro
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
       [
         agentName,
-        provider           || 'unknown',
-        model              || null,
+        provider || 'unknown',
+        model || null,
         Math.round(latency || 0),
-        success            ?? true,
-        error              ? String(error).substring(0, 500) : null,
-        tokensUsed         || 0,
-        context?.userId    || null,
+        success ?? true,
+        error ? String(error).substring(0, 500) : null,
+        tokensUsed || 0,
+        context?.userId || null,
         context?.conversationId || null,
       ]
     );
@@ -65,8 +74,12 @@ async function getAgentMetrics(limit = 50, filters = {}) {
 /**
  * Aggregate metrics summary by agent + provider over a rolling window.
  */
-async function getAgentSummary(hours = 24) {
+async function getAgentSummary(hours = 24, userId = null) {
   const safeHours = Math.min(Math.max(parseInt(hours, 10) || 24, 1), 168); // 1h – 7 days
+  const params = [safeHours];
+  const userFilter = userId ? 'AND user_id = $2' : '';
+  if (userId) params.push(userId);
+
   const result = await pool.query(
     `SELECT
        agent_name,
@@ -80,9 +93,10 @@ async function getAgentSummary(hours = 24) {
        MAX(created_at)                                                AS last_call
      FROM agent_metrics
      WHERE created_at > NOW() - ($1 * INTERVAL '1 hour')
+       ${userFilter}
      GROUP BY agent_name, provider
      ORDER BY total_calls DESC`,
-    [safeHours]
+    params
   );
   return result.rows;
 }
@@ -103,7 +117,14 @@ async function getAgentSummary(hours = 24) {
  * @param {string}   [opts.agentMetricId]
  */
 async function logRetrievalQuality({
-  userId, query, evidence, agentResponse, sourcesUsed, agentsUsed, latencyMs, agentMetricId
+  userId,
+  query,
+  evidence,
+  agentResponse,
+  sourcesUsed,
+  agentsUsed,
+  latencyMs,
+  agentMetricId,
 }) {
   try {
     const retrieved = evidence?.length || 0;
@@ -113,12 +134,10 @@ async function logRetrievalQuality({
     let hallucinationRisk = false;
 
     if (retrieved > 0 && agentResponse) {
-      const evidenceTexts = evidence.map(e => (e.text || e.content || '').toLowerCase());
+      const evidenceTexts = evidence.map((e) => (e.text || e.content || '').toLowerCase());
       const responseLower = agentResponse.toLowerCase();
-      const words = responseLower.split(/\s+/).filter(w => w.length > 4);
-      const wordsInEvidence = words.filter(w =>
-        evidenceTexts.some(et => et.includes(w))
-      );
+      const words = responseLower.split(/\s+/).filter((w) => w.length > 4);
+      const wordsInEvidence = words.filter((w) => evidenceTexts.some((et) => et.includes(w)));
       groundednessScore = words.length > 0 ? wordsInEvidence.length / words.length : 0;
       hallucinationRisk = groundednessScore < 0.15 && retrieved > 0;
     } else if (retrieved === 0) {
@@ -178,15 +197,19 @@ async function getEvaluationSummary(userId, hours = 24) {
 /**
  * Get detailed benchmarking metrics per agent including hallucination rates, costs, error types.
  */
-async function getAgentBenchmarkMetrics(hours = 24) {
+async function getAgentBenchmarkMetrics(hours = 24, userId = null) {
   const safeHours = Math.min(Math.max(parseInt(hours, 10) || 24, 1), 168);
   try {
     // Provider pricing (per 1K tokens) - approximate
     const pricing = {
-      'Groq': { input: 0.0001, output: 0.0001 },
-      'NVIDIA': { input: 0.0001, output: 0.0001 },
-      'OpenRouter': { input: 0.0001, output: 0.0001 },
+      Groq: { input: 0.0001, output: 0.0001 },
+      NVIDIA: { input: 0.0001, output: 0.0001 },
+      OpenRouter: { input: 0.0001, output: 0.0001 },
     };
+
+    const params = [safeHours];
+    const userFilter = userId ? 'AND am.user_id = $2' : '';
+    if (userId) params.push(userId);
 
     const result = await pool.query(
       `SELECT
@@ -222,17 +245,20 @@ async function getAgentBenchmarkMetrics(hours = 24) {
          GROUP BY agent_metric_id
        ) el ON am.id = el.agent_metric_id
        WHERE am.created_at > NOW() - ($1 * INTERVAL '1 hour')
+         ${userFilter}
        GROUP BY am.agent_name, am.provider, am.model, el.total_evals, el.hallucination_count, el.avg_groundedness, el.avg_retrieved_docs
        ORDER BY total_calls DESC`,
-      [safeHours]
+      params
     );
 
     // Calculate costs and derived metrics
-    const metrics = result.rows.map(row => {
+    const metrics = result.rows.map((row) => {
       const providerPricing = pricing[row.provider] || { input: 0.0001, output: 0.0001 };
-      const estimatedCost = (row.total_tokens / 1000) * (providerPricing.input + providerPricing.output);
+      const estimatedCost =
+        (row.total_tokens / 1000) * (providerPricing.input + providerPricing.output);
       const successRate = row.total_calls > 0 ? (row.success_count / row.total_calls) * 100 : 0;
-      const hallucinationRate = row.total_evals > 0 ? (row.hallucination_count / row.total_evals) * 100 : 0;
+      const hallucinationRate =
+        row.total_evals > 0 ? (row.hallucination_count / row.total_evals) * 100 : 0;
       const errorRate = row.total_calls > 0 ? (row.error_count / row.total_calls) * 100 : 0;
 
       return {
@@ -241,7 +267,8 @@ async function getAgentBenchmarkMetrics(hours = 24) {
         hallucination_rate: Math.round(hallucinationRate * 10) / 10,
         error_rate: Math.round(errorRate * 10) / 10,
         estimated_cost_usd: Math.round(estimatedCost * 1000) / 1000,
-        cost_per_call: row.total_calls > 0 ? Math.round((estimatedCost / row.total_calls) * 10000) / 10000 : 0,
+        cost_per_call:
+          row.total_calls > 0 ? Math.round((estimatedCost / row.total_calls) * 10000) / 10000 : 0,
       };
     });
 
@@ -280,4 +307,12 @@ async function getAgentPerformanceTrends(hours = 168) {
   }
 }
 
-module.exports = { logAgentCall, getAgentMetrics, getAgentSummary, logRetrievalQuality, getEvaluationSummary, getAgentBenchmarkMetrics, getAgentPerformanceTrends };
+module.exports = {
+  logAgentCall,
+  getAgentMetrics,
+  getAgentSummary,
+  logRetrievalQuality,
+  getEvaluationSummary,
+  getAgentBenchmarkMetrics,
+  getAgentPerformanceTrends,
+};

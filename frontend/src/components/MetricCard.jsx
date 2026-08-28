@@ -3,11 +3,11 @@ const accents = {
   reminders: 'text-amber-600 bg-amber-50',
   events: 'text-blue-600 bg-blue-50',
   default: 'text-primary-600 bg-primary-50',
-}
+};
 
 export default function MetricCard({ title, value, delta, icon, onClick, accent = 'default' }) {
-  const tone = accents[accent] || accents.default
-  const isPositive = typeof delta === 'string' ? !delta.includes('0 open') : delta > 0
+  const tone = accents[accent] || accents.default;
+  const isPositive = typeof delta === 'string' ? !delta.includes('0 open') : delta > 0;
 
   return (
     <button
@@ -18,11 +18,7 @@ export default function MetricCard({ title, value, delta, icon, onClick, accent 
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          {icon && (
-            <div className={`metric-icon ${tone}`}>
-              {icon}
-            </div>
-          )}
+          {icon && <div className={`metric-icon ${tone}`}>{icon}</div>}
           <div>
             <div className="text-sm font-medium text-slate-500">{title}</div>
             <div className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">{value}</div>
@@ -35,5 +31,5 @@ export default function MetricCard({ title, value, delta, icon, onClick, accent 
         ) : null}
       </div>
     </button>
-  )
+  );
 }

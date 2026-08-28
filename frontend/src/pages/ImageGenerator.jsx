@@ -1,46 +1,46 @@
-import { useState } from 'react'
-import { ImagePlus, Sparkles } from 'lucide-react'
-import api from '../lib/api'
+import { useState } from 'react';
+import { ImagePlus, Sparkles } from 'lucide-react';
+import api from '../lib/api';
 
 const sizePresets = [
   { label: 'Square 1024', width: 1024, height: 1024 },
   { label: 'Portrait 768 × 1344', width: 768, height: 1344 },
   { label: 'Landscape 1344 × 768', width: 1344, height: 768 },
-]
+];
 
 export default function ImageGenerator() {
-  const [prompt, setPrompt] = useState('a wolf in evernight')
-  const [width, setWidth] = useState(768)
-  const [height, setHeight] = useState(1344)
-  const [steps, setSteps] = useState(4)
-  const [seed, setSeed] = useState(1)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [result, setResult] = useState(null)
+  const [prompt, setPrompt] = useState('a wolf in evernight');
+  const [width, setWidth] = useState(768);
+  const [height, setHeight] = useState(1344);
+  const [steps, setSteps] = useState(4);
+  const [seed, setSeed] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState(null);
   const [statusLog, setStatusLog] = useState([
     'Ready. Enter a prompt and generate a concept image.',
-  ])
+  ]);
 
   const addLog = (message) => {
-    const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    setStatusLog((prev) => [...prev.slice(-5), `${stamp} • ${message}`])
-  }
+    const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setStatusLog((prev) => [...prev.slice(-5), `${stamp} • ${message}`]);
+  };
 
   const handleGenerate = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!prompt.trim()) {
-      setError('Please enter a prompt.')
-      return
+      setError('Please enter a prompt.');
+      return;
     }
 
-    setError('')
-    setResult(null)
-    setLoading(true)
-    setStatusLog(['Queued. Preparing image request...'])
+    setError('');
+    setResult(null);
+    setLoading(true);
+    setStatusLog(['Queued. Preparing image request...']);
 
     try {
-      addLog('Validating prompt and generation settings.')
-      addLog('Sending request to NVIDIA image service...')
+      addLog('Validating prompt and generation settings.');
+      addLog('Sending request to NVIDIA image service...');
 
       const { data } = await api.post('/image/generate', {
         prompt,
@@ -48,26 +48,26 @@ export default function ImageGenerator() {
         height,
         steps,
         seed,
-      })
+      });
 
-      addLog('Image received successfully from the provider.')
-      setResult(data)
-      addLog('Rendering preview...')
+      addLog('Image received successfully from the provider.');
+      setResult(data);
+      addLog('Rendering preview...');
     } catch (err) {
-      const message = err?.response?.data?.error || err?.message || 'Image generation failed.'
-      addLog(`Generation failed: ${message}`)
-      setError(message)
+      const message = err?.response?.data?.error || err?.message || 'Image generation failed.';
+      addLog(`Generation failed: ${message}`);
+      setError(message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const onPresetChange = (e) => {
-    const preset = sizePresets[Number(e.target.value)]
-    if (!preset) return
-    setWidth(preset.width)
-    setHeight(preset.height)
-  }
+    const preset = sizePresets[Number(e.target.value)];
+    if (!preset) return;
+    setWidth(preset.width);
+    setHeight(preset.height);
+  };
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -97,28 +97,56 @@ export default function ImageGenerator() {
               <label className="block text-sm font-medium text-slate-700 mb-2">Preset</label>
               <select className="select" onChange={onPresetChange} defaultValue="1">
                 {sizePresets.map((preset, index) => (
-                  <option key={preset.label} value={index}>{preset.label}</option>
+                  <option key={preset.label} value={index}>
+                    {preset.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Width</label>
-              <input className="input" type="number" min="256" max="1536" value={width} onChange={(e) => setWidth(Number(e.target.value) || 768)} />
+              <input
+                className="input"
+                type="number"
+                min="256"
+                max="1536"
+                value={width}
+                onChange={(e) => setWidth(Number(e.target.value) || 768)}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Height</label>
-              <input className="input" type="number" min="256" max="1536" value={height} onChange={(e) => setHeight(Number(e.target.value) || 1344)} />
+              <input
+                className="input"
+                type="number"
+                min="256"
+                max="1536"
+                value={height}
+                onChange={(e) => setHeight(Number(e.target.value) || 1344)}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Steps</label>
-              <input className="input" type="number" min="1" max="12" value={steps} onChange={(e) => setSteps(Number(e.target.value) || 4)} />
+              <input
+                className="input"
+                type="number"
+                min="1"
+                max="12"
+                value={steps}
+                onChange={(e) => setSteps(Number(e.target.value) || 4)}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Seed</label>
-              <input className="input" type="number" value={seed} onChange={(e) => setSeed(Number(e.target.value) || 1)} />
+              <input
+                className="input"
+                type="number"
+                value={seed}
+                onChange={(e) => setSeed(Number(e.target.value) || 1)}
+              />
             </div>
           </div>
 
@@ -150,7 +178,11 @@ export default function ImageGenerator() {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary w-full justify-center" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary w-full justify-center"
+            disabled={loading}
+          >
             {loading ? 'Generating...' : 'Generate image'}
             <Sparkles size={16} />
           </button>
@@ -182,11 +214,13 @@ export default function ImageGenerator() {
                 <ImagePlus size={28} />
               </div>
               <p className="empty-state-title">No image yet</p>
-              <p className="empty-state-description">Generate a concept image to preview it here.</p>
+              <p className="empty-state-description">
+                Generate a concept image to preview it here.
+              </p>
             </div>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }

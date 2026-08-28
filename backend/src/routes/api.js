@@ -1,6 +1,8 @@
 const { Router } = require('express');
 const multer = require('multer');
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
 const pool = require('../db');
 const { createCrudRouter } = require('../lib/crud');
 const { authMiddleware } = require('../middleware/auth');
@@ -107,7 +109,8 @@ router.get('/search', authMiddleware, async (req, res) => {
 router.post('/reminders/:id/snooze', authMiddleware, async (req, res) => {
   try {
     const minutes = Number(req.body?.minutes || 10);
-    const safeMinutes = Number.isFinite(minutes) && minutes > 0 ? Math.min(minutes, 7 * 24 * 60) : 10;
+    const safeMinutes =
+      Number.isFinite(minutes) && minutes > 0 ? Math.min(minutes, 7 * 24 * 60) : 10;
     const userId = req.user?.id;
     const q = `
       UPDATE reminders
@@ -162,9 +165,12 @@ router.post('/image/generate', authMiddleware, async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error('[image/generate] error:', err.message);
-    const upstreamAuthFailure = /NVIDIA image generation authorization failed|Authorization failed|Forbidden/i.test(err.message || '');
+    const upstreamAuthFailure =
+      /NVIDIA image generation authorization failed|Authorization failed|Forbidden/i.test(
+        err.message || ''
+      );
     res.status(upstreamAuthFailure ? 502 : 500).json({
-      error: err.message || 'Image generation failed.'
+      error: err.message || 'Image generation failed.',
     });
   }
 });
@@ -222,7 +228,8 @@ router.post('/projects', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?.id;
     const { name, description = null } = req.body || {};
-    if (!name || !String(name).trim()) return res.status(400).json({ error: 'Project name is required' });
+    if (!name || !String(name).trim())
+      return res.status(400).json({ error: 'Project name is required' });
 
     const inserted = await pool.query(
       'INSERT INTO projects (owner_id, name, description) VALUES ($1, $2, $3) RETURNING *',
@@ -275,7 +282,7 @@ router.get('/projects/:id', authMiddleware, async (req, res) => {
 router.put('/projects/:id', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?.id;
-    if (!await isProjectOwnerOrMember(req.params.id, userId)) {
+    if (!(await isProjectOwnerOrMember(req.params.id, userId))) {
       return res.status(404).json({ error: 'Project not found' });
     }
     const body = req.body || {};
@@ -295,7 +302,7 @@ router.put('/projects/:id', authMiddleware, async (req, res) => {
 router.delete('/projects/:id', authMiddleware, async (req, res) => {
   try {
     const userId = req.user?.id;
-    if (!await isProjectOwnerOrMember(req.params.id, userId)) {
+    if (!(await isProjectOwnerOrMember(req.params.id, userId))) {
       return res.status(404).json({ error: 'Project not found' });
     }
     await pool.query('DELETE FROM project_memberships WHERE project_id = $1', [req.params.id]);
@@ -403,7 +410,14 @@ router.post('/files/register', authMiddleware, async (req, res) => {
         `INSERT INTO files (user_id, name, path, extension, mime_type, size_bytes)
          VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT DO NOTHING RETURNING *`,
-        [req.user.id, f.name, f.path || f.name, ext, f.mime_type || null, Number(f.size_bytes) || null]
+        [
+          req.user.id,
+          f.name,
+          f.path || f.name,
+          ext,
+          f.mime_type || null,
+          Number(f.size_bytes) || null,
+        ]
       );
       if (result.rows.length > 0) inserted.push(result.rows[0]);
     }
@@ -440,7 +454,14 @@ router.post('/files/register-folder', authMiddleware, async (req, res) => {
         `INSERT INTO files (user_id, name, path, extension, mime_type, size_bytes)
          VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT DO NOTHING RETURNING *`,
-        [req.user.id, f.name, f.path || f.name, ext, f.mime_type || null, Number(f.size_bytes) || null]
+        [
+          req.user.id,
+          f.name,
+          f.path || f.name,
+          ext,
+          f.mime_type || null,
+          Number(f.size_bytes) || null,
+        ]
       );
       if (result.rows.length > 0) inserted.push(result.rows[0]);
     }
@@ -511,26 +532,70 @@ router.delete('/indexed_folders/:id/cascade', authMiddleware, async (req, res) =
 });
 
 // ── Standard CRUD Routes ──────────────────────────────────────────────────────
-router.use('/devices',            authMiddleware, createCrudRouter(pool, 'devices',            { userScoped: true }));
-router.use('/tasks',              authMiddleware, createCrudRouter(pool, 'tasks',              { softDelete: 'deleted_at', userScoped: true }));
-router.use('/places',             authMiddleware, createCrudRouter(pool, 'places',             { userScoped: true }));
-router.use('/calendar_events',    authMiddleware, createCrudRouter(pool, 'calendar_events',    { userScoped: true }));
-router.use('/reminders',          authMiddleware, createCrudRouter(pool, 'reminders',          { userScoped: true }));
-router.use('/geofences',          authMiddleware, createCrudRouter(pool, 'geofences',          { userScoped: true }));
-router.use('/files',              authMiddleware, createCrudRouter(pool, 'files',              { userScoped: true }));
-router.use('/indexed_folders',    authMiddleware, createCrudRouter(pool, 'indexed_folders',    { userScoped: true }));
-router.use('/agent_actions',      authMiddleware, createCrudRouter(pool, 'agent_actions',      { userScoped: true }));
-router.use('/conversations',      authMiddleware, createCrudRouter(pool, 'conversations',      { userScoped: true }));
-router.use('/ai_memories',        authMiddleware, createCrudRouter(pool, 'ai_memories',        { userScoped: true }));
-router.use('/notifications',      authMiddleware, createCrudRouter(pool, 'notifications',      { userScoped: true }));
-router.use('/tags',               authMiddleware, createCrudRouter(pool, 'tags',               { userScoped: true }));
-router.use('/entity_tags',        authMiddleware, createCrudRouter(pool, 'entity_tags',        { userScoped: true }));
-router.use('/saved_views',        authMiddleware, createCrudRouter(pool, 'saved_views',        { userScoped: true }));
-router.use('/comments',           authMiddleware, createCrudRouter(pool, 'comments',           { userScoped: true }));
+router.use('/devices', authMiddleware, createCrudRouter(pool, 'devices', { userScoped: true }));
+router.use(
+  '/tasks',
+  authMiddleware,
+  createCrudRouter(pool, 'tasks', { softDelete: 'deleted_at', userScoped: true })
+);
+router.use('/places', authMiddleware, createCrudRouter(pool, 'places', { userScoped: true }));
+router.use(
+  '/calendar_events',
+  authMiddleware,
+  createCrudRouter(pool, 'calendar_events', { userScoped: true })
+);
+router.use('/reminders', authMiddleware, createCrudRouter(pool, 'reminders', { userScoped: true }));
+router.use('/geofences', authMiddleware, createCrudRouter(pool, 'geofences', { userScoped: true }));
+router.use('/files', authMiddleware, createCrudRouter(pool, 'files', { userScoped: true }));
+router.use(
+  '/indexed_folders',
+  authMiddleware,
+  createCrudRouter(pool, 'indexed_folders', { userScoped: true })
+);
+router.use(
+  '/agent_actions',
+  authMiddleware,
+  createCrudRouter(pool, 'agent_actions', { userScoped: true })
+);
+router.use(
+  '/conversations',
+  authMiddleware,
+  createCrudRouter(pool, 'conversations', { userScoped: true })
+);
+router.use(
+  '/ai_memories',
+  authMiddleware,
+  createCrudRouter(pool, 'ai_memories', { userScoped: true })
+);
+router.use(
+  '/notifications',
+  authMiddleware,
+  createCrudRouter(pool, 'notifications', { userScoped: true })
+);
+router.use('/tags', authMiddleware, createCrudRouter(pool, 'tags', { userScoped: true }));
+router.use(
+  '/entity_tags',
+  authMiddleware,
+  createCrudRouter(pool, 'entity_tags', { userScoped: true })
+);
+router.use(
+  '/saved_views',
+  authMiddleware,
+  createCrudRouter(pool, 'saved_views', { userScoped: true })
+);
+router.use('/comments', authMiddleware, createCrudRouter(pool, 'comments', { userScoped: true }));
 
 // Collaboration tables — project_memberships and task_assignments filtered via project membership middleware
-router.use('/project_memberships', authMiddleware, createCrudRouter(pool, 'project_memberships', { userScoped: true }));
-router.use('/task_assignments',    authMiddleware, createCrudRouter(pool, 'task_assignments',    { userScoped: true }));
+router.use(
+  '/project_memberships',
+  authMiddleware,
+  createCrudRouter(pool, 'project_memberships', { userScoped: true })
+);
+router.use(
+  '/task_assignments',
+  authMiddleware,
+  createCrudRouter(pool, 'task_assignments', { userScoped: true })
+);
 
 // Projects — custom owner/member-scoped routes are defined above.
 

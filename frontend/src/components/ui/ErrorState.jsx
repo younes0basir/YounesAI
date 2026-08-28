@@ -1,4 +1,4 @@
-import { AlertTriangle, RotateCcw } from 'lucide-react'
+import { AlertTriangle, RotateCcw } from 'lucide-react';
 
 export default function ErrorState({
   title = 'Something went wrong',
@@ -6,10 +6,17 @@ export default function ErrorState({
   onRetry,
   bare = false,
 }) {
-  const wrapper = bare ? 'empty-state empty-state-bare' : 'surface empty-state animate-fade-up'
+  const wrapper = bare ? 'empty-state empty-state-bare' : 'surface empty-state animate-fade-up';
   return (
     <div className={wrapper} role="alert">
-      <div className="empty-state-icon" style={{ background: 'rgba(248, 113, 113, 0.12)', borderColor: 'rgba(248, 113, 113, 0.2)', color: '#b91c1c' }}>
+      <div
+        className="empty-state-icon"
+        style={{
+          background: 'rgba(248, 113, 113, 0.12)',
+          borderColor: 'rgba(248, 113, 113, 0.2)',
+          color: '#b91c1c',
+        }}
+      >
         <AlertTriangle size={28} strokeWidth={1.5} />
       </div>
       <p className="empty-state-title">{title}</p>
@@ -22,5 +29,5 @@ export default function ErrorState({
         </div>
       ) : null}
     </div>
-  )
+  );
 }

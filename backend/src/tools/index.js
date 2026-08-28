@@ -21,6 +21,13 @@ const classifyEmail = require('./classifyEmail');
 const archiveEmail = require('./archiveEmail');
 const summarizeEmail = require('./summarizeEmail');
 const createTaskFromEmail = require('./createTaskFromEmail');
+const createProject = require('./createProject');
+const updateProject = require('./updateProject');
+const deleteProject = require('./deleteProject');
+const listProjects = require('./listProjects');
+const getProject = require('./getProject');
+const linkEntity = require('./linkEntity');
+const inviteEventAttendee = require('./inviteEventAttendee');
 
 module.exports = {
   createTask,
@@ -45,5 +52,12 @@ module.exports = {
   archiveEmail,
   summarizeEmail,
   createTaskFromEmail,
+  createProject,
+  updateProject,
+  deleteProject,
+  listProjects,
+  getProject,
+  linkEntity,
+  inviteEventAttendee,
   ...fileManagementTools,
 };

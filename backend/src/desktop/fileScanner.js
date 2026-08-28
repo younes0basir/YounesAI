@@ -4,7 +4,18 @@ const fileReader = require('./fileReader');
 const pool = require('../db');
 
 const SUPPORTED_EXTENSIONS = new Set(['pdf', 'docx', 'txt', 'md', 'csv']);
-const IGNORED_DIRS = new Set(['node_modules', '.git', '.cache', 'dist', 'build', '.next', '__pycache__', '.vscode', 'venv', '.venv']);
+const IGNORED_DIRS = new Set([
+  'node_modules',
+  '.git',
+  '.cache',
+  'dist',
+  'build',
+  '.next',
+  '__pycache__',
+  '.vscode',
+  'venv',
+  '.venv',
+]);
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 async function getFileInfo(filePath) {
@@ -43,7 +54,9 @@ async function scanRecursive(folderPath) {
           try {
             const stats = await fs.stat(fullPath);
             if (stats.size > MAX_FILE_SIZE) {
-              console.log(`[fileScanner] Skipping ${fullPath}: ${(stats.size / 1024 / 1024).toFixed(1)}MB exceeds 10MB limit`);
+              console.log(
+                `[fileScanner] Skipping ${fullPath}: ${(stats.size / 1024 / 1024).toFixed(1)}MB exceeds 10MB limit`
+              );
               continue;
             }
             results.push({
@@ -54,7 +67,9 @@ async function scanRecursive(folderPath) {
               createdAt: stats.birthtime,
               modifiedAt: stats.mtime,
             });
-          } catch { /* skip files we can't stat */ }
+          } catch {
+            /* skip files we can't stat */
+          }
         }
       }
     } catch (error) {
@@ -96,7 +111,7 @@ async function scanAndIndex({ userId, folderPath }) {
       sizeBytes: file.size_bytes,
     });
     if (fileId) {
-      folderWatcher.indexFile(file.path, userId).catch(err => {
+      folderWatcher.indexFile(file.path, userId).catch((err) => {
         console.error(`[fileScanner] Index error for ${file.path}:`, err.message);
       });
       indexed++;

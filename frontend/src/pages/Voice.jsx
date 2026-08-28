@@ -1,9 +1,19 @@
-import { useState, useRef, useCallback } from 'react'
-import { Mic, Square, Play, Loader, AlertCircle, CheckCircle, Cpu, Send, MessageSquare } from 'lucide-react'
-import { useVoiceProcess } from '../hooks/useVoice'
-import { useMutation } from '@tanstack/react-query'
-import api from '../lib/api'
-import PageHeader from '../components/ui/PageHeader'
+import { useState, useRef, useCallback } from 'react';
+import {
+  Mic,
+  Square,
+  Play,
+  Loader,
+  AlertCircle,
+  CheckCircle,
+  Cpu,
+  Send,
+  MessageSquare,
+} from 'lucide-react';
+import { useVoiceProcess } from '../hooks/useVoice';
+import { useMutation } from '@tanstack/react-query';
+import api from '../lib/api';
+import PageHeader from '../components/ui/PageHeader';
 
 const agentColors = {
   task: 'bg-emerald-100 text-emerald-700',
@@ -12,82 +22,85 @@ const agentColors = {
   file: 'bg-slate-100 text-slate-700',
   memory: 'bg-amber-100 text-amber-700',
   general: 'bg-gray-100 text-gray-700',
-}
+};
 
 function AgentBadge({ name }) {
-  const color = agentColors[name] || 'bg-gray-100 text-gray-700'
-  return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${color}`}>{name}</span>
+  const color = agentColors[name] || 'bg-gray-100 text-gray-700';
+  return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${color}`}>{name}</span>;
 }
 
 export default function Voice() {
-  const [recording, setRecording] = useState(false)
-  const [audioUrl, setAudioUrl] = useState(null)
-  const [audioBlob, setAudioBlob] = useState(null)
-  const [textInput, setTextInput] = useState('')
-  const [result, setResult] = useState(null)
-  const mediaRecorder = useRef(null)
-  const chunks = useRef([])
+  const [recording, setRecording] = useState(false);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [textInput, setTextInput] = useState('');
+  const [result, setResult] = useState(null);
+  const mediaRecorder = useRef(null);
+  const chunks = useRef([]);
 
-  const voiceProcess = useVoiceProcess()
+  const voiceProcess = useVoiceProcess();
 
   const textProcess = useMutation({
     mutationFn: async (message) => {
-      const res = await api.post('/agents/chat', { message })
-      return res.data
+      const res = await api.post('/agents/chat', { message });
+      return res.data;
     },
     onSuccess: (data) => setResult(data),
-  })
+  });
 
   const startRecording = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
-      mediaRecorder.current = recorder
-      chunks.current = []
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorder.current = recorder;
+      chunks.current = [];
 
       recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.current.push(e.data)
-      }
+        if (e.data.size > 0) chunks.current.push(e.data);
+      };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunks.current, { type: 'audio/webm' })
-        setAudioBlob(blob)
-        setAudioUrl(URL.createObjectURL(blob))
-        stream.getTracks().forEach((t) => t.stop())
-      }
+        const blob = new Blob(chunks.current, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach((t) => t.stop());
+      };
 
-      recorder.start()
-      setRecording(true)
+      recorder.start();
+      setRecording(true);
     } catch {
-      alert('Microphone access is required for voice input.')
+      alert('Microphone access is required for voice input.');
     }
-  }, [])
+  }, []);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
-      mediaRecorder.current.stop()
-      setRecording(false)
+      mediaRecorder.current.stop();
+      setRecording(false);
     }
-  }, [])
+  }, []);
 
   const handleVoiceProcess = async () => {
-    if (!audioBlob) return
-    const data = await voiceProcess.mutateAsync({ audioBlob })
-    setResult(data.agentResponse)
-  }
+    if (!audioBlob) return;
+    const data = await voiceProcess.mutateAsync({ audioBlob });
+    setResult(data.agentResponse);
+  };
 
   const handleTextSubmit = async (e) => {
-    e.preventDefault()
-    if (!textInput.trim()) return
-    await textProcess.mutateAsync(textInput)
-    setTextInput('')
-  }
+    e.preventDefault();
+    if (!textInput.trim()) return;
+    await textProcess.mutateAsync(textInput);
+    setTextInput('');
+  };
 
-  const isPending = voiceProcess.isPending || textProcess.isPending
+  const isPending = voiceProcess.isPending || textProcess.isPending;
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Voice & Text Agent" description="Speak or type — the orchestrator routes to specialized agents in parallel" />
+      <PageHeader
+        title="Voice & Text Agent"
+        description="Speak or type — the orchestrator routes to specialized agents in parallel"
+      />
 
       <div className="grid gap-5 md:grid-cols-2">
         <div className="surface p-5">
@@ -95,11 +108,17 @@ export default function Voice() {
             <Mic size={16} className="text-pink-500" /> Voice Input
           </h3>
           <div className="flex flex-col items-center gap-4">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${recording ? 'bg-red-100 scale-110 animate-pulse' : 'bg-pink-100'}`}>
+            <div
+              className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${recording ? 'bg-red-100 scale-110 animate-pulse' : 'bg-pink-100'}`}
+            >
               {recording ? (
                 <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="w-1 bg-red-500 rounded-full animate-pulse" style={{ height: `${12 + i * 4}px`, animationDelay: `${i * 0.1}s` }} />
+                    <div
+                      key={i}
+                      className="w-1 bg-red-500 rounded-full animate-pulse"
+                      style={{ height: `${12 + i * 4}px`, animationDelay: `${i * 0.1}s` }}
+                    />
                   ))}
                 </div>
               ) : (
@@ -113,7 +132,10 @@ export default function Voice() {
                   <Mic size={16} /> Record
                 </button>
               ) : (
-                <button onClick={stopRecording} className="btn bg-red-500 text-white hover:bg-red-600">
+                <button
+                  onClick={stopRecording}
+                  className="btn bg-red-500 text-white hover:bg-red-600"
+                >
                   <Square size={16} /> Stop
                 </button>
               )}
@@ -125,8 +147,16 @@ export default function Voice() {
                   <Play size={16} className="text-slate-400" />
                   <audio src={audioUrl} controls className="flex-1 h-8" />
                 </div>
-                <button onClick={handleVoiceProcess} disabled={voiceProcess.isPending} className="btn btn-primary w-full">
-                  {voiceProcess.isPending ? <Loader size={16} className="animate-spin" /> : <Cpu size={16} />}
+                <button
+                  onClick={handleVoiceProcess}
+                  disabled={voiceProcess.isPending}
+                  className="btn btn-primary w-full"
+                >
+                  {voiceProcess.isPending ? (
+                    <Loader size={16} className="animate-spin" />
+                  ) : (
+                    <Cpu size={16} />
+                  )}
                   {voiceProcess.isPending ? 'Processing...' : 'Process'}
                 </button>
               </div>
@@ -146,8 +176,16 @@ export default function Voice() {
               rows={4}
               className="input resize-none"
             />
-            <button type="submit" disabled={textProcess.isPending || !textInput.trim()} className="btn btn-primary self-end">
-              {textProcess.isPending ? <Loader size={16} className="animate-spin" /> : <Send size={16} />}
+            <button
+              type="submit"
+              disabled={textProcess.isPending || !textInput.trim()}
+              className="btn btn-primary self-end"
+            >
+              {textProcess.isPending ? (
+                <Loader size={16} className="animate-spin" />
+              ) : (
+                <Send size={16} />
+              )}
               {textProcess.isPending ? 'Sending...' : 'Send'}
             </button>
           </form>
@@ -171,7 +209,9 @@ export default function Voice() {
           {result.agents && result.agents.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
               <span>Agents used:</span>
-              {result.agents.map((name) => <AgentBadge key={name} name={name} />)}
+              {result.agents.map((name) => (
+                <AgentBadge key={name} name={name} />
+              ))}
             </div>
           )}
 
@@ -188,5 +228,5 @@ export default function Voice() {
         </div>
       )}
     </div>
-  )
+  );
 }

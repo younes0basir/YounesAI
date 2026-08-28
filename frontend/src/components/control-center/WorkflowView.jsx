@@ -1,6 +1,6 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, Check, Send, Bot, Loader2 } from 'lucide-react'
-import { TIMELINE_STEPS } from './ccData'
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronRight, Check, Send, Bot, Loader2 } from 'lucide-react';
+import { TIMELINE_STEPS } from './ccData';
 
 const STAGE_DESC = {
   request: 'The raw prompt is captured, trimmed and normalised before any routing happens.',
@@ -10,12 +10,12 @@ const STAGE_DESC = {
   coder: 'The chosen tool executes with strictly validated arguments.',
   reviewer: 'A final groundedness + correctness pass guards the reply.',
   final: 'The orchestrator composes a clean, human-facing response.',
-}
+};
 
 export default function WorkflowView({ steps, live, onInspect, onFire }) {
-  const activeStep = steps[steps.length - 1]?.id || 'request'
-  const activeIndex = TIMELINE_STEPS.findIndex((s) => s.id === activeStep)
-  const working = live.filter((l) => l.liveliness?.phase === 'working')
+  const activeStep = steps[steps.length - 1]?.id || 'request';
+  const activeIndex = TIMELINE_STEPS.findIndex((s) => s.id === activeStep);
+  const working = live.filter((l) => l.liveliness?.phase === 'working');
 
   return (
     <div className="cc-wf">
@@ -31,10 +31,10 @@ export default function WorkflowView({ steps, live, onInspect, onFire }) {
 
       <div className="cc-wf-stages">
         {TIMELINE_STEPS.map((step, i) => {
-          const Icon = step.icon
-          const reached = steps.some((s) => s.id === step.id)
-          const current = i === activeIndex
-          const done = i < activeIndex
+          const Icon = step.icon;
+          const reached = steps.some((s) => s.id === step.id);
+          const current = i === activeIndex;
+          const done = i < activeIndex;
           return (
             <motion.button
               key={step.id}
@@ -46,14 +46,17 @@ export default function WorkflowView({ steps, live, onInspect, onFire }) {
             >
               <div className="cc-wf-stage-row">
                 <span className="cc-wf-stage-icon" style={{ background: step.color }}>
-                  {done || reached && current ? <Check size={13} /> : <Icon size={13} />}
+                  {done || (reached && current) ? <Check size={13} /> : <Icon size={13} />}
                 </span>
                 <div className="cc-wf-stage-text">
                   <span className="cc-wf-stage-label">{step.label}</span>
                   <span className="cc-wf-stage-desc">{STAGE_DESC[step.id]}</span>
                 </div>
                 {current && (
-                  <span className="cc-wf-stage-tag" style={{ color: step.color, background: `${step.color}14` }}>
+                  <span
+                    className="cc-wf-stage-tag"
+                    style={{ color: step.color, background: `${step.color}14` }}
+                  >
                     running
                   </span>
                 )}
@@ -68,7 +71,7 @@ export default function WorkflowView({ steps, live, onInspect, onFire }) {
                 </motion.div>
               )}
             </motion.button>
-          )
+          );
         })}
       </div>
 
@@ -84,20 +87,27 @@ export default function WorkflowView({ steps, live, onInspect, onFire }) {
       </div>
 
       <AnimatePresence>
-        {steps.slice(-5).reverse().slice(0, 3).map((s, idx) => (
-          <motion.div
-            key={`${s.id}-${s.ts}`}
-            className="cc-wf-toast"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: idx * 0.05 }}
-          >
-            <span className="cc-wf-toast-dot" style={{ background: TIMELINE_STEPS.find((x) => x.id === s.id)?.color }} />
-            <span className="cc-wf-toast-label">Pipeline advanced to {s.label}</span>
-          </motion.div>
-        ))}
+        {steps
+          .slice(-5)
+          .reverse()
+          .slice(0, 3)
+          .map((s, idx) => (
+            <motion.div
+              key={`${s.id}-${s.ts}`}
+              className="cc-wf-toast"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ delay: idx * 0.05 }}
+            >
+              <span
+                className="cc-wf-toast-dot"
+                style={{ background: TIMELINE_STEPS.find((x) => x.id === s.id)?.color }}
+              />
+              <span className="cc-wf-toast-label">Pipeline advanced to {s.label}</span>
+            </motion.div>
+          ))}
       </AnimatePresence>
     </div>
-  )
+  );
 }

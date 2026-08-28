@@ -1,6 +1,7 @@
 # Prompt for Cursor — UI/UX Redesign Execution
 
 > **How to use this file in Cursor:**
+>
 > 1. Open the project root in Cursor.
 > 2. Open **Composer** (`Ctrl+I` / `Cmd+I`) for multi-file generation — this is where the main work happens.
 > 3. For questions or quick lookups, use **Chat** (`Ctrl+L` / `Cmd+L`).
@@ -26,7 +27,7 @@ Globs: frontend/src/**
 - API calls go through the shared Axios instance at `frontend/src/lib/api.js` (baseURL: `/api`, auto-attaches Bearer token).
 - Do NOT change backend routes, DB schema, or auth flow — frontend-only redesign.
 - Preserve existing behavior unless a finding explicitly calls for a change. This is a redesign, not a rewrite.
-- Use existing design tokens (primary-*, accent-*, surface, ink-*, border-*) from `index.css` — do not introduce new color values.
+- Use existing design tokens (primary-_, accent-_, surface, ink-_, border-_) from `index.css` — do not introduce new color values.
 - Every page must have: PageHeader ✓, EmptyState ✓, LoadingState ✓, shared Card ✓ where applicable.
 - Use `react-hot-toast` for mutation feedback — not `alert()` or `console.log()`.
 - Run `npx oxlint` after changes to verify no lint errors.
@@ -44,6 +45,7 @@ Globs: frontend/src/**
 I have a completed UI/UX audit of this codebase at `@frontend/UI_UX_REPORT.md`. Read it in full before doing anything else — it contains the finding IDs, file/line evidence, and the design system details. Use the audit as ground truth and verify against the live files only as needed.
 
 **Ground rules for all phases:**
+
 1. **No URL breaks.** Existing routes stay live throughout. New IA is layered on top; old routes become redirects only at the end of a phase, never mid-phase.
 2. **No backend changes.** Auth flow, backend orchestration, DB schema, and backend routes are out of scope.
 3. **Preserve existing behavior** unless a finding explicitly calls for a behavior change. Don't touch working data-fetching logic, react-query hooks, or zustand store shape unless a finding requires it.
@@ -66,6 +68,7 @@ After completing this phase, run `npx oxlint` from `frontend/` and give me a sum
 > **Cursor setup:** Open **Chat** (`Ctrl+L`). Attach `@frontend/UI_UX_REPORT.md` `@frontend/src/components/Sidebar.jsx` `@frontend/src/components/Layout.jsx` `@frontend/src/App.jsx`
 
 Before touching the shell, write a short IA design doc covering:
+
 - The Personal / Assistant / AI Studio nav grouping (finding A1 from the audit)
 - The contextual right-rail registry design (A5)
 - The command palette (Cmd+K) spec

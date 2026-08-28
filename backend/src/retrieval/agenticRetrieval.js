@@ -1,30 +1,30 @@
 /**
  * Agentic Retrieval Engine
- * 
+ *
  * Implements multi-step retrieval:
  * 1. Plan  — LLM classifies which sources are needed for the query
  * 2. Retrieve — parallel fetch from identified sources
  * 3. Merge — deduplicate, rank by relevance, trim to budget
  * 4. Answer — return merged evidence + source attribution
- * 
+ *
  * Inspired by NVIDIA RAG Blueprint agentic retrieval patterns.
  */
 const fallbackManager = require('../agents/fallbackManager');
-const { retrieveDocuments }    = require('./retrieveDocuments');
-const { retrieveMemories }     = require('./retrieveMemories');
-const { retrieveConversations }= require('./retrieveConversations');
-const { retrieveTasks }        = require('./retrieveTasks');
-const { retrieveProjects }     = require('./retrieveProjects');
-const { retrieveEvents }       = require('./retrieveEvents');
+const { retrieveDocuments } = require('./retrieveDocuments');
+const { retrieveMemories } = require('./retrieveMemories');
+const { retrieveConversations } = require('./retrieveConversations');
+const { retrieveTasks } = require('./retrieveTasks');
+const { retrieveProjects } = require('./retrieveProjects');
+const { retrieveEvents } = require('./retrieveEvents');
 const pool = require('../db');
 
 const RETRIEVAL_SOURCES = {
-  documents:     retrieveDocuments,
-  memories:      retrieveMemories,
+  documents: retrieveDocuments,
+  memories: retrieveMemories,
   conversations: retrieveConversations,
-  tasks:         retrieveTasks,
-  projects:      retrieveProjects,
-  events:        retrieveEvents,
+  tasks: retrieveTasks,
+  projects: retrieveProjects,
+  events: retrieveEvents,
 };
 
 const PLANNING_PROMPT = `You are a retrieval planner for a multi-source AI assistant.
@@ -52,17 +52,21 @@ Respond ONLY with valid JSON:
  */
 async function planRetrieval(query) {
   try {
-    const result = await fallbackManager.generateText('general', [
-      { role: 'system', content: PLANNING_PROMPT },
-      { role: 'user', content: `Query: "${query}"` },
-    ], { temperature: 0.1, maxTokens: 200 });
+    const result = await fallbackManager.generateText(
+      'general',
+      [
+        { role: 'system', content: PLANNING_PROMPT },
+        { role: 'user', content: `Query: "${query}"` },
+      ],
+      { temperature: 0.1, maxTokens: 200 }
+    );
 
     if (!result.success) return ['memories', 'tasks'];
 
     const m = result.content.match(/\{[\s\S]*\}/);
     if (m) {
       const parsed = JSON.parse(m[0]);
-      const valid = (parsed.sources || []).filter(s => RETRIEVAL_SOURCES[s]);
+      const valid = (parsed.sources || []).filter((s) => RETRIEVAL_SOURCES[s]);
       return valid.length > 0 ? valid : ['memories', 'tasks'];
     }
   } catch (e) {
@@ -73,7 +77,7 @@ async function planRetrieval(query) {
 
 /**
  * Main agentic retrieval function.
- * 
+ *
  * @param {object} opts
  * @param {string} opts.userId
  * @param {string} opts.query
@@ -85,7 +89,7 @@ async function agenticRetrieve({ userId, query, forceSources, limitPerSource = 5
   const start = Date.now();
 
   // Step 1: Plan
-  const sources = forceSources || await planRetrieval(query);
+  const sources = forceSources || (await planRetrieval(query));
 
   // Step 2: Parallel fetch from all planned sources
   const fetchResults = await Promise.all(
@@ -137,7 +141,7 @@ async function agenticRetrieve({ userId, query, forceSources, limitPerSource = 5
 /**
  * Build a grounded context string from agentic retrieval evidence.
  * Injects into any agent's system prompt for grounded generation.
- * 
+ *
  * @param {Array} evidence
  * @returns {string}
  */

@@ -1,5 +1,3 @@
-
-
 # Personal AI OS — Complete Development Plan
 
 ## 0. Target
@@ -116,7 +114,7 @@ Don't immediately add features.
 
 First establish exactly what currently works.
 
-Your documentation says the project is already substantially realized but specifically identifies operational hardening needs around **database reset/re-run behavior, extension handling, and deployment configuration**. 
+Your documentation says the project is already substantially realized but specifically identifies operational hardening needs around **database reset/re-run behavior, extension handling, and deployment configuration**.
 
 Create a master audit:
 
@@ -181,7 +179,7 @@ docs/
 
 Before adding more agents, define the boundaries.
 
-Your current architecture already has four main layers — frontend, desktop, backend and mobile. 
+Your current architecture already has four main layers — frontend, desktop, backend and mobile.
 
 Keep that.
 
@@ -229,25 +227,25 @@ This prevents agents from inventing database operations.
 
 Your database is the backbone of everything.
 
-You already have a fairly extensive schema covering tasks, events, reminders, files, memories, conversations, projects, logs and evaluation data. 
+You already have a fairly extensive schema covering tasks, events, reminders, files, memories, conversations, projects, logs and evaluation data.
 
 Now audit:
 
 ### Database
 
-* foreign keys
-* indexes
-* unique constraints
-* cascading deletes
-* nullable fields
-* timestamps
-* timezone handling
-* soft deletion
-* migrations
-* seed data
-* reset behavior
-* duplicate records
-* race conditions
+- foreign keys
+- indexes
+- unique constraints
+- cascading deletes
+- nullable fields
+- timestamps
+- timezone handling
+- soft deletion
+- migrations
+- seed data
+- reset behavior
+- duplicate records
+- race conditions
 
 ### Especially fix
 
@@ -293,7 +291,7 @@ from zero.
 
 **Priority: 🔴**
 
-You already have users and devices in the model. 
+You already have users and devices in the model.
 
 Now make device identity a first-class concept.
 
@@ -335,14 +333,14 @@ This will become essential for synchronization.
 
 Your current agents are:
 
-* Task
-* Event
-* Place
-* File
-* Memory
-* Desktop
-* General
-* Voice 
+- Task
+- Event
+- Place
+- File
+- Memory
+- Desktop
+- General
+- Voice
 
 Keep them.
 
@@ -367,11 +365,7 @@ For example:
 {
   "name": "email_agent",
   "version": "1.0",
-  "capabilities": [
-    "read_email",
-    "classify_email",
-    "archive_email"
-  ],
+  "capabilities": ["read_email", "classify_email", "archive_email"],
   "risk": {
     "read_email": "low",
     "archive_email": "medium",
@@ -549,17 +543,17 @@ groq.generate(...)
 
 ### Gateway responsibilities
 
-* provider selection
-* model selection
-* retries
-* timeout
-* fallback
-* rate limiting
-* structured output
-* validation
-* logging
-* token tracking
-* failure tracking
+- provider selection
+- model selection
+- retries
+- timeout
+- fallback
+- rate limiting
+- structured output
+- validation
+- logging
+- token tracking
+- failure tracking
 
 ---
 
@@ -619,7 +613,7 @@ SUCCESS
 
 # PHASE 10 — Build the Evaluation System
 
-You already have evaluation and retrieval logging in the project. 
+You already have evaluation and retrieval logging in the project.
 
 Now turn it into a real test suite.
 
@@ -669,7 +663,7 @@ This gives you objective progress.
 
 # PHASE 11 — Fix RAG / Memory
 
-Your existing file system already extracts, chunks, embeds and retrieves documents, while retrieval can include documents, memories, conversations, tasks, projects and events. 
+Your existing file system already extracts, chunks, embeds and retrieves documents, while retrieval can include documents, memories, conversations, tasks, projects and events.
 
 Now separate:
 
@@ -916,7 +910,7 @@ This is how your system becomes proactive.
 
 # PHASE 16 — Scheduler 2.0
 
-You already have automated reminders, recurring tasks/events and overdue notifications. 
+You already have automated reminders, recurring tasks/events and overdue notifications.
 
 Extend it into:
 
@@ -1017,7 +1011,7 @@ Buttons:
 
 # PHASE 19 — Desktop Agent
 
-Your existing Electron layer already has local filesystem access and file watching. 
+Your existing Electron layer already has local filesystem access and file watching.
 
 Turn this into a proper device agent.
 
@@ -1150,7 +1144,7 @@ The assistant should remember that.
 
 # PHASE 23 — Observability Dashboard
 
-Your project already has observability pages/metrics. 
+Your project already has observability pages/metrics.
 
 Expand them into:
 
@@ -1209,18 +1203,18 @@ You should be able to inspect any failed run.
 
 Before autonomous operations:
 
-* API key encryption
-* OAuth token encryption
-* strict user isolation
-* tool permissions
-* rate limits
-* audit logs
-* input validation
-* output validation
-* file path restrictions
-* command restrictions
-* prompt injection defenses
-* email content treated as untrusted input
+- API key encryption
+- OAuth token encryption
+- strict user isolation
+- tool permissions
+- rate limits
+- audit logs
+- input validation
+- output validation
+- file path restrictions
+- command restrictions
+- prompt injection defenses
+- email content treated as untrusted input
 
 Especially:
 
@@ -1327,7 +1321,7 @@ Indexes and query optimization.
 
 Caching and incremental indexing.
 
-Your current pipeline already supports monitored folders and live watching, so don't repeatedly re-index unchanged files. 
+Your current pipeline already supports monitored folders and live watching, so don't repeatedly re-index unchanged files.
 
 ### AI
 
@@ -1537,3 +1531,4 @@ From now on, every new feature should pass through this architecture:
                    │
                    ▼
              EVENT / LOG
+```

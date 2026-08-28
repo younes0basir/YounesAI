@@ -28,12 +28,11 @@ async function runReminderWarningEngine() {
 
     for (const reminder of result.rows) {
       try {
-        const minsUntilTrigger = Math.round(
-          (new Date(reminder.trigger_at) - new Date()) / 60000
-        );
-        const body = minsUntilTrigger > 0
-          ? `"${reminder.title}" is due in ${minsUntilTrigger} minute${minsUntilTrigger === 1 ? '' : 's'}`
-          : `"${reminder.title}" is due now`;
+        const minsUntilTrigger = Math.round((new Date(reminder.trigger_at) - new Date()) / 60000);
+        const body =
+          minsUntilTrigger > 0
+            ? `"${reminder.title}" is due in ${minsUntilTrigger} minute${minsUntilTrigger === 1 ? '' : 's'}`
+            : `"${reminder.title}" is due now`;
 
         await pool.query(
           `INSERT INTO notifications (user_id, type, title, body, entity_type, entity_id)
@@ -42,7 +41,9 @@ async function runReminderWarningEngine() {
           [reminder.user_id, reminder.title, body, reminder.id]
         );
 
-        console.log(`[Scheduler/Warnings] Warning created: "${reminder.title}" → user ${reminder.user_id} (${minsUntilTrigger} min before)`);
+        console.log(
+          `[Scheduler/Warnings] Warning created: "${reminder.title}" → user ${reminder.user_id} (${minsUntilTrigger} min before)`
+        );
       } catch (err) {
         console.error(`[Scheduler/Warnings] Failed for reminder ${reminder.id}:`, err.message);
       }
@@ -77,22 +78,19 @@ async function runReminderEngine() {
           `INSERT INTO notifications (user_id, type, title, body, entity_type, entity_id)
            VALUES ($1, 'reminder_due', $2, $3, 'reminder', $4)
            ON CONFLICT DO NOTHING`,
-          [
-            reminder.user_id,
-            reminder.title,
-            reminder.message || 'Reminder is due',
-            reminder.id,
-          ]
+          [reminder.user_id, reminder.title, reminder.message || 'Reminder is due', reminder.id]
         );
 
-        await pool.query(
-          `UPDATE reminders SET is_read = TRUE WHERE id = $1`,
-          [reminder.id]
-        );
+        await pool.query(`UPDATE reminders SET is_read = TRUE WHERE id = $1`, [reminder.id]);
 
-        console.log(`[Scheduler/Reminders] Ring delivered: "${reminder.title}" → user ${reminder.user_id}`);
+        console.log(
+          `[Scheduler/Reminders] Ring delivered: "${reminder.title}" → user ${reminder.user_id}`
+        );
       } catch (err) {
-        console.error(`[Scheduler/Reminders] Failed to deliver reminder ${reminder.id}:`, err.message);
+        console.error(
+          `[Scheduler/Reminders] Failed to deliver reminder ${reminder.id}:`,
+          err.message
+        );
       }
     }
   } catch (err) {
@@ -125,16 +123,18 @@ async function runTaskDueNotificationEngine() {
     console.log(`[Scheduler/TaskDue] Sending ${result.rowCount} task-due notification(s)...`);
 
     for (const task of result.rows) {
-      await pool.query(
-        `INSERT INTO notifications (user_id, type, title, body, entity_type, entity_id)
+      await pool
+        .query(
+          `INSERT INTO notifications (user_id, type, title, body, entity_type, entity_id)
          VALUES ($1, 'task_due', $2, $3, 'task', $4)`,
-        [
-          task.user_id,
-          `Task Due Soon: ${task.title}`,
-          `"${task.title}" is due at ${new Date(task.due_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`,
-          task.id,
-        ]
-      ).catch(() => {}); // idempotent — ignore duplicate key errors
+          [
+            task.user_id,
+            `Task Due Soon: ${task.title}`,
+            `"${task.title}" is due at ${new Date(task.due_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`,
+            task.id,
+          ]
+        )
+        .catch(() => {}); // idempotent — ignore duplicate key errors
     }
   } catch (err) {
     console.error('[Scheduler/TaskDue] Engine error:', err.message);
@@ -166,16 +166,18 @@ async function runOverdueTaskEngine() {
     console.log(`[Scheduler/Overdue] Processing ${result.rowCount} overdue task(s)...`);
 
     for (const task of result.rows) {
-      await pool.query(
-        `INSERT INTO notifications (user_id, type, title, body, entity_type, entity_id)
+      await pool
+        .query(
+          `INSERT INTO notifications (user_id, type, title, body, entity_type, entity_id)
          VALUES ($1, 'task_overdue', $2, $3, 'task', $4)`,
-        [
-          task.user_id,
-          `Overdue: ${task.title}`,
-          `"${task.title}" was due ${new Date(task.due_at).toLocaleDateString('en-GB')} and is still incomplete`,
-          task.id,
-        ]
-      ).catch(() => {});
+          [
+            task.user_id,
+            `Overdue: ${task.title}`,
+            `"${task.title}" was due ${new Date(task.due_at).toLocaleDateString('en-GB')} and is still incomplete`,
+            task.id,
+          ]
+        )
+        .catch(() => {});
     }
   } catch (err) {
     console.error('[Scheduler/Overdue] Engine error:', err.message);
@@ -199,7 +201,9 @@ async function runRecurringTaskEngine() {
     );
 
     if (result.rowCount === 0) return;
-    console.log(`[Scheduler/Recurring] Creating ${result.rowCount} recurring task occurrence(s)...`);
+    console.log(
+      `[Scheduler/Recurring] Creating ${result.rowCount} recurring task occurrence(s)...`
+    );
 
     for (const task of result.rows) {
       try {
@@ -224,12 +228,14 @@ async function runRecurringTaskEngine() {
         );
 
         // Stamp the next_run_at on the completed original
-        await pool.query(
-          `UPDATE tasks SET next_run_at = $1 WHERE id = $2`,
-          [nextDue.toISOString(), task.id]
-        );
+        await pool.query(`UPDATE tasks SET next_run_at = $1 WHERE id = $2`, [
+          nextDue.toISOString(),
+          task.id,
+        ]);
 
-        console.log(`[Scheduler/Recurring] Created next "${task.title}" due ${nextDue.toISOString()}`);
+        console.log(
+          `[Scheduler/Recurring] Created next "${task.title}" due ${nextDue.toISOString()}`
+        );
       } catch (err) {
         console.error(`[Scheduler/Recurring] Failed for task ${task.id}:`, err.message);
       }
@@ -282,12 +288,14 @@ async function runRecurringEventEngine() {
           ]
         );
 
-        await pool.query(
-          `UPDATE calendar_events SET next_run_at = $1 WHERE id = $2`,
-          [nextStart.toISOString(), event.id]
-        );
+        await pool.query(`UPDATE calendar_events SET next_run_at = $1 WHERE id = $2`, [
+          nextStart.toISOString(),
+          event.id,
+        ]);
 
-        console.log(`[Scheduler/RecurringEvent] Created next "${event.title}" at ${nextStart.toISOString()}`);
+        console.log(
+          `[Scheduler/RecurringEvent] Created next "${event.title}" at ${nextStart.toISOString()}`
+        );
       } catch (err) {
         console.error(`[Scheduler/RecurringEvent] Failed for event ${event.id}:`, err.message);
       }
@@ -342,34 +350,48 @@ function startScheduler() {
 
   // Reminder warning — every minute (before delivery)
   cron.schedule('* * * * *', () => {
-    runReminderWarningEngine().catch(err => console.error('[Scheduler] Uncaught in reminder-warning engine:', err.message));
+    runReminderWarningEngine().catch((err) =>
+      console.error('[Scheduler] Uncaught in reminder-warning engine:', err.message)
+    );
   });
 
   // Reminder delivery — every minute
   cron.schedule('* * * * *', () => {
-    runReminderEngine().catch(err => console.error('[Scheduler] Uncaught in reminder engine:', err.message));
+    runReminderEngine().catch((err) =>
+      console.error('[Scheduler] Uncaught in reminder engine:', err.message)
+    );
   });
 
   // Task-due notifications — every 15 minutes
   cron.schedule('*/15 * * * *', () => {
-    runTaskDueNotificationEngine().catch(err => console.error('[Scheduler] Uncaught in task-due engine:', err.message));
+    runTaskDueNotificationEngine().catch((err) =>
+      console.error('[Scheduler] Uncaught in task-due engine:', err.message)
+    );
   });
 
   // Recurring tasks + events — every hour at :00
   cron.schedule('0 * * * *', () => {
-    runRecurringTaskEngine().catch(err => console.error('[Scheduler] Uncaught in recurring-task engine:', err.message));
-    runRecurringEventEngine().catch(err => console.error('[Scheduler] Uncaught in recurring-event engine:', err.message));
+    runRecurringTaskEngine().catch((err) =>
+      console.error('[Scheduler] Uncaught in recurring-task engine:', err.message)
+    );
+    runRecurringEventEngine().catch((err) =>
+      console.error('[Scheduler] Uncaught in recurring-event engine:', err.message)
+    );
   });
 
   // Overdue task notifications — daily at 08:00
   cron.schedule('0 8 * * *', () => {
-    runOverdueTaskEngine().catch(err => console.error('[Scheduler] Uncaught in overdue engine:', err.message));
+    runOverdueTaskEngine().catch((err) =>
+      console.error('[Scheduler] Uncaught in overdue engine:', err.message)
+    );
   });
 
   // Gmail sync — every N minutes (default 5)
   const syncMinutes = parseInt(process.env.GMAIL_SYNC_INTERVAL_MINUTES || '5', 10);
   cron.schedule(`*/${syncMinutes} * * * *`, () => {
-    runGmailSyncEngine().catch(err => console.error('[Scheduler] Uncaught in gmail sync:', err.message));
+    runGmailSyncEngine().catch((err) =>
+      console.error('[Scheduler] Uncaught in gmail sync:', err.message)
+    );
   });
 
   console.log('[Scheduler] ✓ Reminder warning engine → every minute');

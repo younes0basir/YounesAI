@@ -1,0 +1,20 @@
+# Git GUI clients (GitHub Desktop, VS Code, etc.) use sh with a minimal PATH.
+# npx/npm are bash scripts — they fail unless Git's bash is available.
+case "$(uname -s 2>/dev/null)" in
+  MINGW* | MSYS* | CYGWIN*)
+    export PATH="/c/Program Files/nodejs:/c/Program Files (x86)/nodejs:/c/Program Files/Git/bin:/c/Program Files/Git/usr/bin:$PATH"
+    ;;
+  Darwin*)
+    if ! command -v node >/dev/null 2>&1; then
+      export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+    fi
+    ;;
+esac
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "husky - node not found; install Node.js or add it to PATH"
+  exit 127
+fi
+
+# Run via node to avoid npx bash shebang issues on Windows Git hooks
+node node_modules/lint-staged/bin/lint-staged.js

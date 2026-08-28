@@ -4,7 +4,14 @@ const { logAgentCall } = require('./metricsLogger');
 const { prefixWithSourceCheck } = require('./context');
 const tools = require('../tools');
 
-const ADMIN_ACTIONS = ['getIndexedFolders', 'getIndexedFolderCount', 'getIndexedFiles', 'getIndexedDocumentCount', 'getRecentIndexedFiles', 'getFolderStatistics'];
+const ADMIN_ACTIONS = [
+  'getIndexedFolders',
+  'getIndexedFolderCount',
+  'getIndexedFiles',
+  'getIndexedDocumentCount',
+  'getRecentIndexedFiles',
+  'getFolderStatistics',
+];
 
 class FileAgent {
   constructor() {
@@ -45,7 +52,9 @@ Examples:
       if (/count|how many/.test(lower)) return 'getIndexedFolderCount';
       return 'getIndexedFolders';
     }
-    if (/files are indexed|indexed file|document count|how many document|indexed document/.test(lower)) {
+    if (
+      /files are indexed|indexed file|document count|how many document|indexed document/.test(lower)
+    ) {
       if (/count|how many/.test(lower)) return 'getIndexedDocumentCount';
       if (/recent/.test(lower)) return 'getRecentIndexedFiles';
       if (/statistics/.test(lower)) return 'getFolderStatistics';
@@ -53,7 +62,8 @@ Examples:
     }
     if (/folder statistics|statistics/.test(lower)) return 'getFolderStatistics';
     if (/recent document|recent file/.test(lower)) return 'getRecentIndexedFiles';
-    if (/search|find|about|mention|what.*say|content|document.*contain/.test(lower)) return 'search';
+    if (/search|find|about|mention|what.*say|content|document.*contain/.test(lower))
+      return 'search';
     return 'chat';
   }
 
@@ -86,9 +96,12 @@ Examples:
     const isEmpty = !items || (Array.isArray(items) && items.length === 0);
 
     if (action === 'getIndexedFolders') {
-      if (!Array.isArray(items) || items.length === 0) return 'No folders are currently indexed or monitored.';
+      if (!Array.isArray(items) || items.length === 0)
+        return 'No folders are currently indexed or monitored.';
       const lines = items.map((f) => {
-        const display = f.folder_path.startsWith('web://') ? f.folder_path.replace('web://', '') : f.folder_path.split(/[\\/]/).pop() || f.folder_path;
+        const display = f.folder_path.startsWith('web://')
+          ? f.folder_path.replace('web://', '')
+          : f.folder_path.split(/[\\/]/).pop() || f.folder_path;
         return `- ${display}  (${f.folder_path})`;
       });
       return `${items.length} indexed folder(s):\n${lines.join('\n')}`;
@@ -96,7 +109,10 @@ Examples:
 
     if (action === 'getIndexedFiles') {
       if (!Array.isArray(items) || items.length === 0) return 'No files are indexed yet.';
-      const lines = items.map((f) => `- ${f.file_path}  (${f.file_type || 'unknown'})  [last indexed at ${new Date(f.indexed_at || Date.now()).toLocaleString()}]`);
+      const lines = items.map(
+        (f) =>
+          `- ${f.file_path}  (${f.file_type || 'unknown'})  [last indexed at ${new Date(f.indexed_at || Date.now()).toLocaleString()}]`
+      );
       return `${items.length} indexed file(s):\n${lines.join('\n')}`;
     }
 
@@ -139,6 +155,30 @@ Examples:
     console.log(`[FILE_AGENT]\nQuestion: ${queryMessage}`);
 
     try {
+      if (context.action === 'attach') {
+        const taskId = context.parameters?.taskId;
+        const fileId = context.parameters?.fileId;
+        if (taskId && fileId) {
+          const linkResult = await tools.linkEntity(context, {
+            sourceType: 'task',
+            sourceId: taskId,
+            targetType: 'file',
+            targetId: fileId,
+            metadata: {},
+          });
+          return {
+            success: linkResult.success,
+            content: prefixWithSourceCheck(
+              linkResult.success ? 'Report attached to the task.' : linkResult.error,
+              context,
+              ['file link tool']
+            ),
+            action: 'attach',
+            toolResult: linkResult,
+          };
+        }
+      }
+
       let action = 'chat';
       let searchQuery = null;
       let providerUsed = null;
@@ -154,10 +194,14 @@ Examples:
       let llmResult = null;
       // Step 1: Try LLM classification, fall back to pattern matching (unless action was forced)
       if (!ADMIN_ACTIONS.includes(action) && action !== 'search') {
-        llmResult = await fallbackManager.generateText('file', [
-          { role: 'system', content: this.systemPrompt },
-          { role: 'user', content: `Message: "${queryMessage}"` }
-        ], { temperature: 0.1, maxTokens: 400 });
+        llmResult = await fallbackManager.generateText(
+          'file',
+          [
+            { role: 'system', content: this.systemPrompt },
+            { role: 'user', content: `Message: "${queryMessage}"` },
+          ],
+          { temperature: 0.1, maxTokens: 400 }
+        );
       }
 
       if (llmResult?.success) {
@@ -181,14 +225,22 @@ Examples:
         }
         console.log(`[FILE_TOOL_CALLED]\n${action}()`);
         const toolResult = await toolFn(context);
-        await logAgentCall({ agentName: 'file', provider: providerUsed, latency: Date.now() - start, success: true, context });
+        await logAgentCall({
+          agentName: 'file',
+          provider: providerUsed,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
 
-        const content = prefixWithSourceCheck(this.formatResponse(action, toolResult), context, ['indexed file database']);
+        const content = prefixWithSourceCheck(this.formatResponse(action, toolResult), context, [
+          'indexed file database',
+        ]);
 
         return {
           success: true,
           content,
-          metadata: { provider: providerUsed, model: null, fallback: !providerUsed }
+          metadata: { provider: providerUsed, model: null, fallback: !providerUsed },
         };
       }
 
@@ -196,22 +248,58 @@ Examples:
         const query = searchQuery || queryMessage;
         console.log(`[FILE_TOOL_CALLED]\nsearchFiles() & retrieveDocuments()`);
         const searchResult = await tools.searchFiles(context, query);
-        const deepDocs = await tools.retrieveDocuments(context, query, { limit: 5, folderPath: context.activeFolder?.folderPath });
+        const deepDocs = await tools.retrieveDocuments(context, query, {
+          limit: 5,
+          folderPath: context.activeFolder?.folderPath,
+        });
 
-        await logAgentCall({ agentName: 'file', provider: providerUsed, latency: Date.now() - start, success: true, context });
+        await logAgentCall({
+          agentName: 'file',
+          provider: providerUsed,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
 
-        const content = prefixWithSourceCheck(this.formatResponse('search', { files: searchResult.files, deepDocs }, query), context, ['indexed file database', 'document search results']);
+        const content = prefixWithSourceCheck(
+          this.formatResponse('search', { files: searchResult.files, deepDocs }, query),
+          context,
+          ['indexed file database', 'document search results']
+        );
 
-        return { success: true, content: content.trim(), metadata: { provider: providerUsed, model: null, fallback: !providerUsed } };
+        return {
+          success: true,
+          content: content.trim(),
+          metadata: { provider: providerUsed, model: null, fallback: !providerUsed },
+        };
       }
 
       // Default chat action
-      await logAgentCall({ agentName: 'file', provider: providerUsed, latency: Date.now() - start, success: true, context });
-      return { success: true, content: prefixWithSourceCheck('I can help you manage files and folders. Try "list files", "show folders", or "find documents about [topic]".', context, ['file agent reasoning']), metadata: { provider: providerUsed } };
-
+      await logAgentCall({
+        agentName: 'file',
+        provider: providerUsed,
+        latency: Date.now() - start,
+        success: true,
+        context,
+      });
+      return {
+        success: true,
+        content: prefixWithSourceCheck(
+          'I can help you manage files and folders. Try "list files", "show folders", or "find documents about [topic]".',
+          context,
+          ['file agent reasoning']
+        ),
+        metadata: { provider: providerUsed },
+      };
     } catch (error) {
       console.error('[FILE_AGENT] Error processing request:', error);
-      await logAgentCall({ agentName: 'file', latency: Date.now() - start, success: false, error: error.message, context });
+      await logAgentCall({
+        agentName: 'file',
+        latency: Date.now() - start,
+        success: false,
+        error: error.message,
+        context,
+      });
       return { success: false, error: error.message };
     }
   }

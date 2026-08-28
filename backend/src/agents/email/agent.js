@@ -44,10 +44,14 @@ Return ONLY valid JSON:
       const contextSummary = buildSystemPromptContext(context);
       const userContent = `Message: "${context.message}"\nUser Context:\n${contextSummary}`;
 
-      const result = await fallbackManager.generateText('email', [
-        { role: 'system', content: this.systemPrompt },
-        { role: 'user', content: userContent },
-      ], { temperature: 0.3, maxTokens: 600, json: true });
+      const result = await fallbackManager.generateText(
+        'email',
+        [
+          { role: 'system', content: this.systemPrompt },
+          { role: 'user', content: userContent },
+        ],
+        { temperature: 0.3, maxTokens: 600, json: true }
+      );
 
       if (!result.success) throw new Error(result.error);
 
@@ -77,7 +81,10 @@ Return ONLY valid JSON:
             responseText = 'Please specify which email to classify.';
             break;
           }
-          toolResult = await tools.classifyEmail({ userId: context.userId, emailId: parsed.emailId });
+          toolResult = await tools.classifyEmail({
+            userId: context.userId,
+            emailId: parsed.emailId,
+          });
           responseText = toolResult.success
             ? `Classified as ${toolResult.classification.category} (${Math.round(toolResult.classification.confidence * 100)}% confidence)`
             : toolResult.error;
@@ -87,7 +94,10 @@ Return ONLY valid JSON:
             responseText = 'Please specify which email to archive.';
             break;
           }
-          toolResult = await tools.archiveEmail({ userId: context.userId, emailId: parsed.emailId });
+          toolResult = await tools.archiveEmail({
+            userId: context.userId,
+            emailId: parsed.emailId,
+          });
           responseText = toolResult.success ? 'Email archived.' : toolResult.error;
           break;
         case 'summarize':
@@ -95,7 +105,10 @@ Return ONLY valid JSON:
             responseText = 'Please specify which email to summarize.';
             break;
           }
-          toolResult = await tools.summarizeEmail({ userId: context.userId, emailId: parsed.emailId });
+          toolResult = await tools.summarizeEmail({
+            userId: context.userId,
+            emailId: parsed.emailId,
+          });
           responseText = toolResult.success ? toolResult.summary : toolResult.error;
           break;
         case 'create_task':
@@ -103,10 +116,14 @@ Return ONLY valid JSON:
             responseText = 'Please specify which email to create a task from.';
             break;
           }
-          toolResult = await tools.createTaskFromEmail({ userId: context.userId, emailId: parsed.emailId });
-          responseText = toolResult.success || toolResult.id
-            ? `Task created: ${toolResult.title || toolResult.task?.title || 'OK'}`
-            : (toolResult.error || 'Failed to create task');
+          toolResult = await tools.createTaskFromEmail({
+            userId: context.userId,
+            emailId: parsed.emailId,
+          });
+          responseText =
+            toolResult.success || toolResult.id
+              ? `Task created: ${toolResult.title || toolResult.task?.title || 'OK'}`
+              : toolResult.error || 'Failed to create task';
           break;
         default:
           responseText = parsed.response || 'How can I help with your inbox?';

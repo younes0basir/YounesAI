@@ -13,7 +13,11 @@ async function storeMemory(context, text, metadata = {}) {
     [context.userId, text.trim()]
   );
   if (existing.rowCount > 0) {
-    return { success: true, message: 'Memory already stored (deduplicated)', id: existing.rows[0].id };
+    return {
+      success: true,
+      message: 'Memory already stored (deduplicated)',
+      id: existing.rows[0].id,
+    };
   }
 
   const embeddingResult = await fallbackManager.generateEmbedding(text);

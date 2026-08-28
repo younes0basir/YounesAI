@@ -41,15 +41,17 @@ async function retrieveConversations({ userId, query, limit = 5 }) {
         [userId, limit - results.length]
       );
       // Merge deduplicating by id
-      const seen = new Set(results.map(r => r.id));
-      results = results.concat(res.rows.filter(r => !seen.has(r.id)));
+      const seen = new Set(results.map((r) => r.id));
+      results = results.concat(res.rows.filter((r) => !seen.has(r.id)));
     }
 
-    await pool.query(
-      `INSERT INTO retrieval_logs (user_id, query, source, result_count, latency_ms, had_results)
+    await pool
+      .query(
+        `INSERT INTO retrieval_logs (user_id, query, source, result_count, latency_ms, had_results)
        VALUES ($1,$2,'conversations',$3,$4,$5)`,
-      [userId, query || '', results.length, Date.now() - start, results.length > 0]
-    ).catch(() => {});
+        [userId, query || '', results.length, Date.now() - start, results.length > 0]
+      )
+      .catch(() => {});
 
     return results;
   } catch (err) {

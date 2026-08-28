@@ -32,30 +32,52 @@ GENERAL — Answer conversational questions helpfully:
 
 Be concise, natural, and helpful.`;
 
-      const result = await fallbackManager.generateText('general', [
-        { role: 'system', content: systemContent },
-        { role: 'user', content: context.message },
-      ], { temperature: 0.5, maxTokens: 500 });
+      const result = await fallbackManager.generateText(
+        'general',
+        [
+          { role: 'system', content: systemContent },
+          { role: 'user', content: context.message },
+        ],
+        { temperature: 0.5, maxTokens: 500 }
+      );
 
       const tokensUsed = result.usage?.total_tokens || 0;
-      await logAgentCall({ agentName: 'general', provider: result.provider, model: result.model, latency: Date.now() - start, success: result.success, tokensUsed, context });
+      await logAgentCall({
+        agentName: 'general',
+        provider: result.provider,
+        model: result.model,
+        latency: Date.now() - start,
+        success: result.success,
+        tokensUsed,
+        context,
+      });
 
       if (result.success) {
         return {
           success: true,
           content: prefixWithSourceCheck(result.content, context, ['general chat context']),
-          metadata: { agent: 'general', provider: result.provider, model: result.model }
+          metadata: { agent: 'general', provider: result.provider, model: result.model },
         };
       }
     } catch (e) {
       console.error('[GeneralAgent] Error:', e.message);
-      await logAgentCall({ agentName: 'general', latency: Date.now() - start, success: false, error: e.message, context });
+      await logAgentCall({
+        agentName: 'general',
+        latency: Date.now() - start,
+        success: false,
+        error: e.message,
+        context,
+      });
     }
     // Last-resort fallback: echo the message
     return {
       success: true,
-      content: prefixWithSourceCheck('I\'m here to help. Could you rephrase your question?', context, ['general fallback']),
-      metadata: { agent: 'general' }
+      content: prefixWithSourceCheck(
+        "I'm here to help. Could you rephrase your question?",
+        context,
+        ['general fallback']
+      ),
+      metadata: { agent: 'general' },
     };
   }
 }

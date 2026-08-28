@@ -1,10 +1,16 @@
 const Joi = require('joi');
 const fallbackManager = require('../fallbackManager');
 const { EMAIL_CATEGORIES } = require('./constants');
-const { wrapUntrustedEmailContent, guardLlmOutput, EMAIL_DATA_ONLY_PROMPT } = require('./security/promptGuard');
+const {
+  wrapUntrustedEmailContent,
+  guardLlmOutput,
+  EMAIL_DATA_ONLY_PROMPT,
+} = require('./security/promptGuard');
 
 const classificationSchema = Joi.object({
-  category: Joi.string().valid(...EMAIL_CATEGORIES).required(),
+  category: Joi.string()
+    .valid(...EMAIL_CATEGORIES)
+    .required(),
   confidence: Joi.number().min(0).max(1).default(0.5),
   reasoning: Joi.string().max(1000).default(''),
   signals: Joi.array().items(Joi.string().max(200)).default([]),
@@ -25,10 +31,14 @@ Return ONLY valid JSON:
 
 async function classifyWithLlm(email) {
   const wrapped = wrapUntrustedEmailContent(email);
-  const result = await fallbackManager.generateText('email', [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: wrapped },
-  ], { temperature: 0.2, maxTokens: 400, json: true });
+  const result = await fallbackManager.generateText(
+    'email',
+    [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: wrapped },
+    ],
+    { temperature: 0.2, maxTokens: 400, json: true }
+  );
 
   if (!result.success) {
     return {

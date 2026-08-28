@@ -60,6 +60,19 @@ Examples:
         }
       }
 
+      if (context.action === 'edit' || context.action === 'generate') {
+        action = 'generate';
+      }
+
+      if (
+        /\b(make it|change it to|another version|edit|modify)\b/i.test(context.message) &&
+        context.conversationSession?.currentImage?.meta?.imageData
+      ) {
+        action = 'generate';
+        const prior = context.conversationSession.workingMemory?.lastImagePrompt || 'image';
+        prompt = `${prior}, ${context.message}`;
+      }
+
       if (context.parameters?.prompt) {
         action = 'generate';
         prompt = context.parameters.prompt;
@@ -71,13 +84,29 @@ Examples:
 
       if (action === 'generate' && prompt) {
         const result = await tools.generateImage(context, { prompt, width, height, steps, seed });
-        await logAgentCall({ agentName: 'image', latency: Date.now() - start, success: true, context });
+        await logAgentCall({
+          agentName: 'image',
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
 
         if (result.image) {
+          if (context.conversationSession) {
+            context.conversationSession.workingMemory =
+              context.conversationSession.workingMemory || {};
+            context.conversationSession.workingMemory.lastImagePrompt = prompt;
+          }
           return {
             success: true,
-            content: prefixWithSourceCheck(`Image generated: "${prompt}" (${width}×${height}, ${steps} steps).`, context, ['image generation service']),
-            metadata: { agent: 'image', width, height, steps, seed },
+            content: prefixWithSourceCheck(
+              `Image generated: "${prompt}" (${width}×${height}, ${steps} steps).`,
+              context,
+              ['image generation service']
+            ),
+            action: 'generate',
+            toolResult: result,
+            metadata: { agent: 'image', width, height, steps, seed, prompt },
             image: result.image,
           };
         }
@@ -89,14 +118,29 @@ Examples:
         };
       }
 
-      await logAgentCall({ agentName: 'image', latency: Date.now() - start, success: true, context });
+      await logAgentCall({
+        agentName: 'image',
+        latency: Date.now() - start,
+        success: true,
+        context,
+      });
       return {
         success: true,
-        content: prefixWithSourceCheck('I can generate images for you. Try "generate an image of a futuristic city".', context, ['image agent reasoning']),
+        content: prefixWithSourceCheck(
+          'I can generate images for you. Try "generate an image of a futuristic city".',
+          context,
+          ['image agent reasoning']
+        ),
         metadata: { agent: 'image' },
       };
     } catch (error) {
-      await logAgentCall({ agentName: 'image', latency: Date.now() - start, success: false, error: error.message, context });
+      await logAgentCall({
+        agentName: 'image',
+        latency: Date.now() - start,
+        success: false,
+        error: error.message,
+        context,
+      });
       return { success: false, error: error.message };
     }
   }

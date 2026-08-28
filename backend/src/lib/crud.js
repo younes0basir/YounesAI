@@ -15,7 +15,7 @@ function createCrudRouter(pool, table, options = {}) {
     if (allowedColumns) return allowedColumns;
     const q = `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1`;
     const r = await pool.query(q, [table]);
-    allowedColumns = r.rows.map(r => r.column_name);
+    allowedColumns = r.rows.map((r) => r.column_name);
     return allowedColumns;
   }
 
@@ -47,11 +47,18 @@ function createCrudRouter(pool, table, options = {}) {
           }
         }
 
-        payload[key] = JSON.stringify(Array.isArray(payload[key]) ? payload[key] : payload[key] || []);
+        payload[key] = JSON.stringify(
+          Array.isArray(payload[key]) ? payload[key] : payload[key] || []
+        );
         continue;
       }
 
-      if (value !== null && value !== undefined && typeof value === 'object' && !Array.isArray(value)) {
+      if (
+        value !== null &&
+        value !== undefined &&
+        typeof value === 'object' &&
+        !Array.isArray(value)
+      ) {
         payload[key] = JSON.stringify(value);
         continue;
       }
@@ -111,7 +118,11 @@ function createCrudRouter(pool, table, options = {}) {
         params.push(value);
       });
 
-      const orderColumn = colsList.includes('updated_at') ? 'updated_at' : (colsList.includes('created_at') ? 'created_at' : idCol);
+      const orderColumn = colsList.includes('updated_at')
+        ? 'updated_at'
+        : colsList.includes('created_at')
+          ? 'created_at'
+          : idCol;
       let q = `SELECT ${cols ? cols.join(',') : '*'} FROM ${table}`;
       if (whereClauses.length > 0) {
         q += ` WHERE ${whereClauses.join(' AND ')}`;
@@ -151,7 +162,7 @@ function createCrudRouter(pool, table, options = {}) {
       const colsSql = safeKeys.join(', ');
       const params = safeKeys.map((_, i) => `$${i + 1}`);
       const q = `INSERT INTO ${table} (${colsSql}) VALUES (${params.join(',')}) RETURNING *`;
-      const vals = safeKeys.map(k => payload[k]);
+      const vals = safeKeys.map((k) => payload[k]);
       const result = await pool.query(q, vals);
       res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -165,7 +176,7 @@ function createCrudRouter(pool, table, options = {}) {
       const { safeKeys, payload } = await normalizePayload(req.body || {}, req);
       if (safeKeys.length === 0) return res.status(400).json({ error: 'No fields provided' });
       const sets = safeKeys.map((k, i) => `${k} = $${i + 1}`);
-      const vals = safeKeys.map(k => payload[k]);
+      const vals = safeKeys.map((k) => payload[k]);
       let q = `UPDATE ${table} SET ${sets.join(', ')} WHERE ${idCol} = $${vals.length + 1}`;
       const params = [...vals, req.params.id];
       const colsList = await loadColumns();

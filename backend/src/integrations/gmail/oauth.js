@@ -67,12 +67,12 @@ async function handleCallback(code, state) {
     encryptedRefresh = existing.rows[0].encrypted_refresh_token;
   }
   if (!encryptedRefresh) {
-    throw new Error('No refresh token received — revoke app access in Google Account and reconnect');
+    throw new Error(
+      'No refresh token received — revoke app access in Google Account and reconnect'
+    );
   }
 
-  const expiresAt = tokens.expiry_date
-    ? new Date(tokens.expiry_date).toISOString()
-    : null;
+  const expiresAt = tokens.expiry_date ? new Date(tokens.expiry_date).toISOString() : null;
 
   const encryptedAccess = tokens.access_token ? encrypt(tokens.access_token) : null;
 
@@ -90,7 +90,14 @@ async function handleCallback(code, state) {
        last_sync_error = NULL,
        updated_at = NOW()
      RETURNING *`,
-    [userId, emailAddress, profile.data.name || emailAddress, encryptedAccess, encryptedRefresh, expiresAt]
+    [
+      userId,
+      emailAddress,
+      profile.data.name || emailAddress,
+      encryptedAccess,
+      encryptedRefresh,
+      expiresAt,
+    ]
   );
 
   return { account: result.rows[0], userId };

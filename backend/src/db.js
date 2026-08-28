@@ -1,6 +1,6 @@
-const { Pool } = require("pg");
-const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+const { Pool } = require('pg');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 // Serverless-friendly config:
 // - Prefer a full DATABASE_URL connection string (Vercel Postgres / Neon /
@@ -27,7 +27,7 @@ const pool = connectionString
       connectionTimeoutMillis: 10000,
     });
 
-pool.on("connect", () => console.log("Connected to PostgreSQL"));
-pool.on("error", (err) => console.error("PostgreSQL error:", err.message));
+pool.on('connect', () => console.log('Connected to PostgreSQL'));
+pool.on('error', (err) => console.error('PostgreSQL error:', err.message));
 
 module.exports = pool;

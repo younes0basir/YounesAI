@@ -20,7 +20,16 @@ async function createReminder(context, data) {
       `INSERT INTO reminders (user_id, title, message, trigger_at, task_id, event_id, recurrence_rule, request_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, title, trigger_at, created_at`,
-      [context.userId, title, message, trigger_at, task_id, event_id, recurrence_rule, context.requestId || null]
+      [
+        context.userId,
+        title,
+        message,
+        trigger_at,
+        task_id,
+        event_id,
+        recurrence_rule,
+        context.requestId || null,
+      ]
     );
     return { success: true, reminder: result.rows[0] };
   } catch (err) {

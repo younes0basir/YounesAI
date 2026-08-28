@@ -58,42 +58,89 @@ IMPORTANT: If the user provides a specific folder path like "C:\\Users\\Basir\\D
   async run(context) {
     const start = Date.now();
     try {
-      const result = await fallbackManager.generateText('desktop', [
-        { role: 'system', content: this.systemPrompt },
-        { role: 'user', content: `Message: "${context.message}"\nContext: ${JSON.stringify({ userId: context.userId })}` }
-      ], { temperature: 0.3, maxTokens: 500 });
+      const result = await fallbackManager.generateText(
+        'desktop',
+        [
+          { role: 'system', content: this.systemPrompt },
+          {
+            role: 'user',
+            content: `Message: "${context.message}"\nContext: ${JSON.stringify({ userId: context.userId })}`,
+          },
+        ],
+        { temperature: 0.3, maxTokens: 500 }
+      );
 
       if (!result.success) throw new Error(result.error);
       let parsed = this.parseResponse(result.content);
       if (context.action) parsed.action = context.action;
-      if (context.parameters?.query && parsed.action === 'search') parsed.query = context.parameters.query;
-      if (context.parameters?.folderPath && ['scan', 'list_folder'].includes(parsed.action)) parsed.folderPath = context.parameters.folderPath;
-      if (context.parameters?.filePath && ['analyze', 'open', 'read'].includes(parsed.action)) parsed.filePath = context.parameters.filePath;
+      if (context.parameters?.query && parsed.action === 'search')
+        parsed.query = context.parameters.query;
+      if (context.parameters?.folderPath && ['scan', 'list_folder'].includes(parsed.action))
+        parsed.folderPath = context.parameters.folderPath;
+      if (context.parameters?.filePath && ['analyze', 'open', 'read'].includes(parsed.action))
+        parsed.filePath = context.parameters.filePath;
 
       if (parsed.action === 'search') {
         const docs = await tools.retrieveDocuments(context, parsed.query, { limit: 5 });
-        await logAgentCall({ agentName: 'desktop', provider: result.provider, latency: Date.now() - start, success: true, context });
+        await logAgentCall({
+          agentName: 'desktop',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
         if (docs.length === 0) {
-          return { success: true, content: prefixWithSourceCheck(`No matching documents found for "${parsed.query}".`, context, ['desktop document search results']), metadata: { provider: result.provider, model: result.model } };
+          return {
+            success: true,
+            content: prefixWithSourceCheck(
+              `No matching documents found for "${parsed.query}".`,
+              context,
+              ['desktop document search results']
+            ),
+            metadata: { provider: result.provider, model: result.model },
+          };
         }
-        const summary = `Found ${docs.length} relevant passage(s):\n\n${docs.map((d, i) =>
-          `[${i + 1}] From: ${d.file_path}\n${d.summary ? `Summary: ${d.summary}\n` : ''}Content: ${d.content.slice(0, 400)}${d.content.length > 400 ? '...' : ''}`
-        ).join('\n\n')}`;
-        return { success: true, content: prefixWithSourceCheck(summary, context, ['desktop document search results']), metadata: { provider: result.provider, model: result.model } };
+        const summary = `Found ${docs.length} relevant passage(s):\n\n${docs
+          .map(
+            (d, i) =>
+              `[${i + 1}] From: ${d.file_path}\n${d.summary ? `Summary: ${d.summary}\n` : ''}Content: ${d.content.slice(0, 400)}${d.content.length > 400 ? '...' : ''}`
+          )
+          .join('\n\n')}`;
+        return {
+          success: true,
+          content: prefixWithSourceCheck(summary, context, ['desktop document search results']),
+          metadata: { provider: result.provider, model: result.model },
+        };
       }
 
       if (parsed.action === 'scan') {
-        const indexed = await fileScanner.scanAndIndex({ userId: context.userId, folderPath: parsed.folderPath });
-        await logAgentCall({ agentName: 'desktop', provider: result.provider, latency: Date.now() - start, success: true, context });
+        const indexed = await fileScanner.scanAndIndex({
+          userId: context.userId,
+          folderPath: parsed.folderPath,
+        });
+        await logAgentCall({
+          agentName: 'desktop',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
         return {
           success: true,
-          content: prefixWithSourceCheck(`Scanned "${parsed.folderPath}". Indexed ${indexed} new document(s) with entity extraction and embeddings.`, context, ['filesystem scan result']),
-          metadata: { provider: result.provider, model: result.model }
+          content: prefixWithSourceCheck(
+            `Scanned "${parsed.folderPath}". Indexed ${indexed} new document(s) with entity extraction and embeddings.`,
+            context,
+            ['filesystem scan result']
+          ),
+          metadata: { provider: result.provider, model: result.model },
         };
       }
 
       if (parsed.action === 'analyze') {
-        const procResult = await documentProcessor.processDocument({ userId: context.userId, filePath: parsed.filePath });
+        const procResult = await documentProcessor.processDocument({
+          userId: context.userId,
+          filePath: parsed.filePath,
+        });
         if (!procResult.success) {
           return { success: false, error: procResult.reason || 'Could not process document' };
         }
@@ -101,24 +148,52 @@ IMPORTANT: If the user provides a specific folder path like "C:\\Users\\Basir\\D
         const entitySummary = [
           entities.summary ? `Summary: ${entities.summary}` : '',
           entities.people?.length ? `People: ${entities.people.join(', ')}` : '',
-          entities.organizations?.length ? `Organizations: ${entities.organizations.join(', ')}` : '',
+          entities.organizations?.length
+            ? `Organizations: ${entities.organizations.join(', ')}`
+            : '',
           entities.dates?.length ? `Dates: ${entities.dates.join(', ')}` : '',
           entities.locations?.length ? `Locations: ${entities.locations.join(', ')}` : '',
-          entities.actionItems?.length ? `Action Items:\n${entities.actionItems.map(a => `  - ${a}`).join('\n')}` : '',
-        ].filter(Boolean).join('\n');
-        await logAgentCall({ agentName: 'desktop', provider: result.provider, latency: Date.now() - start, success: true, context });
+          entities.actionItems?.length
+            ? `Action Items:\n${entities.actionItems.map((a) => `  - ${a}`).join('\n')}`
+            : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
+        await logAgentCall({
+          agentName: 'desktop',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
         return {
           success: true,
-          content: prefixWithSourceCheck(`Document Analysis for "${path.basename(parsed.filePath)}":\n\n${entitySummary || 'No entities extracted.'}`, context, ['document analysis result']),
-          metadata: { provider: result.provider, model: result.model }
+          content: prefixWithSourceCheck(
+            `Document Analysis for "${path.basename(parsed.filePath)}":\n\n${entitySummary || 'No entities extracted.'}`,
+            context,
+            ['document analysis result']
+          ),
+          metadata: { provider: result.provider, model: result.model },
         };
       }
 
       if (parsed.action === 'open') {
         const safePath = parsed.filePath.replace(/"/g, '\\"');
         exec(`start "" "${safePath}"`);
-        await logAgentCall({ agentName: 'desktop', provider: result.provider, latency: Date.now() - start, success: true, context });
-        return { success: true, content: prefixWithSourceCheck(`Opening file natively: "${parsed.filePath}"`, context, ['desktop open-file command']), metadata: { provider: result.provider, model: result.model } };
+        await logAgentCall({
+          agentName: 'desktop',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
+        return {
+          success: true,
+          content: prefixWithSourceCheck(`Opening file natively: "${parsed.filePath}"`, context, [
+            'desktop open-file command',
+          ]),
+          metadata: { provider: result.provider, model: result.model },
+        };
       }
 
       if (parsed.action === 'read') {
@@ -126,67 +201,163 @@ IMPORTANT: If the user provides a specific folder path like "C:\\Users\\Basir\\D
         if (!readResult.success) {
           return { success: false, error: readResult.error };
         }
-        await logAgentCall({ agentName: 'desktop', provider: result.provider, latency: Date.now() - start, success: true, context });
+        await logAgentCall({
+          agentName: 'desktop',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
         return {
           success: true,
-          content: prefixWithSourceCheck(`Content of file "${path.basename(parsed.filePath)}":\n\n${readResult.content.slice(0, 1000)}${readResult.content.length > 1000 ? '\n... (truncated)' : ''}`, context, ['desktop file read result']),
-          metadata: { provider: result.provider, model: result.model }
+          content: prefixWithSourceCheck(
+            `Content of file "${path.basename(parsed.filePath)}":\n\n${readResult.content.slice(0, 1000)}${readResult.content.length > 1000 ? '\n... (truncated)' : ''}`,
+            context,
+            ['desktop file read result']
+          ),
+          metadata: { provider: result.provider, model: result.model },
         };
       }
 
       if (parsed.action === 'folders') {
         const foldersResult = await tools.getIndexedFolders(context);
-        await logAgentCall({ agentName: 'desktop', provider: result.provider, latency: Date.now() - start, success: true, context });
+        await logAgentCall({
+          agentName: 'desktop',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
         if (!foldersResult.folders || foldersResult.folders.length === 0) {
-          return { success: true, content: prefixWithSourceCheck('No folders are currently being watched or monitored.', context, ['indexed folder list']), metadata: { provider: result.provider, model: result.model } };
+          return {
+            success: true,
+            content: prefixWithSourceCheck(
+              'No folders are currently being watched or monitored.',
+              context,
+              ['indexed folder list']
+            ),
+            metadata: { provider: result.provider, model: result.model },
+          };
         }
-        const folderList = foldersResult.folders.map(f => {
-          const status = f.is_active ? 'Active' : 'Inactive';
-          const lastScan = f.last_scan ? ` (last scan: ${new Date(f.last_scan).toLocaleDateString()})` : '';
-          return `- ${f.folder_path} [${status}]${lastScan}`;
-        }).join('\n');
-        return { success: true, content: prefixWithSourceCheck(`Watched folders (${foldersResult.folders.length}):\n${folderList}`, context, ['indexed folder list']), metadata: { provider: result.provider, model: result.model } };
+        const folderList = foldersResult.folders
+          .map((f) => {
+            const status = f.is_active ? 'Active' : 'Inactive';
+            const lastScan = f.last_scan
+              ? ` (last scan: ${new Date(f.last_scan).toLocaleDateString()})`
+              : '';
+            return `- ${f.folder_path} [${status}]${lastScan}`;
+          })
+          .join('\n');
+        return {
+          success: true,
+          content: prefixWithSourceCheck(
+            `Watched folders (${foldersResult.folders.length}):\n${folderList}`,
+            context,
+            ['indexed folder list']
+          ),
+          metadata: { provider: result.provider, model: result.model },
+        };
       }
 
       if (parsed.action === 'list_folder') {
         const listResult = await fileManagementTools.listFolderContents(parsed.folderPath);
-        await logAgentCall({ agentName: 'desktop', provider: result.provider, latency: Date.now() - start, success: true, context });
-        
+        await logAgentCall({
+          agentName: 'desktop',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
+
         if (!listResult.success) {
-          return { success: false, error: listResult.error, metadata: { provider: result.provider, model: result.model } };
+          return {
+            success: false,
+            error: listResult.error,
+            metadata: { provider: result.provider, model: result.model },
+          };
         }
 
-        const summary = `Contents of "${parsed.folderPath}" (${listResult.contents.length} items):\n\n${listResult.contents.map(item => {
-          const type = item.isDirectory ? '[DIR]' : '[FILE]';
-          const ext = item.extension ? ` (${item.extension})` : '';
-          return `${type} ${item.name}${ext}`;
-        }).join('\n')}`;
+        const summary = `Contents of "${parsed.folderPath}" (${listResult.contents.length} items):\n\n${listResult.contents
+          .map((item) => {
+            const type = item.isDirectory ? '[DIR]' : '[FILE]';
+            const ext = item.extension ? ` (${item.extension})` : '';
+            return `${type} ${item.name}${ext}`;
+          })
+          .join('\n')}`;
 
-        return { success: true, content: prefixWithSourceCheck(summary, context, ['folder listing result']), metadata: { provider: result.provider, model: result.model } };
+        return {
+          success: true,
+          content: prefixWithSourceCheck(summary, context, ['folder listing result']),
+          metadata: { provider: result.provider, model: result.model },
+        };
       }
 
       if (parsed.action === 'list_files') {
         const fileResult = await tools.listIndexedFiles(context, 50);
-        await logAgentCall({ agentName: 'desktop', provider: result.provider, latency: Date.now() - start, success: true, context });
+        await logAgentCall({
+          agentName: 'desktop',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
         if (!fileResult.files || fileResult.files.length === 0) {
-          return { success: true, content: prefixWithSourceCheck('No indexed files found.', context, ['indexed file list']), metadata: { provider: result.provider, model: result.model } };
+          return {
+            success: true,
+            content: prefixWithSourceCheck('No indexed files found.', context, [
+              'indexed file list',
+            ]),
+            metadata: { provider: result.provider, model: result.model },
+          };
         }
-        const fileList = fileResult.files.map(f =>
-          `- ${f.name} (${(f.size_bytes / 1024).toFixed(1)}KB, ${f.extension}) — ${new Date(f.indexed_at).toLocaleDateString()}`
-        ).join('\n');
-        return { success: true, content: prefixWithSourceCheck(`Indexed files (${fileResult.files.length}):\n${fileList}`, context, ['indexed file list']), metadata: { provider: result.provider, model: result.model } };
+        const fileList = fileResult.files
+          .map(
+            (f) =>
+              `- ${f.name} (${(f.size_bytes / 1024).toFixed(1)}KB, ${f.extension}) — ${new Date(f.indexed_at).toLocaleDateString()}`
+          )
+          .join('\n');
+        return {
+          success: true,
+          content: prefixWithSourceCheck(
+            `Indexed files (${fileResult.files.length}):\n${fileList}`,
+            context,
+            ['indexed file list']
+          ),
+          metadata: { provider: result.provider, model: result.model },
+        };
       }
 
-      await logAgentCall({ agentName: 'desktop', provider: result.provider, latency: Date.now() - start, success: true, context });
-      return { success: true, content: prefixWithSourceCheck(parsed.response || result.content, context, ['desktop agent reasoning']), metadata: { provider: result.provider, model: result.model } };
+      await logAgentCall({
+        agentName: 'desktop',
+        provider: result.provider,
+        latency: Date.now() - start,
+        success: true,
+        context,
+      });
+      return {
+        success: true,
+        content: prefixWithSourceCheck(parsed.response || result.content, context, [
+          'desktop agent reasoning',
+        ]),
+        metadata: { provider: result.provider, model: result.model },
+      };
     } catch (error) {
-      await logAgentCall({ agentName: 'desktop', latency: Date.now() - start, success: false, error: error.message, context });
+      await logAgentCall({
+        agentName: 'desktop',
+        latency: Date.now() - start,
+        success: false,
+        error: error.message,
+        context,
+      });
       return { success: false, error: error.message };
     }
   }
 
   parseResponse(content) {
-    try { const m = content.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); } catch {}
+    try {
+      const m = content.match(/\{[\s\S]*\}/);
+      if (m) return JSON.parse(m[0]);
+    } catch {}
     return { action: 'chat', response: content };
   }
 }

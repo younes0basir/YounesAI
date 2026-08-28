@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react';
 
 export default function ConfirmModal({
   open,
@@ -11,13 +11,21 @@ export default function ConfirmModal({
   danger = true,
   busy = false,
 }) {
-  if (!open) return null
+  if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50" onClick={onCancel}>
-      <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-lg animate-fade-up" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-lg animate-fade-up"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center gap-3 mb-4">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${danger ? 'bg-rose-100' : 'bg-slate-100'}`}>
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center ${danger ? 'bg-rose-100' : 'bg-slate-100'}`}
+          >
             <AlertTriangle size={20} className={danger ? 'text-rose-600' : 'text-slate-600'} />
           </div>
           <h3 className="font-semibold text-slate-900">{title}</h3>
@@ -42,5 +50,5 @@ export default function ConfirmModal({
         </div>
       </div>
     </div>
-  )
+  );
 }

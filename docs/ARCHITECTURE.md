@@ -40,14 +40,23 @@ The core value proposition is natural-language task/event/place/file/memory mana
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
+│           CONVERSATIONAL ORCHESTRATION LAYER (Lane 1)          │
+│  ConversationContext (session) → EntityResolver → Planner      │
+│  Hybrid store: in-memory cache + conversations.entities JSONB  │
+└─────────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
 │                 ORCHESTRATION LAYER                          │
 │  AgentCoordinator  →  Orchestrator LLM  →  Temporal Parser   │
+│  executePlan (sequential/parallel)  →  ResultAggregator        │
 └─────────────────────────────────────────────────────────────┘
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      AGENT LAYER                             │
-│  task  event  place  file  memory  general  desktop  image  gemma │
+│  task  event  place  file  memory  general  desktop  image   │
+│  gemma  email  project                                         │
 └─────────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -77,6 +86,7 @@ The core value proposition is natural-language task/event/place/file/memory mana
 ## Technology Stack
 
 ### Frontend
+
 - **Framework:** React 18
 - **Build tool:** Vite 8
 - **Styling:** Tailwind CSS 4 + `@tailwindcss/vite`
@@ -87,6 +97,7 @@ The core value proposition is natural-language task/event/place/file/memory mana
 - **Linting:** oxlint
 
 ### Backend
+
 - **Runtime:** Node.js
 - **Framework:** Express 4
 - **Database:** PostgreSQL 13+ (实际 requires 14+ due to trigger syntax)
@@ -99,11 +110,13 @@ The core value proposition is natural-language task/event/place/file/memory mana
 - **Auth:** JWT + bcryptjs
 
 ### Desktop
+
 - **Shell:** Electron 30
 - **Packaging:** electron-builder (Windows NSIS target)
 - **Process model:** Backend is required inside the Electron main process
 
 ### AI Providers
+
 - **Groq:** orchestrator, task, event, place, general, whisper
 - **NVIDIA NIM:** file analysis, memory embeddings, image generation (FLUX.2 Klein via `backend/src/services/imageGenerator.js`)
 - **OpenRouter:** fallback for all; dedicated Gemma model
@@ -115,24 +128,32 @@ The core value proposition is natural-language task/event/place/file/memory mana
 ### Chat Request Example
 
 ```text
-User types: "Create a task to review the project docs tomorrow"
+User types: "Create a meeting tomorrow at 3pm called AI Demo"
 
-1. Frontend sends POST /api/agents/chat { message }
+1. Frontend sends POST /api/agents/chat { message, sessionId }
 2. authMiddleware validates JWT, extracts userId
-3. buildContext() enriches request with user profile, device, recent messages
-4. Recent 5 conversation rows are fetched from PostgreSQL
-5. User message is inserted into conversations
-6. AgentCoordinator.processRequest() is called
-7. Orchestrator LLM returns JSON routing: [{ agent: "task", action: "process", needs_parsing: true }]
-8. Temporal parser extracts "tomorrow" into parsedDate/dueAt
-9. TaskAgent.run() is invoked
-10. TaskAgent asks Groq to extract task JSON
-11. TaskAgent calls tools.createTask(context, task)
-12. createTask validates with Joi, inserts into tasks table, handles idempotency
-13. Result is returned to TaskAgent, which formats a text response
-14. Orchestrator.formatFinalResponse() combines agent results
-15. Assistant response is inserted into conversations
-16. Response returned to frontend
+3. buildContext() enriches request with user profile, tasks, events, documents
+4. ConversationContext.load(userId, sessionId) — hybrid cache + entities JSONB recovery
+5. EntityResolver.resolve(message, session) — binds pronouns ("it", "that meeting") to IDs
+6. User message inserted into conversations
+7. AgentCoordinator.processRequest() called with resolved context
+8. Orchestrator returns routing plan or agent list (tiered 8B/70B)
+9. executePlan runs agents (parallel or sequential with $step:N input binding)
+10. EntityRegistry updates session state from tool results
+11. ResultAggregator builds checklist for multi-step responses
+12. Assistant response + entities JSONB persisted (includes image attachments)
+13. Response returned to frontend — Chat.jsx renders text, steps, inline images
+```
+
+### Conversational follow-up example
+
+```text
+User: "Move it to Friday"
+
+1. EntityResolver binds "it" → currentEvent from ConversationContext
+2. Orchestrator routes to event agent with eventId pre-filled
+3. EventAgent calls tools.updateEvent — no re-identification needed
+4. Session state updated; user sees "✓ Meeting updated"
 ```
 
 ### Direct Agent Request Example
@@ -186,6 +207,7 @@ GET /api/news?limit=10
 8. **Automation:** `notifications`, `scheduled_jobs`
 
 ### Schema Patterns
+
 - UUID primary keys everywhere
 - `user_id` foreign key on almost all tables with `ON DELETE CASCADE`
 - Soft delete via `deleted_at` on `tasks` and `comments`
@@ -206,6 +228,7 @@ Agent
 ```
 
 Each agent is a singleton class that:
+
 1. Receives a context object (userId, message, recent messages, parsed dates, etc.).
 2. Sends a prompt to an LLM via `fallbackManager`.
 3. Parses the LLM's JSON response.
@@ -259,13 +282,13 @@ Retrieval logs and evaluation logs are written
 
 The scheduler is a collection of `node-cron` jobs defined in `backend/src/scheduler/index.js`:
 
-| Job | Cron | Purpose |
-|---|---|---|
-| Reminder warnings | `* * * * *` | Create warning notifications before a reminder fires |
-| Reminder delivery | `* * * * *` | Mark due reminders and create ring notifications |
-| Task due | `*/15 * * * *` | Notify about tasks due within the next hour |
-| Recurring tasks/events | `0 * * * *` | Spawn the next occurrence of completed recurring items |
-| Overdue tasks | `0 8 * * *` | Daily summary of overdue tasks |
+| Job                    | Cron           | Purpose                                                |
+| ---------------------- | -------------- | ------------------------------------------------------ |
+| Reminder warnings      | `* * * * *`    | Create warning notifications before a reminder fires   |
+| Reminder delivery      | `* * * * *`    | Mark due reminders and create ring notifications       |
+| Task due               | `*/15 * * * *` | Notify about tasks due within the next hour            |
+| Recurring tasks/events | `0 * * * *`    | Spawn the next occurrence of completed recurring items |
+| Overdue tasks          | `0 8 * * *`    | Daily summary of overdue tasks                         |
 
 All engines write to the `notifications` table. There is no push/email/Telegram delivery yet.
 
@@ -406,6 +429,7 @@ Feature
 ```
 
 Key additions needed:
+
 - Formal agent runtime with manifests, capabilities, permissions, schemas, and execution policies.
 - Run/step state machine with planning, approval, verification, retry, and fallback.
 - Autonomy levels (`MANUAL`, `SEMI_AUTO`, `AUTO`, `DISABLED`) per action type.

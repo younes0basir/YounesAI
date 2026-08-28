@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["node"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-undef": "error"
+  },
+  "env": {
+    "node": true
+  }
+}

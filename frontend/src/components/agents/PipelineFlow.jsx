@@ -1,8 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react';
 import {
-  Brain, Clock, Database, Radio, ArrowRight, Sparkles, GitBranch,
-  MessageSquare, Wrench, ChevronRight, Play,
-} from 'lucide-react'
+  Brain,
+  Clock,
+  Database,
+  Radio,
+  ArrowRight,
+  Sparkles,
+  GitBranch,
+  MessageSquare,
+  Wrench,
+  ChevronRight,
+  Play,
+} from 'lucide-react';
 
 const PIPELINE_EXAMPLES = [
   {
@@ -49,7 +58,7 @@ const PIPELINE_EXAMPLES = [
     tool: 'createTask · listTasks',
     result: 'Two tool calls, one merged reply',
   },
-]
+];
 
 const STAGES = [
   { id: 'input', num: '01', title: 'User message', icon: MessageSquare },
@@ -57,26 +66,29 @@ const STAGES = [
   { id: 'temporal', num: '03', title: 'Temporal parse', icon: Clock },
   { id: 'agents', num: '04', title: 'Specialist agents', icon: GitBranch },
   { id: 'tools', num: '05', title: 'Tools & storage', icon: Wrench },
-]
+];
 
 export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExample }) {
-  const [exampleId, setExampleId] = useState(PIPELINE_EXAMPLES[0].id)
-  const [activeStage, setActiveStage] = useState('input')
+  const [exampleId, setExampleId] = useState(PIPELINE_EXAMPLES[0].id);
+  const [activeStage, setActiveStage] = useState('input');
 
   const example = useMemo(
     () => PIPELINE_EXAMPLES.find((e) => e.id === exampleId) || PIPELINE_EXAMPLES[0],
     [exampleId]
-  )
+  );
 
   const routedAgents = useMemo(
-    () => [...new Set(example.routes)].map((name) => agentDefs.find((a) => a.name === name)).filter(Boolean),
+    () =>
+      [...new Set(example.routes)]
+        .map((name) => agentDefs.find((a) => a.name === name))
+        .filter(Boolean),
     [example.routes, agentDefs]
-  )
+  );
 
   const isAgentLive = (name) => {
-    if (name === 'orchestrator') return status?.orchestrator === 'active'
-    return status?.agents?.includes(name)
-  }
+    if (name === 'orchestrator') return status?.orchestrator === 'active';
+    return status?.agents?.includes(name);
+  };
 
   return (
     <section className="pipeline-flow" aria-label="Decoupled AI routing pipeline">
@@ -85,14 +97,20 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
           <span className="pipeline-kicker">Architecture</span>
           <h2>Decoupled AI routing pipeline</h2>
           <p>
-            Every chat message flows through intent routing, optional date extraction,
-            specialist agents, and structured tools — without mixing responsibilities.
+            Every chat message flows through intent routing, optional date extraction, specialist
+            agents, and structured tools — without mixing responsibilities.
           </p>
         </div>
         <div className="pipeline-legend">
-          <span><i className="pipeline-dot pipeline-dot-live" /> Live node</span>
-          <span><i className="pipeline-dot pipeline-dot-route" /> Routed in example</span>
-          <span><i className="pipeline-dot pipeline-dot-skip" /> Skipped step</span>
+          <span>
+            <i className="pipeline-dot pipeline-dot-live" /> Live node
+          </span>
+          <span>
+            <i className="pipeline-dot pipeline-dot-route" /> Routed in example
+          </span>
+          <span>
+            <i className="pipeline-dot pipeline-dot-skip" /> Skipped step
+          </span>
         </div>
       </header>
 
@@ -103,7 +121,10 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
             key={item.id}
             type="button"
             className={`pipeline-example-chip ${exampleId === item.id ? 'active' : ''}`}
-            onClick={() => { setExampleId(item.id); setActiveStage('input') }}
+            onClick={() => {
+              setExampleId(item.id);
+              setActiveStage('input');
+            }}
           >
             {item.label}
           </button>
@@ -127,11 +148,11 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
 
           <div className="pipeline-track">
             {STAGES.map((stage, index) => {
-              const Icon = stage.icon
-              const isTemporal = stage.id === 'temporal'
-              const skipped = isTemporal && !example.needsTemporal
-              const isActive = activeStage === stage.id
-              const isPast = STAGES.findIndex((s) => s.id === activeStage) > index
+              const Icon = stage.icon;
+              const isTemporal = stage.id === 'temporal';
+              const skipped = isTemporal && !example.needsTemporal;
+              const isActive = activeStage === stage.id;
+              const isPast = STAGES.findIndex((s) => s.id === activeStage) > index;
 
               return (
                 <div key={stage.id} className="pipeline-track-segment">
@@ -149,19 +170,25 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
                     {skipped && <span className="pipeline-stage-badge">Bypassed</span>}
                   </button>
                   {index < STAGES.length - 1 && (
-                    <div className={`pipeline-connector ${skipped && index === 2 ? 'is-dim' : ''} ${isPast ? 'is-past' : ''}`}>
+                    <div
+                      className={`pipeline-connector ${skipped && index === 2 ? 'is-dim' : ''} ${isPast ? 'is-past' : ''}`}
+                    >
                       <ChevronRight size={14} />
                     </div>
                   )}
                 </div>
-              )
+              );
             })}
           </div>
 
           <div className="pipeline-diagram">
             {/* Input node */}
-            <div className={`pipeline-node pipeline-node-input ${activeStage === 'input' ? 'is-highlight' : ''}`}>
-              <div className="pipeline-node-label"><Radio size={12} /> Incoming prompt</div>
+            <div
+              className={`pipeline-node pipeline-node-input ${activeStage === 'input' ? 'is-highlight' : ''}`}
+            >
+              <div className="pipeline-node-label">
+                <Radio size={12} /> Incoming prompt
+              </div>
               <blockquote className="pipeline-prompt">&ldquo;{example.prompt}&rdquo;</blockquote>
             </div>
 
@@ -170,7 +197,9 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
             </div>
 
             {/* Orchestrator hub */}
-            <div className={`pipeline-node pipeline-node-orchestrator ${activeStage === 'orchestrator' ? 'is-highlight' : ''}`}>
+            <div
+              className={`pipeline-node pipeline-node-orchestrator ${activeStage === 'orchestrator' ? 'is-highlight' : ''}`}
+            >
               <div className="pipeline-orchestrator-core">
                 <Brain size={22} />
                 <strong>Orchestrator</strong>
@@ -178,7 +207,11 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
               </div>
               <div className="pipeline-route-tags">
                 {routedAgents.map((agent) => (
-                  <span key={agent.name} className="pipeline-route-tag" style={{ '--agent-color': agent.color }}>
+                  <span
+                    key={agent.name}
+                    className="pipeline-route-tag"
+                    style={{ '--agent-color': agent.color }}
+                  >
                     {agent.label}
                   </span>
                 ))}
@@ -186,8 +219,12 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
             </div>
 
             {/* Temporal branch */}
-            <div className={`pipeline-node pipeline-node-temporal ${!example.needsTemporal ? 'is-skipped' : ''} ${activeStage === 'temporal' ? 'is-highlight' : ''}`}>
-              <div className="pipeline-node-label"><Clock size={12} /> Temporal utility</div>
+            <div
+              className={`pipeline-node pipeline-node-temporal ${!example.needsTemporal ? 'is-skipped' : ''} ${activeStage === 'temporal' ? 'is-highlight' : ''}`}
+            >
+              <div className="pipeline-node-label">
+                <Clock size={12} /> Temporal utility
+              </div>
               {example.needsTemporal ? (
                 <div className="pipeline-transform">
                   <div className="pipeline-transform-row">
@@ -200,18 +237,24 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
                   </div>
                 </div>
               ) : (
-                <p className="pipeline-skip-note">No date expressions — agent receives the original message.</p>
+                <p className="pipeline-skip-note">
+                  No date expressions — agent receives the original message.
+                </p>
               )}
             </div>
 
             {/* Agent fan-out */}
-            <div className={`pipeline-node pipeline-node-agents ${activeStage === 'agents' ? 'is-highlight' : ''}`}>
-              <div className="pipeline-node-label"><GitBranch size={12} /> Specialist fan-out</div>
+            <div
+              className={`pipeline-node pipeline-node-agents ${activeStage === 'agents' ? 'is-highlight' : ''}`}
+            >
+              <div className="pipeline-node-label">
+                <GitBranch size={12} /> Specialist fan-out
+              </div>
               <div className="pipeline-agent-grid">
                 {agentsFlat.map((agent) => {
-                  const Icon = agent.icon
-                  const routed = example.routes.includes(agent.name)
-                  const live = isAgentLive(agent.name)
+                  const Icon = agent.icon;
+                  const routed = example.routes.includes(agent.name);
+                  const live = isAgentLive(agent.name);
                   return (
                     <div
                       key={agent.name}
@@ -221,14 +264,18 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
                       <Icon size={13} />
                       <span>{agent.label.replace(' Agent', '')}</span>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </div>
 
             {/* Tools */}
-            <div className={`pipeline-node pipeline-node-tools ${activeStage === 'tools' ? 'is-highlight' : ''}`}>
-              <div className="pipeline-node-label"><Database size={12} /> Tool layer</div>
+            <div
+              className={`pipeline-node pipeline-node-tools ${activeStage === 'tools' ? 'is-highlight' : ''}`}
+            >
+              <div className="pipeline-node-label">
+                <Database size={12} /> Tool layer
+              </div>
               <div className="pipeline-tools-row">
                 <span className="pipeline-tool-call">{example.tool}</span>
                 <ArrowRight size={14} className="text-slate-400" />
@@ -262,9 +309,11 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
               active={activeStage === 'temporal'}
               onClick={() => setActiveStage('temporal')}
               title="Resolve dates (optional)"
-              body={example.needsTemporal
-                ? 'chrono-node + custom rules strip time phrases and inject ISO timestamps before the agent LLM runs.'
-                : 'Skipped — no temporal expressions in this message.'}
+              body={
+                example.needsTemporal
+                  ? 'chrono-node + custom rules strip time phrases and inject ISO timestamps before the agent LLM runs.'
+                  : 'Skipped — no temporal expressions in this message.'
+              }
               muted={!example.needsTemporal}
             />
             <InspectorStep
@@ -287,7 +336,7 @@ export default function PipelineFlow({ agentDefs, agentsFlat, status, onRunExamp
         </aside>
       </div>
     </section>
-  )
+  );
 }
 
 function InspectorStep({ active, onClick, title, body, muted = false }) {
@@ -302,5 +351,5 @@ function InspectorStep({ active, onClick, title, body, muted = false }) {
         <p>{body}</p>
       </button>
     </li>
-  )
+  );
 }

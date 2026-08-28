@@ -53,12 +53,17 @@ function normalizeGmailMessage(message) {
   const from = parseAddress(getHeader(headers, 'From'));
   const toRaw = getHeader(headers, 'To');
   const toAddresses = toRaw
-    ? toRaw.split(',').map((s) => parseAddress(s.trim()).address).filter(Boolean)
+    ? toRaw
+        .split(',')
+        .map((s) => parseAddress(s.trim()).address)
+        .filter(Boolean)
     : [];
 
   const bodyRaw = extractBody(message.payload);
   const receivedHeader = getHeader(headers, 'Date');
-  const receivedAt = receivedHeader ? new Date(receivedHeader) : new Date(parseInt(message.internalDate, 10));
+  const receivedAt = receivedHeader
+    ? new Date(receivedHeader)
+    : new Date(parseInt(message.internalDate, 10));
 
   return {
     gmailMessageId: message.id,

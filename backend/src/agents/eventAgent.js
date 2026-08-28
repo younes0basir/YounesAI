@@ -6,7 +6,7 @@ const { parseTemporal } = require('../utils/temporalUtility');
 const { applyExtractedTitle, extractNamedTitle } = require('../utils/titleUtility');
 const tools = require('../tools');
 
-const EVENT_ACTIONS = new Set(['create', 'update', 'delete', 'list', 'chat']);
+const EVENT_ACTIONS = new Set(['create', 'update', 'delete', 'list', 'invite', 'attach', 'chat']);
 
 class EventAgent {
   constructor() {
@@ -58,10 +58,14 @@ Only use action "chat" if the message is purely conversational with zero event i
           : '(no prior messages)'
       }`;
 
-      const result = await fallbackManager.generateText('event', [
-        { role: 'system', content: this.systemPrompt },
-        { role: 'user', content: userContent },
-      ], { temperature: 0.3, maxTokens: 600, json: true });
+      const result = await fallbackManager.generateText(
+        'event',
+        [
+          { role: 'system', content: this.systemPrompt },
+          { role: 'user', content: userContent },
+        ],
+        { temperature: 0.3, maxTokens: 600, json: true }
+      );
 
       if (!result.success) throw new Error(result.error);
       let parsed = this.parseResponse(result.content, sourceMessage);
@@ -76,53 +80,253 @@ Only use action "chat" if the message is purely conversational with zero event i
           parsed.event.ends_at = new Date(startsAt.getTime() + 60 * 60 * 1000).toISOString();
         }
       }
+      if (context.parameters?.eventId) parsed.eventId = context.parameters.eventId;
       const tokensUsed = result.usage?.total_tokens || 0;
       let actionResult;
 
       switch (parsed.action) {
         case 'create':
           if (!context.requestId) {
-            context.requestId = generateMessageHash(context.userId, context.message, 'create_event');
+            context.requestId = generateMessageHash(
+              context.userId,
+              context.message,
+              'create_event'
+            );
           }
           actionResult = await tools.createEvent(context, parsed.event);
-          await logAgentCall({ agentName: 'event', provider: result.provider, model: result.model, latency: Date.now() - start, success: true, tokensUsed, context });
-          if (actionResult.idempotent) return { success: true, content: prefixWithSourceCheck(`Event already created (duplicate request prevented): "${actionResult.event.title}".`, context, ['event tool output']), metadata: { provider: result.provider, model: result.model } };
-          const eventDateInfo = actionResult.event.starts_at ? ` at ${new Date(actionResult.event.starts_at).toLocaleString()}` : '';
-          return { success: true, content: prefixWithSourceCheck(`Event created successfully: "${actionResult.event.title}"${eventDateInfo} (id: ${actionResult.event.id}).`, context, ['event tool output']), metadata: { provider: result.provider, model: result.model } };
+          await logAgentCall({
+            agentName: 'event',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: true,
+            tokensUsed,
+            context,
+          });
+          if (actionResult.idempotent)
+            return {
+              success: true,
+              content: prefixWithSourceCheck(
+                `Event already created (duplicate request prevented): "${actionResult.event.title}".`,
+                context,
+                ['event tool output']
+              ),
+              metadata: { provider: result.provider, model: result.model },
+            };
+          const eventDateInfo = actionResult.event.starts_at
+            ? ` at ${new Date(actionResult.event.starts_at).toLocaleString()}`
+            : '';
+          return {
+            success: true,
+            content: prefixWithSourceCheck(
+              `Event created successfully: "${actionResult.event.title}"${eventDateInfo} (id: ${actionResult.event.id}).`,
+              context,
+              ['event tool output']
+            ),
+            action: 'create',
+            toolResult: actionResult,
+            metadata: { provider: result.provider, model: result.model },
+          };
 
         case 'list':
           actionResult = await tools.listEvents(context, parsed.filters || {});
-          await logAgentCall({ agentName: 'event', provider: result.provider, model: result.model, latency: Date.now() - start, success: true, tokensUsed, context });
+          await logAgentCall({
+            agentName: 'event',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: true,
+            tokensUsed,
+            context,
+          });
           const events = actionResult.events || [];
-          const eventSummary = events.length === 0
-            ? 'No upcoming events found.'
-            : `Found ${events.length} event(s):\n${events.map((e) => `- ${e.title} at ${new Date(e.starts_at).toLocaleString()}`).join('\n')}`;
-          return { success: true, content: prefixWithSourceCheck(eventSummary, context, ['event tool output']), metadata: { provider: result.provider, model: result.model } };
+          const eventSummary =
+            events.length === 0
+              ? 'No upcoming events found.'
+              : `Found ${events.length} event(s):\n${events.map((e) => `- ${e.title} at ${new Date(e.starts_at).toLocaleString()}`).join('\n')}`;
+          return {
+            success: true,
+            content: prefixWithSourceCheck(eventSummary, context, ['event tool output']),
+            metadata: { provider: result.provider, model: result.model },
+          };
 
         case 'update':
           if (!parsed.eventId) {
-            await logAgentCall({ agentName: 'event', provider: result.provider, model: result.model, latency: Date.now() - start, success: false, error: 'No eventId provided', context });
-            return { success: true, content: prefixWithSourceCheck('I could not identify which event to update. Please specify the event name or show your events first.', context, ['event agent reasoning']), metadata: { provider: result.provider, model: result.model } };
+            await logAgentCall({
+              agentName: 'event',
+              provider: result.provider,
+              model: result.model,
+              latency: Date.now() - start,
+              success: false,
+              error: 'No eventId provided',
+              context,
+            });
+            return {
+              success: true,
+              content: prefixWithSourceCheck(
+                'I could not identify which event to update. Please specify the event name or show your events first.',
+                context,
+                ['event agent reasoning']
+              ),
+              metadata: { provider: result.provider, model: result.model },
+            };
           }
           actionResult = await tools.updateEvent(context, parsed.eventId, parsed.event);
-          await logAgentCall({ agentName: 'event', provider: result.provider, model: result.model, latency: Date.now() - start, success: actionResult.success, tokensUsed, context });
-          return { success: true, content: prefixWithSourceCheck(actionResult.success ? `Event updated.` : `Event not found.`, context, ['event tool output']), metadata: { provider: result.provider, model: result.model } };
+          await logAgentCall({
+            agentName: 'event',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: actionResult.success,
+            tokensUsed,
+            context,
+          });
+          return {
+            success: true,
+            content: prefixWithSourceCheck(
+              actionResult.success ? `Event updated.` : `Event not found.`,
+              context,
+              ['event tool output']
+            ),
+            action: 'update',
+            toolResult: actionResult,
+            metadata: { provider: result.provider, model: result.model },
+          };
+
+        case 'invite': {
+          const eventId = parsed.eventId || context.parameters?.eventId;
+          const nameMatch = context.message.match(/invite\s+([A-Za-z][A-Za-z\s'-]+)/i);
+          const attendeeName = parsed.attendeeName || (nameMatch ? nameMatch[1].trim() : null);
+          if (!eventId || !attendeeName) {
+            return {
+              success: true,
+              content: prefixWithSourceCheck(
+                'Please specify which event and who to invite.',
+                context,
+                ['event agent reasoning']
+              ),
+            };
+          }
+          actionResult = await tools.inviteEventAttendee(context, eventId, { name: attendeeName });
+          return {
+            success: actionResult.success,
+            content: prefixWithSourceCheck(
+              actionResult.success
+                ? `Invited ${attendeeName} to "${actionResult.event.title}".`
+                : actionResult.error,
+              context,
+              ['event tool output']
+            ),
+            action: 'invite',
+            toolResult: actionResult,
+            metadata: { provider: result.provider, model: result.model },
+          };
+        }
+
+        case 'attach': {
+          const eventId = parsed.eventId || context.parameters?.eventId;
+          const imageUrl =
+            context.parameters?.imageUrl ||
+            context.conversationSession?.currentImage?.meta?.imageData;
+          if (!eventId || !imageUrl) {
+            return {
+              success: true,
+              content: prefixWithSourceCheck(
+                'Please specify the event and image to attach.',
+                context,
+                ['event agent reasoning']
+              ),
+            };
+          }
+          actionResult = await tools.linkEntity(context, {
+            sourceType: 'event',
+            sourceId: eventId,
+            targetType: 'image',
+            targetId: context.conversationSession?.currentImage?.id || `img-${Date.now()}`,
+            metadata: { imageUrl },
+          });
+          return {
+            success: actionResult.success,
+            content: prefixWithSourceCheck(
+              actionResult.success ? 'Image linked to the meeting.' : actionResult.error,
+              context,
+              ['event tool output']
+            ),
+            action: 'attach',
+            toolResult: actionResult,
+            metadata: { provider: result.provider, model: result.model },
+          };
+        }
 
         case 'delete':
           if (!parsed.eventId) {
-            await logAgentCall({ agentName: 'event', provider: result.provider, model: result.model, latency: Date.now() - start, success: false, error: 'No eventId provided', context });
-            return { success: true, content: prefixWithSourceCheck('I could not identify which event to delete. Please specify the event name or show your events first.', context, ['event agent reasoning']), metadata: { provider: result.provider, model: result.model } };
+            await logAgentCall({
+              agentName: 'event',
+              provider: result.provider,
+              model: result.model,
+              latency: Date.now() - start,
+              success: false,
+              error: 'No eventId provided',
+              context,
+            });
+            return {
+              success: true,
+              content: prefixWithSourceCheck(
+                'I could not identify which event to delete. Please specify the event name or show your events first.',
+                context,
+                ['event agent reasoning']
+              ),
+              metadata: { provider: result.provider, model: result.model },
+            };
           }
           actionResult = await tools.deleteEvent(context, parsed.eventId);
-          await logAgentCall({ agentName: 'event', provider: result.provider, model: result.model, latency: Date.now() - start, success: actionResult.success, tokensUsed, context });
-          return { success: true, content: prefixWithSourceCheck(actionResult.success ? `Event deleted.` : `Event not found.`, context, ['event tool output']), metadata: { provider: result.provider, model: result.model } };
+          await logAgentCall({
+            agentName: 'event',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: actionResult.success,
+            tokensUsed,
+            context,
+          });
+          return {
+            success: true,
+            content: prefixWithSourceCheck(
+              actionResult.success ? `Event deleted.` : `Event not found.`,
+              context,
+              ['event tool output']
+            ),
+            action: 'delete',
+            toolResult: actionResult,
+            metadata: { provider: result.provider, model: result.model },
+          };
 
         default:
-          await logAgentCall({ agentName: 'event', provider: result.provider, model: result.model, latency: Date.now() - start, success: true, tokensUsed, context });
-          return { success: true, content: prefixWithSourceCheck(parsed.response || result.content, context, ['event agent reasoning']), metadata: { provider: result.provider, model: result.model } };
+          await logAgentCall({
+            agentName: 'event',
+            provider: result.provider,
+            model: result.model,
+            latency: Date.now() - start,
+            success: true,
+            tokensUsed,
+            context,
+          });
+          return {
+            success: true,
+            content: prefixWithSourceCheck(parsed.response || result.content, context, [
+              'event agent reasoning',
+            ]),
+            metadata: { provider: result.provider, model: result.model },
+          };
       }
     } catch (error) {
-      await logAgentCall({ agentName: 'event', latency: Date.now() - start, success: false, error: error.message, context });
+      await logAgentCall({
+        agentName: 'event',
+        latency: Date.now() - start,
+        success: false,
+        error: error.message,
+        context,
+      });
       return { success: false, error: error.message };
     }
   }
@@ -130,7 +334,10 @@ Only use action "chat" if the message is purely conversational with zero event i
   parseResponse(content, originalMessage = '') {
     // 1. Try to extract and parse valid JSON from the LLM response
     try {
-      let cleaned = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      let cleaned = content
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim();
       const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
@@ -140,7 +347,10 @@ Only use action "chat" if the message is purely conversational with zero event i
           if (parsed.action === 'chat') {
             const fallback = this.fallbackParse(originalMessage || content);
             if (fallback && fallback.action !== 'chat') {
-              console.log('[EventAgent] LLM returned action=chat but creation intent detected — overriding:', JSON.stringify(fallback));
+              console.log(
+                '[EventAgent] LLM returned action=chat but creation intent detected — overriding:',
+                JSON.stringify(fallback)
+              );
               return fallback;
             }
           }
@@ -171,9 +381,10 @@ Only use action "chat" if the message is purely conversational with zero event i
     }
 
     // Check for creation intent
-    const hasCreateIntent = /(?:create|schedule|add|new)\s+(?:an?\s+)?(?:event|meeting)/i.test(lower)
-      || /(?:schedule|meet)\s+/i.test(lower)
-      || /meeting\s+on/i.test(lower);
+    const hasCreateIntent =
+      /(?:create|schedule|add|new)\s+(?:an?\s+)?(?:event|meeting)/i.test(lower) ||
+      /(?:schedule|meet)\s+/i.test(lower) ||
+      /meeting\s+on/i.test(lower);
 
     if (!hasCreateIntent) return null;
 

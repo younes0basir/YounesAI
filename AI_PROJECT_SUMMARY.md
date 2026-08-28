@@ -39,6 +39,7 @@ In short, the project turns a normal productivity app into an AI-enhanced operat
 ## 3. Main Functional Domains
 
 ### 3.1 Productivity Management
+
 The core productivity layer includes:
 
 - Users and devices
@@ -51,6 +52,7 @@ The core productivity layer includes:
 This part of the system acts as the operational backbone of the platform. It handles everyday work planning in a structured and queryable database model.
 
 ### 3.2 AI Chat and Multi-Agent Orchestration
+
 The backend includes an orchestrator-driven multi-agent system. User intent is interpreted by an AI orchestrator, which then routes requests to specialized agents:
 
 - Task agent
@@ -72,6 +74,7 @@ This allows the user to speak naturally, for example:
 The AI does not directly execute unsafe operations. Instead, it routes validated commands into a tools layer that performs controlled database updates and queries.
 
 ### 3.3 Semantic File Intelligence
+
 The file pipeline is one of the most important parts of the system. The platform can:
 
 - index local folders from the desktop app
@@ -85,6 +88,7 @@ The file pipeline is one of the most important parts of the system. The platform
 This makes the app more than a note app or task app: it becomes a personal knowledge layer connected to user files.
 
 ### 3.4 Knowledge Retrieval and Memory
+
 The retrieval system searches across multiple knowledge sources:
 
 - documents
@@ -97,6 +101,7 @@ The retrieval system searches across multiple knowledge sources:
 This allows the assistant to provide grounded answers based not only on static files but also on user activity and historical context.
 
 ### 3.5 Scheduler and Automation
+
 The project includes a scheduler that runs recurring background checks for:
 
 - reminder warnings
@@ -115,6 +120,7 @@ This creates a practical automation loop without needing constant manual actions
 The application is structured in four major layers:
 
 ### 4.1 Frontend Layer
+
 The frontend is a React application built for the web. It includes dashboards, forms, data tables, agent chat, file management, calendar views, search, notifications, and user flows for all major features.
 
 It uses:
@@ -127,6 +133,7 @@ It uses:
 - Axios for backend communication
 
 ### 4.2 Desktop Layer
+
 The Electron shell adds desktop-native capabilities such as:
 
 - folder selection dialogs
@@ -138,6 +145,7 @@ The Electron shell adds desktop-native capabilities such as:
 This allows the app to behave like a real desktop assistant instead of a browser-only tool.
 
 ### 4.3 Backend Layer
+
 The backend is built with Express and PostgreSQL. It exposes APIs for:
 
 - authentication
@@ -151,6 +159,7 @@ The backend is built with Express and PostgreSQL. It exposes APIs for:
 The backend acts as the centralized system of record for the whole application.
 
 ### 4.4 Mobile Layer
+
 The mobile app is built with Expo / React Native and mirrors the core platform experience on smaller screens.
 
 It supports access to tasks, notifications, reminders, files, and core system features while staying connected to the same backend APIs.
@@ -160,6 +169,7 @@ It supports access to tasks, notifications, reminders, files, and core system fe
 ## 5. Project Modules and Responsibilities
 
 ### 5.1 Frontend
+
 The frontend implements the main user experience:
 
 - dashboard overview
@@ -175,6 +185,7 @@ The frontend implements the main user experience:
 - observability pages for AI system metrics
 
 ### 5.2 Backend Services
+
 The backend contains several functional groups:
 
 - authentication routes
@@ -188,6 +199,7 @@ The backend contains several functional groups:
 - PostgreSQL access layer
 
 ### 5.3 Desktop File Pipeline
+
 This includes:
 
 - file scanning
@@ -199,6 +211,7 @@ This includes:
 - document-based search and semantic lookup
 
 ### 5.4 Data Layer
+
 The database stores all the information needed for planning and AI retrieval:
 
 - user and device identity

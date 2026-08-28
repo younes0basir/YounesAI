@@ -3,5 +3,5 @@ export default function Card({ children, className = '', elevated = false }) {
     <div className={`${elevated ? 'surface-elevated' : 'surface'} p-5 ${className}`}>
       {children}
     </div>
-  )
+  );
 }

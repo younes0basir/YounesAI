@@ -6,15 +6,15 @@ Express.js + PostgreSQL backend with a generic CRUD engine and a multi-agent AI 
 
 ## Stack
 
-| Layer | Tech |
-|-------|------|
-| Runtime | Node.js |
-| Framework | Express 4 |
-| Database | PostgreSQL 13+ (via `pg`) |
-| Auth | JWT (`jsonwebtoken` + `bcryptjs`) |
-| AI SDK | `groq-sdk` (primary), NVIDIA NIM, OpenRouter |
-| File upload | `multer` |
-| API docs | `swagger-ui-express` |
+| Layer       | Tech                                         |
+| ----------- | -------------------------------------------- |
+| Runtime     | Node.js                                      |
+| Framework   | Express 4                                    |
+| Database    | PostgreSQL 13+ (via `pg`)                    |
+| Auth        | JWT (`jsonwebtoken` + `bcryptjs`)            |
+| AI SDK      | `groq-sdk` (primary), NVIDIA NIM, OpenRouter |
+| File upload | `multer`                                     |
+| API docs    | `swagger-ui-express`                         |
 
 ---
 
@@ -62,13 +62,13 @@ backend/
 
 Mounts five routers:
 
-| Mount | Router | File |
-|-------|--------|------|
-| `GET /api/health` | Health check | `routes/health.js` |
-| `/api/auth` | Login, register, me | `routes/auth.js` |
-| `/api` | 20+ CRUD resources + custom endpoints | `routes/api.js` |
-| `/api/agents` | Chat, voice, memory, status | `routes/agents.js` |
-| `/api/docs` | Swagger UI | `swagger.js` |
+| Mount             | Router                                | File               |
+| ----------------- | ------------------------------------- | ------------------ |
+| `GET /api/health` | Health check                          | `routes/health.js` |
+| `/api/auth`       | Login, register, me                   | `routes/auth.js`   |
+| `/api`            | 20+ CRUD resources + custom endpoints | `routes/api.js`    |
+| `/api/agents`     | Chat, voice, memory, status           | `routes/agents.js` |
+| `/api/docs`       | Swagger UI                            | `swagger.js`       |
 
 ---
 
@@ -80,40 +80,42 @@ Mounts five routers:
 
 ### Tables
 
-| Table | Purpose | Scoped |
-|-------|---------|--------|
-| `users` | Auth + profile | — |
-| `devices` | User devices | user |
-| `tasks` | Tasks with AI priority, checklist, recurrence, assignments | user, soft-delete |
-| `places` | Locations with lat/lng, visited flag | user |
-| `calendar_events` | Events with recurrence, color, location | user |
-| `reminders` | Reminders linked to tasks/events, snooze, dismiss | user |
-| `geofences` | Geo-triggers for places | user |
-| `files` | File metadata, checksum, deletion flag | user |
-| `agent_actions` | Audit log for AI operations | user |
-| `conversations` | Chat messages (user/assistant roles) | user |
-| `ai_memories` | Stored AI memories with importance | user |
-| `notifications` | User notifications (task_due, reminder_due, etc.) | user |
-| `tags` | User-defined tags | user |
-| `entity_tags` | Polymorphic tag associations | user |
-| `saved_views` | Saved filter/sort presets | user |
-| `projects` | Collaboration projects | — |
-| `project_memberships` | Project roles (owner/editor/viewer) | — |
-| `task_assignments` | Task assignees | — |
-| `comments` | Threaded comments on projects/tasks | user |
-| `activity_log` | Audit trail for entities | — |
+| Table                 | Purpose                                                    | Scoped            |
+| --------------------- | ---------------------------------------------------------- | ----------------- |
+| `users`               | Auth + profile                                             | —                 |
+| `devices`             | User devices                                               | user              |
+| `tasks`               | Tasks with AI priority, checklist, recurrence, assignments | user, soft-delete |
+| `places`              | Locations with lat/lng, visited flag                       | user              |
+| `calendar_events`     | Events with recurrence, color, location                    | user              |
+| `reminders`           | Reminders linked to tasks/events, snooze, dismiss          | user              |
+| `geofences`           | Geo-triggers for places                                    | user              |
+| `files`               | File metadata, checksum, deletion flag                     | user              |
+| `agent_actions`       | Audit log for AI operations                                | user              |
+| `conversations`       | Chat messages (user/assistant roles)                       | user              |
+| `ai_memories`         | Stored AI memories with importance                         | user              |
+| `notifications`       | User notifications (task_due, reminder_due, etc.)          | user              |
+| `tags`                | User-defined tags                                          | user              |
+| `entity_tags`         | Polymorphic tag associations                               | user              |
+| `saved_views`         | Saved filter/sort presets                                  | user              |
+| `projects`            | Collaboration projects                                     | —                 |
+| `project_memberships` | Project roles (owner/editor/viewer)                        | —                 |
+| `task_assignments`    | Task assignees                                             | —                 |
+| `comments`            | Threaded comments on projects/tasks                        | user              |
+| `activity_log`        | Audit trail for entities                                   | —                 |
 
 ---
 
 ## Auth (`middleware/auth.js` + `routes/auth.js`)
 
 ### JWT flow
+
 1. `POST /api/auth/register` — creates user with bcrypt-hashed password, returns `{ user, token }`
 2. `POST /api/auth/login` — validates credentials, returns `{ user, token }`
 3. `GET /api/auth/me` — validates token, returns user profile
 4. Token expires in **7 days**, signed with `JWT_SECRET` env var (required — no fallback)
 
 ### Middleware
+
 `authMiddleware` extracts `Authorization: Bearer <token>`, verifies JWT, attaches `req.user = { id, email }`. Used on all CRUD routes and the chat endpoint.
 
 ---
@@ -122,15 +124,16 @@ Mounts five routers:
 
 `createCrudRouter(pool, table, options)` generates 5 standard endpoints:
 
-| Method | Path | Action |
-|--------|------|--------|
-| `GET` | `/api/{table}` | List (filters via query params, max 100) |
-| `GET` | `/api/{table}/:id` | Get by ID |
-| `POST` | `/api/{table}` | Create (validates columns from `information_schema`) |
-| `PUT` | `/api/{table}/:id` | Update (partial, same column validation) |
-| `DELETE` | `/api/{table}/:id` | Delete or soft-delete |
+| Method   | Path               | Action                                               |
+| -------- | ------------------ | ---------------------------------------------------- |
+| `GET`    | `/api/{table}`     | List (filters via query params, max 100)             |
+| `GET`    | `/api/{table}/:id` | Get by ID                                            |
+| `POST`   | `/api/{table}`     | Create (validates columns from `information_schema`) |
+| `PUT`    | `/api/{table}/:id` | Update (partial, same column validation)             |
+| `DELETE` | `/api/{table}/:id` | Delete or soft-delete                                |
 
 ### Options
+
 - `userScoped: true` — auto-filters/inserts `user_id` from JWT, prevents cross-user access
 - `softDelete: 'deleted_at'` — sets timestamp instead of deleting rows
 - `idCol` — custom ID column name (default `id`)
@@ -144,14 +147,14 @@ Special handling: `checklist` JSONB parsing (auto-converts newline/comma-separat
 
 Beyond the generic CRUD, these custom endpoints are mounted at `/api`:
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /tasks/smart?filter=` | Smart task queries: `today`, `overdue`, `high_priority` |
-| `GET /search?q=` | Cross-resource search across tasks, files, places |
-| `POST /reminders/:id/snooze` | Snooze a reminder (configurable minutes) |
-| `POST /reminders/:id/dismiss` | Dismiss a reminder permanently |
-| `GET /projects` | List projects (owned + member of) |
-| `POST /projects` | Create project with auto-membership |
+| Endpoint                      | Description                                             |
+| ----------------------------- | ------------------------------------------------------- |
+| `GET /tasks/smart?filter=`    | Smart task queries: `today`, `overdue`, `high_priority` |
+| `GET /search?q=`              | Cross-resource search across tasks, files, places       |
+| `POST /reminders/:id/snooze`  | Snooze a reminder (configurable minutes)                |
+| `POST /reminders/:id/dismiss` | Dismiss a reminder permanently                          |
+| `GET /projects`               | List projects (owned + member of)                       |
+| `POST /projects`              | Create project with auto-membership                     |
 
 ### CRUD resources mounted (all auth-protected)
 
@@ -191,19 +194,20 @@ task event place file memory
 
 ### Agent Files
 
-| File | Agent | Model | Provider | Latency |
-|------|-------|-------|----------|---------|
-| `orchestrator.js` | Orchestrator | `llama-3.3-70b-versatile` | Groq | ~200ms |
-| `taskAgent.js` | Task | `llama-3.1-8b-instant` | Groq | ~80ms |
-| `eventAgent.js` | Event | `llama-3.1-8b-instant` | Groq | ~80ms |
-| `placeAgent.js` | Place | `mixtral-8x7b-32768` | Groq | ~300ms |
-| `fileAgent.js` | File | `llama-3.1-70b-instruct` | NVIDIA | ~500ms |
-| `memoryAgent.js` | Memory | `bge-large-en-v1.5` | NVIDIA | ~400ms |
-| `voiceAgent.js` | Voice/Whisper | `whisper-large-v3-turbo` | Groq | varies |
+| File              | Agent         | Model                     | Provider | Latency |
+| ----------------- | ------------- | ------------------------- | -------- | ------- |
+| `orchestrator.js` | Orchestrator  | `llama-3.3-70b-versatile` | Groq     | ~200ms  |
+| `taskAgent.js`    | Task          | `llama-3.1-8b-instant`    | Groq     | ~80ms   |
+| `eventAgent.js`   | Event         | `llama-3.1-8b-instant`    | Groq     | ~80ms   |
+| `placeAgent.js`   | Place         | `mixtral-8x7b-32768`      | Groq     | ~300ms  |
+| `fileAgent.js`    | File          | `llama-3.1-70b-instruct`  | NVIDIA   | ~500ms  |
+| `memoryAgent.js`  | Memory        | `bge-large-en-v1.5`       | NVIDIA   | ~400ms  |
+| `voiceAgent.js`   | Voice/Whisper | `whisper-large-v3-turbo`  | Groq     | varies  |
 
 ### Fallback System (`fallbackManager.js`)
 
 Each agent type has a provider priority list:
+
 - **Task / Event / Place / Orchestrator**: Groq → OpenRouter
 - **File / Memory**: NVIDIA → OpenRouter
 
@@ -212,6 +216,7 @@ On rate limit (429): exponential backoff, then switches to next provider.
 ### Memory Agent
 
 In-memory `Map`-based vector store with cosine similarity search. Methods:
+
 - `storeInformation(text, metadata)` — generates embedding, stores
 - `semanticSearch(query, topK)` — finds most similar stored texts
 - `clearOldMemories(maxAge)` — cleanup
@@ -225,20 +230,20 @@ Note: Not persisted to DB. In production, replace with a vector database (pgvect
 
 All endpoints mounted at `/api/agents`:
 
-| Endpoint | Auth | Description |
-|----------|------|-------------|
-| `POST /chat` | Yes | Send message → orchestrator → parallel agents → response. Persists to `conversations` table. |
-| `GET /conversations` | Yes | Last 100 messages for the authenticated user |
-| `POST /task` | No | Direct access to task agent |
-| `POST /event` | No | Direct access to event agent |
-| `POST /place` | No | Direct access to place agent |
-| `POST /file` | No | Direct access to file agent |
-| `POST /memory/store` | No | Store info in memory |
-| `POST /memory/search` | No | Semantic search in memory |
-| `POST /memory/clear` | No | Clear old memories |
-| `GET /status` | No | System status (agents, orchestrator, memory stats) |
-| `POST /voice/transcribe` | No | Upload audio → Whisper transcription |
-| `POST /voice/process` | No | Upload audio → transcribe → route through agent system |
+| Endpoint                 | Auth | Description                                                                                  |
+| ------------------------ | ---- | -------------------------------------------------------------------------------------------- |
+| `POST /chat`             | Yes  | Send message → orchestrator → parallel agents → response. Persists to `conversations` table. |
+| `GET /conversations`     | Yes  | Last 100 messages for the authenticated user                                                 |
+| `POST /task`             | No   | Direct access to task agent                                                                  |
+| `POST /event`            | No   | Direct access to event agent                                                                 |
+| `POST /place`            | No   | Direct access to place agent                                                                 |
+| `POST /file`             | No   | Direct access to file agent                                                                  |
+| `POST /memory/store`     | No   | Store info in memory                                                                         |
+| `POST /memory/search`    | No   | Semantic search in memory                                                                    |
+| `POST /memory/clear`     | No   | Clear old memories                                                                           |
+| `GET /status`            | No   | System status (agents, orchestrator, memory stats)                                           |
+| `POST /voice/transcribe` | No   | Upload audio → Whisper transcription                                                         |
+| `POST /voice/process`    | No   | Upload audio → transcribe → route through agent system                                       |
 
 ---
 

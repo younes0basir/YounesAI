@@ -19,7 +19,10 @@ if (!line) {
   process.exit(1);
 }
 
-const val = line.replace(/^\s*OAUTH_TOKEN_ENCRYPTION_KEY\s*=\s*/, '').replace(/\s*#.*$/, '').trim();
+const val = line
+  .replace(/^\s*OAUTH_TOKEN_ENCRYPTION_KEY\s*=\s*/, '')
+  .replace(/\s*#.*$/, '')
+  .trim();
 const unquoted = val.replace(/^['"]|['"]$/g, '');
 const loaded = process.env.OAUTH_TOKEN_ENCRYPTION_KEY || '';
 
@@ -36,5 +39,5 @@ if (/^[0-9a-fA-F]{64}$/.test(loaded)) {
 }
 
 console.log('FAIL: Fix OAUTH_TOKEN_ENCRYPTION_KEY in backend/.env');
-console.log('Generate: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+console.log("Generate: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"");
 process.exit(1);

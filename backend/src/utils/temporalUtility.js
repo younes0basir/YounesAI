@@ -20,7 +20,9 @@ function parseTemporal(rawMessage, referenceDate = new Date()) {
 
     // Priority check: "N this month" / "the Nth of this month" pattern
     // chrono-node often misparses these, so we handle them manually first.
-    const dayThisMonthMatch = cleanedMessage.match(/(?:on\s+)?(\d{1,2})(?:st|nd|rd|th)?\s*(?:this\s+month|of\s+this\s+month|of\s+the\s+month)/i);
+    const dayThisMonthMatch = cleanedMessage.match(
+      /(?:on\s+)?(\d{1,2})(?:st|nd|rd|th)?\s*(?:this\s+month|of\s+this\s+month|of\s+the\s+month)/i
+    );
     if (dayThisMonthMatch) {
       const day = parseInt(dayThisMonthMatch[1], 10);
       if (day >= 1 && day <= 31) {
@@ -33,25 +35,28 @@ function parseTemporal(rawMessage, referenceDate = new Date()) {
         return {
           success: true,
           parsedDate: targetDate.toISOString(),
-          cleanedMessage: cleanedMessage.replace(dayThisMonthMatch[0], '').replace(/\s+/g, ' ').trim()
+          cleanedMessage: cleanedMessage
+            .replace(dayThisMonthMatch[0], '')
+            .replace(/\s+/g, ' ')
+            .trim(),
         };
       }
     }
 
     // Try chrono-node parsing for other patterns
     let results = chrono.parse(cleanedMessage, referenceDate);
-    
+
     // If chrono-node fails, try manual parsing for common relative expressions
     if (!results || results.length === 0) {
       const manualResult = parseRelativeDates(cleanedMessage, referenceDate);
       if (manualResult) {
         return manualResult;
       }
-      
+
       return {
         success: false,
         parsedDate: null,
-        cleanedMessage: rawMessage
+        cleanedMessage: rawMessage,
       };
     }
 
@@ -60,19 +65,22 @@ function parseTemporal(rawMessage, referenceDate = new Date()) {
     const parsedDate = firstResult.start.date().toISOString();
 
     // Replace the parsed time expression in the original message to get a cleaner prompt
-    const resultCleanedMessage = cleanedMessage.replace(firstResult.text, '').replace(/\s+/g, ' ').trim();
+    const resultCleanedMessage = cleanedMessage
+      .replace(firstResult.text, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
     return {
       success: true,
       parsedDate,
-      cleanedMessage: resultCleanedMessage
+      cleanedMessage: resultCleanedMessage,
     };
   } catch (err) {
     console.error('[temporalUtility] Error parsing temporal expression:', err);
     return {
       success: false,
       parsedDate: null,
-      cleanedMessage: rawMessage
+      cleanedMessage: rawMessage,
     };
   }
 }
@@ -85,7 +93,7 @@ function parseTemporal(rawMessage, referenceDate = new Date()) {
  */
 function parseRelativeDates(message, referenceDate) {
   const lowerMessage = message.toLowerCase();
-  
+
   // Match patterns like "in X days", "X days later", "X days from now"
   const dayPatterns = [
     /(?:in\s+)?(\d+)\s+days?\s+(?:later|from now)/i,
@@ -95,7 +103,7 @@ function parseRelativeDates(message, referenceDate) {
     /three\s+days?\s+later/i,
     /in\s+three\s+days?/i,
   ];
-  
+
   for (const pattern of dayPatterns) {
     const match = lowerMessage.match(pattern);
     if (match) {
@@ -103,24 +111,24 @@ function parseRelativeDates(message, referenceDate) {
       if (match[1]) {
         days = parseInt(match[1], 10);
       }
-      
+
       const targetDate = new Date(referenceDate);
       targetDate.setDate(targetDate.getDate() + days);
-      
+
       // Find the original text to replace
       const originalMatch = message.match(new RegExp(match.source, 'i'));
       const originalText = originalMatch ? originalMatch[0] : match[0];
-      
+
       const cleanedMessage = message.replace(originalText, '').replace(/\s+/g, ' ').trim();
-      
+
       return {
         success: true,
         parsedDate: targetDate.toISOString(),
-        cleanedMessage
+        cleanedMessage,
       };
     }
   }
-  
+
   // Match patterns like "in X weeks", "X weeks later"
   const weekPatterns = [
     /(?:in\s+)?(\d+)\s+weeks?\s+(?:later|from now)/i,
@@ -129,7 +137,7 @@ function parseRelativeDates(message, referenceDate) {
     /(\d+)\s+weeks?\s+from now/i,
     /next\s+week/i,
   ];
-  
+
   for (const pattern of weekPatterns) {
     const match = lowerMessage.match(pattern);
     if (match) {
@@ -137,23 +145,23 @@ function parseRelativeDates(message, referenceDate) {
       if (match[1]) {
         weeks = parseInt(match[1], 10);
       }
-      
+
       const targetDate = new Date(referenceDate);
-      targetDate.setDate(targetDate.getDate() + (weeks * 7));
-      
+      targetDate.setDate(targetDate.getDate() + weeks * 7);
+
       const originalMatch = message.match(new RegExp(match.source, 'i'));
       const originalText = originalMatch ? originalMatch[0] : match[0];
-      
+
       const cleanedMessage = message.replace(originalText, '').replace(/\s+/g, ' ').trim();
-      
+
       return {
         success: true,
         parsedDate: targetDate.toISOString(),
-        cleanedMessage
+        cleanedMessage,
       };
     }
   }
-  
+
   return null;
 }
 

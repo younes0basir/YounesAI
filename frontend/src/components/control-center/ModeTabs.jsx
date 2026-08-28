@@ -1,12 +1,12 @@
-import { motion } from 'framer-motion'
-import { WORKSPACE_MODES } from './ccData'
+import { motion } from 'framer-motion';
+import { WORKSPACE_MODES } from './ccData';
 
 export default function ModeTabs({ mode, onChange }) {
   return (
     <div className="cc-modes" role="tablist" aria-label="Workspace views">
       {WORKSPACE_MODES.map((m) => {
-        const active = mode === m.id
-        const Icon = m.icon
+        const active = mode === m.id;
+        const Icon = m.icon;
         return (
           <button
             key={m.id}
@@ -27,8 +27,8 @@ export default function ModeTabs({ mode, onChange }) {
             <Icon size={13} className="cc-mode-icon" />
             <span className="cc-mode-label">{m.label}</span>
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

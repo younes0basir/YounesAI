@@ -32,10 +32,17 @@ Only use action "chat" if the message is purely conversational with zero memory 
   async run(context) {
     const start = Date.now();
     try {
-      const result = await fallbackManager.generateText('memory', [
-        { role: 'system', content: this.systemPrompt },
-        { role: 'user', content: `Message: "${context.message}"\nContext: ${JSON.stringify({ userId: context.userId })}\n\nRecent conversation:\n${context.recentMessages?.length > 0 ? context.recentMessages.map((m) => `${m.role}: "${m.content}"`).join('\n') : '(no prior messages)'}` }
-      ], { temperature: 0.3, maxTokens: 500, json: true });
+      const result = await fallbackManager.generateText(
+        'memory',
+        [
+          { role: 'system', content: this.systemPrompt },
+          {
+            role: 'user',
+            content: `Message: "${context.message}"\nContext: ${JSON.stringify({ userId: context.userId })}\n\nRecent conversation:\n${context.recentMessages?.length > 0 ? context.recentMessages.map((m) => `${m.role}: "${m.content}"`).join('\n') : '(no prior messages)'}`,
+          },
+        ],
+        { temperature: 0.3, maxTokens: 500, json: true }
+      );
 
       if (!result.success) throw new Error(result.error);
       let parsed = this.parseResponse(result.content, context.message);
@@ -44,22 +51,65 @@ Only use action "chat" if the message is purely conversational with zero memory 
 
       if (parsed.action === 'store' && parsed.text) {
         await tools.storeMemory(context, parsed.text);
-        await logAgentCall({ agentName: 'memory', provider: result.provider, latency: Date.now() - start, success: true, context });
-        return { success: true, content: prefixWithSourceCheck(`Got it! I've remembered: "${parsed.text}"`, context, ['memory store result']), metadata: { provider: result.provider, model: result.model } };
+        await logAgentCall({
+          agentName: 'memory',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
+        return {
+          success: true,
+          content: prefixWithSourceCheck(`Got it! I've remembered: "${parsed.text}"`, context, [
+            'memory store result',
+          ]),
+          metadata: { provider: result.provider, model: result.model },
+        };
       }
 
       if (parsed.action === 'search' && parsed.text) {
         const searchResult = await tools.retrieveMemory(context, parsed.text);
-        await logAgentCall({ agentName: 'memory', provider: result.provider, latency: Date.now() - start, success: true, context });
+        await logAgentCall({
+          agentName: 'memory',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
         const count = searchResult.results.length;
-        const summary = count === 0 ? 'No relevant memories found.' : `Found ${count} relevant memory/ies:\n${searchResult.results.map((r) => `- ${r.content}`).join('\n')}`;
-        return { success: true, content: prefixWithSourceCheck(summary, context, ['memory search result']), metadata: { provider: result.provider, model: result.model } };
+        const summary =
+          count === 0
+            ? 'No relevant memories found.'
+            : `Found ${count} relevant memory/ies:\n${searchResult.results.map((r) => `- ${r.content}`).join('\n')}`;
+        return {
+          success: true,
+          content: prefixWithSourceCheck(summary, context, ['memory search result']),
+          metadata: { provider: result.provider, model: result.model },
+        };
       }
 
-      await logAgentCall({ agentName: 'memory', provider: result.provider, latency: Date.now() - start, success: true, context });
-      return { success: true, content: prefixWithSourceCheck(parsed.response || result.content, context, ['memory agent reasoning']), metadata: { provider: result.provider, model: result.model } };
+      await logAgentCall({
+        agentName: 'memory',
+        provider: result.provider,
+        latency: Date.now() - start,
+        success: true,
+        context,
+      });
+      return {
+        success: true,
+        content: prefixWithSourceCheck(parsed.response || result.content, context, [
+          'memory agent reasoning',
+        ]),
+        metadata: { provider: result.provider, model: result.model },
+      };
     } catch (error) {
-      await logAgentCall({ agentName: 'memory', latency: Date.now() - start, success: false, error: error.message, context });
+      await logAgentCall({
+        agentName: 'memory',
+        latency: Date.now() - start,
+        success: false,
+        error: error.message,
+        context,
+      });
       return { success: false, error: error.message };
     }
   }
@@ -67,7 +117,10 @@ Only use action "chat" if the message is purely conversational with zero memory 
   parseResponse(content, originalMessage = '') {
     // 1. Try JSON extraction
     try {
-      let cleaned = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      let cleaned = content
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim();
       const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
@@ -77,7 +130,10 @@ Only use action "chat" if the message is purely conversational with zero memory 
           if (parsed.action === 'chat') {
             const fallback = this.fallbackParse(originalMessage || content);
             if (fallback && fallback.action !== 'chat') {
-              console.log('[MemoryAgent] LLM returned action=chat but memory intent detected — overriding:', JSON.stringify(fallback));
+              console.log(
+                '[MemoryAgent] LLM returned action=chat but memory intent detected — overriding:',
+                JSON.stringify(fallback)
+              );
               return fallback;
             }
           }
@@ -99,12 +155,20 @@ Only use action "chat" if the message is purely conversational with zero memory 
   fallbackParse(message) {
     const lower = (message || '').toLowerCase();
     if (/(?:remember|store|save|memorize|note\s+that|keep\s+in\s+mind)/.test(lower)) {
-      const match = message.match(/(?:remember|store|save|memorize|note\s+that|keep\s+in\s+mind)\s+(?:that\s+)?(.+)/i);
+      const match = message.match(
+        /(?:remember|store|save|memorize|note\s+that|keep\s+in\s+mind)\s+(?:that\s+)?(.+)/i
+      );
       const text = match ? match[1].trim() : message;
       return { action: 'store', text };
     }
-    if (/(?:what do you know|what do you remember|do you remember|recall|search\s+memor|what did i say)/.test(lower)) {
-      const match = message.match(/(?:what do you know|what do you remember|do you remember|recall|search\s+memor|what did i say)\s+(?:about\s+|that\s+)?(.+)/i);
+    if (
+      /(?:what do you know|what do you remember|do you remember|recall|search\s+memor|what did i say)/.test(
+        lower
+      )
+    ) {
+      const match = message.match(
+        /(?:what do you know|what do you remember|do you remember|recall|search\s+memor|what did i say)\s+(?:about\s+|that\s+)?(.+)/i
+      );
       const text = match ? match[1].trim() : message;
       return { action: 'search', text };
     }

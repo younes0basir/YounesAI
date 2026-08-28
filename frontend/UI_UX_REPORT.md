@@ -34,26 +34,26 @@ The frontend is a **single-page application** built with React 18, Vite 8, and T
 
 **Design language:** Glassmorphism meets calm productivity — translucent surfaces, layered radial gradients, and a cyan/violet accent palette sit on top of a soft slate/indigo background. The overall aesthetic is modern, airy, and deliberately uncluttered.
 
-**Core UX philosophy:** *"Built for focus, not clutter"* — every page follows a consistent header → filter → content → empty-state pattern, with a persistent three-column shell (left nav, main content, contextual right rail) on large screens.
+**Core UX philosophy:** _"Built for focus, not clutter"_ — every page follows a consistent header → filter → content → empty-state pattern, with a persistent three-column shell (left nav, main content, contextual right rail) on large screens.
 
 ---
 
 ## 2. Technology Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Framework | React 18.2 | Component-based UI |
-| Build tool | Vite 8.1 | Dev server, HMR, bundling |
-| Styling | Tailwind CSS v4 + custom CSS | Utility-first + bespoke glassmorphism classes |
-| Routing | React Router DOM v6 | Client-side navigation with protected routes |
-| Data fetching | TanStack React Query v5 | Server state, caching, polling, mutations |
-| State management | Zustand v4 | Auth store (user, token, localStorage) |
-| HTTP client | Axios | API calls with auth interceptor |
-| Charts | Recharts v3 | Bar charts, radar charts for agent metrics |
-| Maps | React-Leaflet + Leaflet | Interactive map for Places page |
-| Icons | Lucide React | Consistent icon set across all pages |
-| Toasts | react-hot-toast | Non-blocking notifications |
-| Date formatting | date-fns | Human-readable date display |
+| Layer            | Technology                   | Purpose                                       |
+| ---------------- | ---------------------------- | --------------------------------------------- |
+| Framework        | React 18.2                   | Component-based UI                            |
+| Build tool       | Vite 8.1                     | Dev server, HMR, bundling                     |
+| Styling          | Tailwind CSS v4 + custom CSS | Utility-first + bespoke glassmorphism classes |
+| Routing          | React Router DOM v6          | Client-side navigation with protected routes  |
+| Data fetching    | TanStack React Query v5      | Server state, caching, polling, mutations     |
+| State management | Zustand v4                   | Auth store (user, token, localStorage)        |
+| HTTP client      | Axios                        | API calls with auth interceptor               |
+| Charts           | Recharts v3                  | Bar charts, radar charts for agent metrics    |
+| Maps             | React-Leaflet + Leaflet      | Interactive map for Places page               |
+| Icons            | Lucide React                 | Consistent icon set across all pages          |
+| Toasts           | react-hot-toast              | Non-blocking notifications                    |
+| Date formatting  | date-fns                     | Human-readable date display                   |
 
 ---
 
@@ -64,34 +64,39 @@ The frontend is a **single-page application** built with React 18, Vite 8, and T
 The design system is defined in `index.css` using Tailwind v4's `@theme` directive, establishing two primary accent families and a set of semantic surface/ink tokens.
 
 **Primary (Cyan/Teal):**
-| Token | Value | Usage |
-|-------|-------|-------|
-| `primary-50` | `#ecfeff` | Hover backgrounds |
+
+| Token         | Value     | Usage                          |
+| ------------- | --------- | ------------------------------ |
+| `primary-50`  | `#ecfeff` | Hover backgrounds              |
 | `primary-400` | `#22d3ee` | Focus rings, active indicators |
-| `primary-500` | `#14b8d6` | Primary buttons, links |
-| `primary-600` | `#0ea5c5` | Brand gradients |
-| `primary-700` | `#0f766e` | Kicker badges, deep accents |
+| `primary-500` | `#14b8d6` | Primary buttons, links         |
+| `primary-600` | `#0ea5c5` | Brand gradients                |
+| `primary-700` | `#0f766e` | Kicker badges, deep accents    |
 
 **Accent (Violet/Purple):**
-| Token | Value | Usage |
-|-------|-------|-------|
-| `accent-50` | `#f5f3ff` | Subtle violet backgrounds |
+
+| Token        | Value     | Usage                             |
+| ------------ | --------- | --------------------------------- |
+| `accent-50`  | `#f5f3ff` | Subtle violet backgrounds         |
 | `accent-500` | `#8b5cf6` | Agent badges, pipeline highlights |
-| `accent-600` | `#7c3aed` | Orchestrator branding |
+| `accent-600` | `#7c3aed` | Orchestrator branding             |
 
 **Semantic tokens:**
+
 - `surface` / `surface-elevated` — translucent white layers with backdrop blur
 - `ink` / `ink-muted` / `ink-subtle` — `#0f172a` / `#475569` / `#64748b` text hierarchy
 - `border` / `border-strong` — low-opacity slate dividers
 
 **Background composition:**
 The body uses a multi-layer gradient stack:
+
 ```
 radial-gradient(circle at top left, rgba(103, 232, 249, 0.18), transparent 24%),
 radial-gradient(circle at top right, rgba(168, 85, 247, 0.12), transparent 28%),
 radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.08), transparent 30%),
 linear-gradient(135deg, #e2e8f0 0%, #f8fafc 25%, #eef2ff 100%);
 ```
+
 This creates a soft, aurora-like backdrop that gives depth without competing with content.
 
 ### 3.2 Typography
@@ -106,33 +111,38 @@ This creates a soft, aurora-like backdrop that gives depth without competing wit
 ### 3.3 Elevation & Shadows
 
 Three shadow tiers create depth hierarchy:
-| Level | Value | Usage |
-|-------|-------|-------|
-| `shadow-sm` | `0 8px 20px rgba(15, 23, 42, 0.12)` | Cards, stat panels |
+
+| Level       | Value                               | Usage                           |
+| ----------- | ----------------------------------- | ------------------------------- |
+| `shadow-sm` | `0 8px 20px rgba(15, 23, 42, 0.12)` | Cards, stat panels              |
 | `shadow-md` | `0 14px 28px rgba(8, 15, 32, 0.18)` | Hover states, elevated surfaces |
-| `shadow-lg` | `0 20px 44px rgba(6, 18, 29, 0.22)` | Modals, dropdowns |
+| `shadow-lg` | `0 20px 44px rgba(6, 18, 29, 0.22)` | Modals, dropdowns               |
 
 ### 3.4 Border Radius Scale
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `radius-lg` | `0.75rem` | Buttons, inputs, small cards |
-| `radius-xl` | `1rem` | Surface panels, cards |
+| Token        | Value     | Usage                         |
+| ------------ | --------- | ----------------------------- |
+| `radius-lg`  | `0.75rem` | Buttons, inputs, small cards  |
+| `radius-xl`  | `1rem`    | Surface panels, cards         |
 | `radius-2xl` | `1.25rem` | Large modals, featured panels |
-| `9999px` | Full pill | Badges, filter pills, avatars |
+| `9999px`     | Full pill | Badges, filter pills, avatars |
 
 ### 3.5 Glassmorphism
 
 The signature visual motif is frosted glass surfaces:
+
 ```css
 .surface {
-  background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.12));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.12));
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 1rem;
-  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.08);
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
 }
 ```
+
 Applied consistently across cards, panels, the header, sidebar, and rail.
 
 ---
@@ -163,6 +173,7 @@ The authenticated app uses a **three-column shell** (`shell-layout`):
 ### 4.2 Header
 
 The header (`glass-header`) is a sticky glassmorphic bar:
+
 - **Height:** `4rem` (`h-16`)
 - **Background:** `rgba(255, 255, 255, 0.36)` with `backdrop-filter: blur(18px)`
 - **Left:** Brand mark (gradient "AI" square) + workspace name
@@ -188,6 +199,7 @@ The sidebar organizes navigation into **four sections**:
 ### 4.4 Right Rail
 
 Visible only on `2xl+` screens, the right rail provides contextual awareness:
+
 - **Today panel:** Up to 5 events scheduled for today, with color-coded bars and time stamps
 - **Active reminders panel:** Up to 5 unread reminders with bell icons
 - **At a glance:** 2×2 stat grid showing total events and reminders counts
@@ -230,6 +242,7 @@ All authenticated routes are wrapped in `<ProtectedRoute>` which checks for a JW
 ### 5.3 Information Hierarchy
 
 The IA follows a **hub-and-spoke** model:
+
 - **Hub:** Dashboard — shows today's focus, key metrics, recent tasks, today's events, and recent activity
 - **Spokes:** Individual domain pages (Tasks, Events, Places, Files, etc.)
 - **AI layer:** Chat, Agents, Voice, and Image Generator form a parallel AI interaction layer accessible from the sidebar's featured panel
@@ -240,14 +253,15 @@ The IA follows a **hub-and-spoke** model:
 
 ### 6.1 Buttons
 
-| Variant | Class | Visual | Usage |
-|---------|-------|--------|-------|
-| Primary | `btn btn-primary` | Cyan gradient, dark text, inner glow shadow | Main CTAs: "New task", "Sign in", "Generate" |
-| Secondary | `btn btn-secondary` | Translucent white, subtle border | Secondary actions: "Close", "Cancel" |
-| Ghost | `btn btn-ghost` | Transparent, muted text | Tertiary: "Clear" |
-| Icon | `btn-icon` | Small square, translucent bg, border | Toolbars, action buttons (trash, star, settings) |
+| Variant   | Class               | Visual                                      | Usage                                            |
+| --------- | ------------------- | ------------------------------------------- | ------------------------------------------------ |
+| Primary   | `btn btn-primary`   | Cyan gradient, dark text, inner glow shadow | Main CTAs: "New task", "Sign in", "Generate"     |
+| Secondary | `btn btn-secondary` | Translucent white, subtle border            | Secondary actions: "Close", "Cancel"             |
+| Ghost     | `btn btn-ghost`     | Transparent, muted text                     | Tertiary: "Clear"                                |
+| Icon      | `btn-icon`          | Small square, translucent bg, border        | Toolbars, action buttons (trash, star, settings) |
 
 **Interaction states:**
+
 - Hover: `translateY(-1px) scale(1.01)` with enhanced shadow
 - Active: `translateY(0) scale(0.98)` — press-down feel
 - Disabled: `opacity: 0.55; cursor: not-allowed`
@@ -264,15 +278,16 @@ The IA follows a **hub-and-spoke** model:
 ### 6.3 Badges
 
 Seven semantic badge variants for status indication:
-| Variant | Color | Usage |
-|---------|-------|-------|
-| `badge-pending` | Amber | Pending tasks, warning states |
-| `badge-progress` | Blue | In-progress items |
-| `badge-done` | Green | Completed items |
-| `badge-muted` | Gray | Archived, neutral |
-| `badge-urgent` | Red | Urgent/overdue items |
-| `badge-priority` | Indigo | Priority levels |
-| `badge-repeat` | Violet | Recurring items |
+
+| Variant          | Color  | Usage                         |
+| ---------------- | ------ | ----------------------------- |
+| `badge-pending`  | Amber  | Pending tasks, warning states |
+| `badge-progress` | Blue   | In-progress items             |
+| `badge-done`     | Green  | Completed items               |
+| `badge-muted`    | Gray   | Archived, neutral             |
+| `badge-urgent`   | Red    | Urgent/overdue items          |
+| `badge-priority` | Indigo | Priority levels               |
+| `badge-repeat`   | Violet | Recurring items               |
 
 All badges use pill shape (`border-radius: 9999px`), `0.6875rem` font, and `700` weight.
 
@@ -285,6 +300,7 @@ All badges use pill shape (`border-radius: 9999px`), `0.6875rem` font, and `700`
 ### 6.5 Filter Pills
 
 Horizontal pill-shaped toggle buttons for data filtering:
+
 - **Primary variant:** Cyan gradient when active
 - **Accent variant:** Violet gradient when active
 - Inactive state: translucent white with subtle border
@@ -292,6 +308,7 @@ Horizontal pill-shaped toggle buttons for data filtering:
 ### 6.6 Page Header
 
 Consistent page-level header component:
+
 - **Kicker badge:** "OVERVIEW" in uppercase, tiny cyan-tinted pill
 - **Title:** Large, tight-tracked heading with fluid sizing
 - **Description:** Muted subtitle, max-width constrained
@@ -300,6 +317,7 @@ Consistent page-level header component:
 ### 6.7 Empty State
 
 Standardized empty state with:
+
 - Gradient icon container (cyan-to-violet)
 - Title and optional description
 - Optional action button
@@ -318,6 +336,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Layout:** Full-screen split — left panel (brand gradient with marketing copy) + right panel (form on slate background).
 
 **Login flow:**
+
 1. Email input with auto-focus
 2. Password input with show/hide toggle (eye icon)
 3. Submit button with loading spinner state
@@ -325,11 +344,13 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 5. Link to register page
 
 **Register flow:**
+
 - Adds display name field
 - Real-time password validation (minimum 6 characters) with inline error
 - Same visual structure as login
 
 **UX details:**
+
 - Authenticated users are redirected away from auth pages via `<Navigate to="/" />`
 - On focus, error state is cleared (`login.reset()`)
 - Brand mark appears in both panels on mobile (centered in form)
@@ -340,6 +361,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Central hub showing today's priorities and key metrics.
 
 **Sections (top to bottom):**
+
 1. **Page header** — "Dashboard" + today's date + "Quick task" CTA
 2. **Today's Focus banner** — Gradient surface with the top open task title, event count context, and two metric tiles (open tasks, events today)
 3. **Metric cards row** — 3-column grid: Tasks (with open count delta), Reminders, Events. Each clickable to navigate.
@@ -348,6 +370,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
    - Right: Recent activity feed
 
 **UX strengths:**
+
 - Progressive disclosure — summary metrics link to full detail pages
 - "Today's focus" banner provides a motivational starting point
 - Empty states with CTAs for every section
@@ -357,6 +380,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Full task management with rich metadata.
 
 **Features:**
+
 - **Dual filter system:** Smart filters (All, Today, Overdue, High priority) as accent pills + status filters (All, Pending, In Progress, Done) as primary pills
 - **Create form:** Expandable inline form with title, description, details, checklist, due date, recurrence, urgency (1–5), priority (1–5), and favorite toggle
 - **Task cards:** Circle checkbox, title with strikethrough on done, favorite star, description, checklist preview (first 3 items), progress bar for subtask completion, status/urgency/priority/due date badges
@@ -369,6 +393,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Calendar event management with color coding.
 
 **Features:**
+
 - **Color picker:** 6 preset colors (blue, teal, amber, red, violet, pink) as circular swatches with ring selection indicator
 - **Date/time inputs:** Start and end datetime-local pickers in a 2-column grid
 - **Event cards:** Date badge (month + day), color bar, title, time range, location text
@@ -380,6 +405,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Location discovery and saving with map integration.
 
 **Features:**
+
 - **Dual geocoding:** Geoapify + Mapbox for stronger place discovery
 - **Fuzzy search:** Custom scoring algorithm with prefix matching, token overlap, and Morocco-specific boosting
 - **Interactive map:** Leaflet map with Geoapify tiles, CircleMarker for selected location (red) and saved places (blue)
@@ -393,6 +419,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Document management with folder monitoring and drag-and-drop upload.
 
 **Features:**
+
 - **File list:** Sortable by name/date/size, filterable by type (PDF, Doc, Text, Image, Audio, Video, Archive)
 - **File type icons:** Extension-specific icons and color tones
 - **Drag & drop:** Drop zone with visual indicator (dashed indigo border + upload icon)
@@ -407,6 +434,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Timed and recurring alert management.
 
 **Features:**
+
 - **Rich creation form:** Title, message, trigger datetime, recurrence rule, warning lead time (minutes before)
 - **Active/Completed split:** Active reminders shown first, completed (read/dismissed) below with reduced opacity
 - **Action buttons:** Snooze (10 minutes), dismiss, mark read, delete — all appear on hover
@@ -417,6 +445,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** System-generated alert feed.
 
 **Features:**
+
 - **Type-coded badges:** `task_due` (blue), `task_overdue` (red), `reminder_warning` (amber), `system` (gray)
 - **Unread highlighting:** Gradient background + primary border for unread items
 - **Mark as read:** CheckCheck button on unread items
@@ -427,6 +456,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Cross-domain workspace search.
 
 **Features:**
+
 - **Unified search bar:** Large, focused input with glass surface
 - **Three-column results:** Tasks, Files, and Places shown in parallel cards
 - **Section icons:** Color-coded per domain (emerald for tasks, slate for files, rose for places)
@@ -438,6 +468,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Group tasks into collaborative workspaces.
 
 **Features:**
+
 - **Card grid:** Responsive 1/2/3-column grid with violet gradient backgrounds
 - **Simple creation:** Name + description form
 - **Status badge:** Active (green) or archived (gray)
@@ -447,6 +478,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Conversational AI interface for the multi-agent system.
 
 **Features:**
+
 - **Message bubbles:** User messages (right-aligned, primary gradient) + AI messages (left-aligned, slate background)
 - **Agent intent badges:** Colored pills below AI messages showing which agents handled the request (task, event, place, file, memory, general)
 - **Timestamps:** Subtle time labels under each message
@@ -461,6 +493,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** Voice and text input for the AI agent pipeline.
 
 **Features:**
+
 - **Voice input panel:** Large circular mic button that pulses red during recording, waveform visualization with 5 animated bars, audio playback after recording, "Process" button
 - **Text input panel:** Textarea with send button for typed input
 - **Response display:** Agent badges showing which agents were invoked, violet-tinted response card
@@ -471,6 +504,7 @@ Centered spinner with `animate-spin` on a Lucide `Loader` icon in primary color,
 **Purpose:** AI image generation via NVIDIA FLUX.
 
 **Features:**
+
 - **Split layout:** Form (left) + Preview (right) in 1.1:0.9 ratio
 - **Prompt textarea:** 6 rows, min-height 120px
 - **Size presets:** Square, Portrait, Landscape dropdown
@@ -523,6 +557,7 @@ The `PipelineFlow` component is a standout UX feature — it visualizes the enti
 ### 8.3 Smart Cache Invalidation
 
 The chat system intelligently refreshes related data:
+
 - When a chat message routes to the `task` agent → tasks list auto-refreshes
 - When routed to the `event` agent → events list auto-refreshes
 - This creates a seamless "say it and see it happen" experience
@@ -534,12 +569,20 @@ The chat system intelligently refreshes related data:
 ### 9.1 Page Transitions
 
 Every page mount triggers `animate-fade-up`:
+
 ```css
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 ```
+
 Duration: `0.35s` with `ease-out` easing and `both` fill mode.
 
 ### 9.2 Hover Effects
@@ -574,14 +617,14 @@ Duration: `0.35s` with `ease-out` easing and `both` fill mode.
 
 ### 10.1 Chart Types (Recharts)
 
-| Chart | Data | Location |
-|-------|------|----------|
-| Vertical bar | Calls by agent, success rate, tokens | Metrics tab |
-| Horizontal bar | Latency by agent, cost comparison | Metrics & Benchmark tabs |
-| Grouped bar | Success rate + latency overlay, hallucination + error rates | Benchmark tab |
-| Radar | Overall performance distribution (success, groundedness, speed, reliability) | Benchmark tab |
-| Inline sparklines | Per-agent latency bars in agent cards | Agents tab |
-| Progress bars | Pipeline activity feed, task subtask progress | Metrics tab, Tasks page |
+| Chart             | Data                                                                         | Location                 |
+| ----------------- | ---------------------------------------------------------------------------- | ------------------------ |
+| Vertical bar      | Calls by agent, success rate, tokens                                         | Metrics tab              |
+| Horizontal bar    | Latency by agent, cost comparison                                            | Metrics & Benchmark tabs |
+| Grouped bar       | Success rate + latency overlay, hallucination + error rates                  | Benchmark tab            |
+| Radar             | Overall performance distribution (success, groundedness, speed, reliability) | Benchmark tab            |
+| Inline sparklines | Per-agent latency bars in agent cards                                        | Agents tab               |
+| Progress bars     | Pipeline activity feed, task subtask progress                                | Metrics tab, Tasks page  |
 
 ### 10.2 Chart Styling
 
@@ -603,6 +646,7 @@ Duration: `0.35s` with `ease-out` easing and `both` fill mode.
 ### 11.2 Empty States
 
 Every list page has a tailored empty state with:
+
 - Domain-specific icon (CheckSquare for tasks, Calendar for events, Bell for reminders, etc.)
 - Contextual title and description
 - CTA button to create the first item
@@ -621,13 +665,13 @@ Every list page has a tailored empty state with:
 
 ### 12.1 Breakpoints
 
-| Breakpoint | Layout Change |
-|-----------|---------------|
-| `< 640px` (sm) | Single column, stacked headers, hidden search bar |
-| `< 768px` (md) | Pipeline diagram single column, agents grid 1-col |
-| `< 1024px` (lg) | Sidebar becomes overlay, search bar hidden |
-| `< 1280px` (xl) | Sidebar toggle appears, sidebar slides in |
-| `< 1536px` (2xl) | Right rail hidden |
+| Breakpoint       | Layout Change                                     |
+| ---------------- | ------------------------------------------------- |
+| `< 640px` (sm)   | Single column, stacked headers, hidden search bar |
+| `< 768px` (md)   | Pipeline diagram single column, agents grid 1-col |
+| `< 1024px` (lg)  | Sidebar becomes overlay, search bar hidden        |
+| `< 1280px` (xl)  | Sidebar toggle appears, sidebar slides in         |
+| `< 1536px` (2xl) | Right rail hidden                                 |
 
 ### 12.2 Adaptive Patterns
 
@@ -697,23 +741,23 @@ Every list page has a tailored empty state with:
 
 ### 14.3 Custom Hooks
 
-| Hook | Purpose |
-|------|---------|
-| `useTasks`, `useSmartTasks` | Task CRUD + smart filtering |
-| `useEvents` | Event CRUD |
-| `useReminders` | Reminder CRUD + snooze/dismiss |
-| `usePlaces` | Place CRUD + visit toggle |
-| `useFiles`, `useIndexedFolders` | File management + folder monitoring |
-| `useProjects` | Project CRUD |
-| `useNotifications` | Notification feed + mark read |
-| `useChat`, `useConversations` | Chat messaging + history |
-| `useVoiceProcess` | Voice audio processing |
-| `useAgents`, `useAgentStatus` | Agent monitoring |
-| `useAgentSummary`, `useAgentBenchmark` | Agent analytics |
-| `useGlobalSearch` | Cross-domain search |
-| `useDashboard` | Stats, activity, counts |
-| `usePendingAlerts` | Background alert polling + TTS |
-| `useLogin`, `useRegister` | Auth mutations |
+| Hook                                   | Purpose                             |
+| -------------------------------------- | ----------------------------------- |
+| `useTasks`, `useSmartTasks`            | Task CRUD + smart filtering         |
+| `useEvents`                            | Event CRUD                          |
+| `useReminders`                         | Reminder CRUD + snooze/dismiss      |
+| `usePlaces`                            | Place CRUD + visit toggle           |
+| `useFiles`, `useIndexedFolders`        | File management + folder monitoring |
+| `useProjects`                          | Project CRUD                        |
+| `useNotifications`                     | Notification feed + mark read       |
+| `useChat`, `useConversations`          | Chat messaging + history            |
+| `useVoiceProcess`                      | Voice audio processing              |
+| `useAgents`, `useAgentStatus`          | Agent monitoring                    |
+| `useAgentSummary`, `useAgentBenchmark` | Agent analytics                     |
+| `useGlobalSearch`                      | Cross-domain search                 |
+| `useDashboard`                         | Stats, activity, counts             |
+| `usePendingAlerts`                     | Background alert polling + TTS      |
+| `useLogin`, `useRegister`              | Auth mutations                      |
 
 ---
 
@@ -777,45 +821,45 @@ Every list page has a tailored empty state with:
 
 ### High Priority
 
-| # | Recommendation | Impact | Effort |
-|---|---------------|--------|--------|
-| 1 | **Add dark mode** with CSS custom properties and a toggle in the header | High | Medium |
-| 2 | **Replace native `confirm()` with a shared `ConfirmModal` component** | Medium | Low |
-| 3 | **Add React Error Boundary** wrapping the app layout | High | Low |
-| 4 | **Remove duplicate CSS** in `index.css` (lines ~792–968) | Low | Low |
-| 5 | **Add keyboard shortcuts** (`/` for search, `n` for new task) | Medium | Medium |
+| #   | Recommendation                                                          | Impact | Effort |
+| --- | ----------------------------------------------------------------------- | ------ | ------ |
+| 1   | **Add dark mode** with CSS custom properties and a toggle in the header | High   | Medium |
+| 2   | **Replace native `confirm()` with a shared `ConfirmModal` component**   | Medium | Low    |
+| 3   | **Add React Error Boundary** wrapping the app layout                    | High   | Low    |
+| 4   | **Remove duplicate CSS** in `index.css` (lines ~792–968)                | Low    | Low    |
+| 5   | **Add keyboard shortcuts** (`/` for search, `n` for new task)           | Medium | Medium |
 
 ### Medium Priority
 
-| # | Recommendation | Impact | Effort |
-|---|---------------|--------|--------|
-| 6 | **Add pagination or virtualization** to Tasks, Files, and Notifications lists | Medium | Medium |
-| 7 | **Implement clickable chat history threads** in the Chat page sidebar | High | Medium |
-| 8 | **Add `aria-live` regions** for chat messages and toast notifications | Medium | Low |
-| 9 | **Unify form styling** on Places page to use shared surface classes | Low | Low |
-| 10 | **Add optimistic updates** for task toggle and reminder actions | Medium | Low |
+| #   | Recommendation                                                                | Impact | Effort |
+| --- | ----------------------------------------------------------------------------- | ------ | ------ |
+| 6   | **Add pagination or virtualization** to Tasks, Files, and Notifications lists | Medium | Medium |
+| 7   | **Implement clickable chat history threads** in the Chat page sidebar         | High   | Medium |
+| 8   | **Add `aria-live` regions** for chat messages and toast notifications         | Medium | Low    |
+| 9   | **Unify form styling** on Places page to use shared surface classes           | Low    | Low    |
+| 10  | **Add optimistic updates** for task toggle and reminder actions               | Medium | Low    |
 
 ### Nice to Have
 
-| # | Recommendation | Impact | Effort |
-|---|---------------|--------|--------|
-| 11 | **Add PWA support** with service worker for offline resilience | Medium | High |
-| 12 | **Add drag-and-drop reordering** for tasks | Medium | Medium |
-| 13 | **Add data export** (CSV/JSON) for tasks, events, and places | Medium | Low |
-| 14 | **Add onboarding tour** for first-time users highlighting key features | High | Medium |
-| 15 | **Add command palette** (Cmd+K) for quick navigation and actions | High | Medium |
+| #   | Recommendation                                                         | Impact | Effort |
+| --- | ---------------------------------------------------------------------- | ------ | ------ |
+| 11  | **Add PWA support** with service worker for offline resilience         | Medium | High   |
+| 12  | **Add drag-and-drop reordering** for tasks                             | Medium | Medium |
+| 13  | **Add data export** (CSV/JSON) for tasks, events, and places           | Medium | Low    |
+| 14  | **Add onboarding tour** for first-time users highlighting key features | High   | Medium |
+| 15  | **Add command palette** (Cmd+K) for quick navigation and actions       | High   | Medium |
 
 ---
 
 ## Appendix: File Inventory
 
-| Category | Files |
-|----------|-------|
-| **Entry** | `main.jsx`, `App.jsx`, `index.html` |
-| **Pages (14)** | `Dashboard`, `Tasks`, `Events`, `Places`, `Files`, `Reminders`, `Notifications`, `Search`, `Projects`, `Agents`, `Chat`, `Voice`, `ImageGenerator`, `Login`, `Register` |
-| **Shared components (9)** | `Layout`, `Header`, `Sidebar`, `Card`, `MetricCard`, `QuickActions`, `ActivityList`, `TaskList`, `ProtectedRoute` |
-| **UI primitives (4)** | `PageHeader`, `EmptyState`, `LoadingState`, `FilterPills` |
-| **Agent components (1)** | `PipelineFlow` |
-| **Hooks (14)** | `useAuth`, `useTasks`, `useEvents`, `usePlaces`, `useFiles`, `useReminders`, `useNotifications`, `useChat`, `useVoice`, `useAgents`, `useDashboard`, `useSearch`, `useProjects`, `useAlerts` |
-| **Store (1)** | `useAuth` (Zustand) |
-| **Styles (2)** | `index.css` (1708 lines), `App.css` (185 lines) |
+| Category                  | Files                                                                                                                                                                                        |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Entry**                 | `main.jsx`, `App.jsx`, `index.html`                                                                                                                                                          |
+| **Pages (14)**            | `Dashboard`, `Tasks`, `Events`, `Places`, `Files`, `Reminders`, `Notifications`, `Search`, `Projects`, `Agents`, `Chat`, `Voice`, `ImageGenerator`, `Login`, `Register`                      |
+| **Shared components (9)** | `Layout`, `Header`, `Sidebar`, `Card`, `MetricCard`, `QuickActions`, `ActivityList`, `TaskList`, `ProtectedRoute`                                                                            |
+| **UI primitives (4)**     | `PageHeader`, `EmptyState`, `LoadingState`, `FilterPills`                                                                                                                                    |
+| **Agent components (1)**  | `PipelineFlow`                                                                                                                                                                               |
+| **Hooks (14)**            | `useAuth`, `useTasks`, `useEvents`, `usePlaces`, `useFiles`, `useReminders`, `useNotifications`, `useChat`, `useVoice`, `useAgents`, `useDashboard`, `useSearch`, `useProjects`, `useAlerts` |
+| **Store (1)**             | `useAuth` (Zustand)                                                                                                                                                                          |
+| **Styles (2)**            | `index.css` (1708 lines), `App.css` (185 lines)                                                                                                                                              |

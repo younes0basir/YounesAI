@@ -26,7 +26,9 @@ router.get('/callback', async (req, res) => {
   try {
     const { code, state, error } = req.query;
     if (error) {
-      return res.redirect(`${FRONTEND_URL}/settings?gmail=error&message=${encodeURIComponent(error)}`);
+      return res.redirect(
+        `${FRONTEND_URL}/settings?gmail=error&message=${encodeURIComponent(error)}`
+      );
     }
     if (!code || !state) {
       return res.redirect(`${FRONTEND_URL}/settings?gmail=error&message=missing_code`);

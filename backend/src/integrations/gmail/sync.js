@@ -194,7 +194,11 @@ async function syncAccount(accountId, userId) {
       [accountId, currentHistoryId]
     );
 
-    return { synced, historyId: currentHistoryId, reclassified: await reclassifyPending(account.user_id, accountId) };
+    return {
+      synced,
+      historyId: currentHistoryId,
+      reclassified: await reclassifyPending(account.user_id, accountId),
+    };
   } catch (err) {
     await pool.query(
       `UPDATE email_accounts SET sync_status = 'error', last_sync_error = $2, updated_at = NOW() WHERE id = $1`,

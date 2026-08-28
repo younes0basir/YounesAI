@@ -1,76 +1,81 @@
-import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { HeartPulse, Brain, Zap, MemoryStick } from 'lucide-react'
-import { AGENT_AURAS } from './ccData'
+import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { HeartPulse, Brain, Zap, MemoryStick } from 'lucide-react';
+import { AGENT_AURAS } from './ccData';
 
 export default function NetworkGraph({
-  agents, live, pulses, focusedAgent, hoveringAgent,
-  onSelect, onHover, onClear, onOpenConnection,
+  agents,
+  live,
+  pulses,
+  focusedAgent,
+  hoveringAgent,
+  onSelect,
+  onHover,
+  onClear,
+  onOpenConnection,
 }) {
-  const wrapRef = useRef(null)
-  const [size, setSize] = useState({ w: 760, h: 420 })
-  const [tick, setTick] = useState(0)
+  const wrapRef = useRef(null);
+  const [size, setSize] = useState({ w: 760, h: 420 });
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const el = wrapRef.current
-    if (!el) return
-    const measure = () => setSize({ w: el.clientWidth, h: el.clientHeight })
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
+    const el = wrapRef.current;
+    if (!el) return;
+    const measure = () => setSize({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // gentle rotation every frame (throttled to ~30fps)
   useEffect(() => {
-    let raf = 0
-    let last = 0
+    let raf = 0;
+    let last = 0;
     const step = (now) => {
-      raf = requestAnimationFrame(step)
+      raf = requestAnimationFrame(step);
       if (now - last > 40) {
-        last = now
-        setTick((t) => t + 0.0016)
+        last = now;
+        setTick((t) => t + 0.0016);
       }
-    }
-    raf = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(raf)
-  }, [])
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
-  const { w, h } = size
-  const cx = w / 2
-  const cy = h / 2
-  const rx = Math.min(w * 0.34, 300)
-  const ry = Math.min(h * 0.33, 200)
+  const { w, h } = size;
+  const cx = w / 2;
+  const cy = h / 2;
+  const rx = Math.min(w * 0.34, 300);
+  const ry = Math.min(h * 0.33, 200);
 
   const positions = agents.map((a, i) => {
-    const isOrch = a.name === 'orchestrator'
-    if (isOrch) return { x: cx, y: cy }
-    const base = 2 * Math.PI * (i / agents.length) - Math.PI / 2
-    const ang = base + tick * (4 + (i % 3) * 0.6)
-    return { x: cx + Math.cos(ang) * rx, y: cy + Math.sin(ang) * ry * 0.82 }
-  })
+    const isOrch = a.name === 'orchestrator';
+    if (isOrch) return { x: cx, y: cy };
+    const base = 2 * Math.PI * (i / agents.length) - Math.PI / 2;
+    const ang = base + tick * (4 + (i % 3) * 0.6);
+    return { x: cx + Math.cos(ang) * rx, y: cy + Math.sin(ang) * ry * 0.82 };
+  });
 
   // Which node is currently "zoomed" (focused) or hovered
-  const selPos = focusedAgent
-    ? positions[agents.findIndex((a) => a.name === focusedAgent)]
-    : null
-  const zoom = Boolean(selPos)
+  const selPos = focusedAgent ? positions[agents.findIndex((a) => a.name === focusedAgent)] : null;
+  const zoom = Boolean(selPos);
 
-  const activePulses = pulses.filter((p) => p.agentName !== 'orchestrator')
+  const activePulses = pulses.filter((p) => p.agentName !== 'orchestrator');
 
   const renderNode = (agent, i) => {
-    const pos = positions[i]
-    if (!pos) return null
-    const ll = live.find((l) => l.name === agent.name)?.liveliness
-    const isOnline = live.find((l) => l.name === agent.name)?.online
-    const phase = isOnline ? (ll?.phase || 'idle') : 'resting'
-    const aura = AGENT_AURAS[phase] || AGENT_AURAS.idle
-    const isFocused = focusedAgent === agent.name
-    const isHovered = hoveringAgent === agent.name
-    const isOrch = agent.name === 'orchestrator'
-    const r = isOrch ? 46 : 30
-    const Icon = agent.icon
-    const hasPulse = pulses.some((p) => p.agentName === agent.name)
+    const pos = positions[i];
+    if (!pos) return null;
+    const ll = live.find((l) => l.name === agent.name)?.liveliness;
+    const isOnline = live.find((l) => l.name === agent.name)?.online;
+    const phase = isOnline ? ll?.phase || 'idle' : 'resting';
+    const aura = AGENT_AURAS[phase] || AGENT_AURAS.idle;
+    const isFocused = focusedAgent === agent.name;
+    const isHovered = hoveringAgent === agent.name;
+    const isOrch = agent.name === 'orchestrator';
+    const r = isOrch ? 46 : 30;
+    const Icon = agent.icon;
+    const hasPulse = pulses.some((p) => p.agentName === agent.name);
 
     return (
       <motion.g
@@ -85,7 +90,7 @@ export default function NetworkGraph({
           x2={pos.x}
           y2={pos.y}
           stroke={agent.color}
-          strokeOpacity={hasPulse ? 0.9 : (isOrch ? 0 : 0.22)}
+          strokeOpacity={hasPulse ? 0.9 : isOrch ? 0 : 0.22}
           strokeWidth={hasPulse ? 2.2 : 1}
           strokeLinecap="round"
           animate={{ strokeOpacity: hasPulse ? 0.9 : 0.22 }}
@@ -101,7 +106,10 @@ export default function NetworkGraph({
             stroke="transparent"
             strokeWidth={14}
             strokeLinecap="round"
-            onClick={(e) => { e.stopPropagation(); onOpenConnection?.(agent.name) }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenConnection?.(agent.name);
+            }}
             className="cc-line-hit"
           />
         )}
@@ -141,12 +149,12 @@ export default function NetworkGraph({
           r={r}
           fill={isOrch ? 'url(#ccOrchGrad)' : 'url(#ccNodeGrad)'}
           stroke={agent.color}
-          strokeWidth={isFocused ? 3 : (isHovered ? 2.4 : 1.4)}
+          strokeWidth={isFocused ? 3 : isHovered ? 2.4 : 1.4}
           style={{ filter: `drop-shadow(0 6px 14px ${agent.color}55)` }}
           initial={false}
           animate={{
             r: isHovered || isFocused ? r * 1.22 : r,
-            strokeWidth: isFocused ? 3 : (isHovered ? 2.4 : 1.4),
+            strokeWidth: isFocused ? 3 : isHovered ? 2.4 : 1.4,
           }}
           whileHover={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 320, damping: 22 }}
@@ -186,9 +194,7 @@ export default function NetworkGraph({
         )}
 
         {/* heartbeat ticker when working */}
-        {phase === 'working' && (
-          <Heartbeat cx={pos.x} cy={pos.y} r={r + 8} color={agent.color} />
-        )}
+        {phase === 'working' && <Heartbeat cx={pos.x} cy={pos.y} r={r + 8} color={agent.color} />}
 
         {/* agent icon */}
         <g className="cc-node-icon-g">
@@ -231,8 +237,8 @@ export default function NetworkGraph({
           className={`cc-node-ring cc-node-ring-${phase}`}
         />
       </motion.g>
-    )
-  }
+    );
+  };
 
   return (
     <div className="cc-graph" ref={wrapRef} onClick={() => zoom && onClear()}>
@@ -246,68 +252,71 @@ export default function NetworkGraph({
             : '50% 50%',
         }}
       >
-      <svg
-        className="cc-graph-svg"
-        viewBox={`0 0 ${w} ${h}`}
-        preserveAspectRatio="xMidYMid meet"
-        width="100%"
-        height="100%"
-      >
-        <defs>
-          <radialGradient id="ccNodeGrad" cx="30%" cy="25%" r="80%">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="55%" stopColor="#ffffff" />
-            <stop offset="100%" stopColor="#f3f0ff" />
-          </radialGradient>
-          <radialGradient id="ccOrchGrad" cx="30%" cy="25%" r="80%">
-            <stop offset="0%" stopColor="#f5f3ff" />
-            <stop offset="55%" stopColor="#ede9fe" />
-            <stop offset="100%" stopColor="#ddd6fe" />
-          </radialGradient>
-        </defs>
+        <svg
+          className="cc-graph-svg"
+          viewBox={`0 0 ${w} ${h}`}
+          preserveAspectRatio="xMidYMid meet"
+          width="100%"
+          height="100%"
+        >
+          <defs>
+            <radialGradient id="ccNodeGrad" cx="30%" cy="25%" r="80%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="55%" stopColor="#ffffff" />
+              <stop offset="100%" stopColor="#f3f0ff" />
+            </radialGradient>
+            <radialGradient id="ccOrchGrad" cx="30%" cy="25%" r="80%">
+              <stop offset="0%" stopColor="#f5f3ff" />
+              <stop offset="55%" stopColor="#ede9fe" />
+              <stop offset="100%" stopColor="#ddd6fe" />
+            </radialGradient>
+          </defs>
 
-        {/* faint orbit guide circles */}
-        <circle className="cc-graph-orbit cc-graph-orbit-mid" cx={cx} cy={cy} r={(rx + ry) / 2} />
-        <circle className="cc-graph-orbit" cx={cx} cy={cy} r={rx} />
+          {/* faint orbit guide circles */}
+          <circle className="cc-graph-orbit cc-graph-orbit-mid" cx={cx} cy={cy} r={(rx + ry) / 2} />
+          <circle className="cc-graph-orbit" cx={cx} cy={cy} r={rx} />
 
-        {agents.map((a, i) => {
-          return renderNode(a, i)
-        })}
+          {agents.map((a, i) => {
+            return renderNode(a, i);
+          })}
 
-        {/* zoom-in click targets (invisible bigger circles) */}
-        {agents.map((a, i) => {
-          const pos = positions[i]
-          if (!pos) return null
-          return (
-            <circle
-              key={`hit-${a.name}`}
-              cx={pos.x}
-              cy={pos.y}
-              r={46}
-              fill="transparent"
-              onClick={(e) => { e.stopPropagation(); onSelect(a.name) }}
-              className="cc-node-hit"
+          {/* zoom-in click targets (invisible bigger circles) */}
+          {agents.map((a, i) => {
+            const pos = positions[i];
+            if (!pos) return null;
+            return (
+              <circle
+                key={`hit-${a.name}`}
+                cx={pos.x}
+                cy={pos.y}
+                r={46}
+                fill="transparent"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect(a.name);
+                }}
+                className="cc-node-hit"
+              />
+            );
+          })}
+
+          {/* zoom focus frame */}
+          {selPos && (
+            <motion.ellipse
+              cx={selPos.x}
+              cy={selPos.y}
+              rx={70}
+              ry={58}
+              fill="none"
+              stroke="#8b5cf6"
+              strokeWidth={1.6}
+              strokeDasharray="4 6"
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 3.4, repeat: Infinity }}
+              className="cc-focus-ring"
             />
-          )
-        })}
-
-        {/* zoom focus frame */}
-        {selPos && (
-          <motion.ellipse
-            cx={selPos.x}
-            cy={selPos.y}
-            rx={70}
-            ry={58}
-            fill="none"
-            stroke="#8b5cf6"
-            strokeWidth={1.6}
-            strokeDasharray="4 6"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 3.4, repeat: Infinity }}
-            className="cc-focus-ring"
-          />
-        )}
-      </svg>
+          )}
+        </svg>
       </motion.div>
 
       {/* hover tooltip - absolutely positioned card */}
@@ -322,7 +331,7 @@ export default function NetworkGraph({
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }
 
 function Heartbeat({ cx, cy, r, color }) {
@@ -335,8 +344,8 @@ function Heartbeat({ cx, cy, r, color }) {
     { x: cx + r * 0.2, y: cy - 3 },
     { x: cx + r * 0.32, y: cy },
     { x: cx + r, y: cy },
-  ]
-  const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+  ];
+  const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
   return (
     <motion.path
       d={d}
@@ -353,15 +362,15 @@ function Heartbeat({ cx, cy, r, color }) {
       transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
       className="cc-heartbeat"
     />
-  )
+  );
 }
 
 function NodeTooltip({ agent, ll, online, pos }) {
-  const Icon = agent.icon
-  const phase = online ? (ll?.phase || 'idle') : 'resting'
-  const aura = AGENT_AURAS[phase] || AGENT_AURAS.idle
-  const x = pos?.x || 0
-  const y = pos?.y || 0
+  const Icon = agent.icon;
+  const phase = online ? ll?.phase || 'idle' : 'resting';
+  const aura = AGENT_AURAS[phase] || AGENT_AURAS.idle;
+  const x = pos?.x || 0;
+  const y = pos?.y || 0;
   return (
     <motion.div
       className="cc-tooltip"
@@ -386,13 +395,25 @@ function NodeTooltip({ agent, ll, online, pos }) {
       </div>
       <div className="cc-tooltip-rows">
         <TooltipRow icon={<Brain size={11} />} label="Task" value={ll?.task || '—'} />
-        <TooltipRow icon={<HeartPulse size={11} />} label="Confidence" value={`${ll?.confidence || 0}%`} />
-        <TooltipRow icon={<Zap size={11} />} label="Tokens" value={`${Math.round((ll?.tokensUsed || 0) / 1000)}k`} />
-        <TooltipRow icon={<MemoryStick size={11} />} label="Memory" value={`${Math.round((ll?.memoryUsage || 0) * 100)}%`} />
+        <TooltipRow
+          icon={<HeartPulse size={11} />}
+          label="Confidence"
+          value={`${ll?.confidence || 0}%`}
+        />
+        <TooltipRow
+          icon={<Zap size={11} />}
+          label="Tokens"
+          value={`${Math.round((ll?.tokensUsed || 0) / 1000)}k`}
+        />
+        <TooltipRow
+          icon={<MemoryStick size={11} />}
+          label="Memory"
+          value={`${Math.round((ll?.memoryUsage || 0) * 100)}%`}
+        />
       </div>
       <div className="cc-tooltip-foot">{ll?.lastAction || 'Standing by'}</div>
     </motion.div>
-  )
+  );
 }
 
 function TooltipRow({ icon, label, value }) {
@@ -402,5 +423,5 @@ function TooltipRow({ icon, label, value }) {
       <span className="cc-tooltip-row-label">{label}</span>
       <span className="cc-tooltip-row-value">{value}</span>
     </div>
-  )
+  );
 }

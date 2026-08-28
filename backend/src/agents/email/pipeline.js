@@ -21,7 +21,14 @@ async function saveClassification(emailId, userId, result) {
        source = EXCLUDED.source,
        evidence = EXCLUDED.evidence,
        updated_at = NOW()`,
-    [emailId, userId, result.category, result.confidence, result.source, JSON.stringify(result.evidence || {})]
+    [
+      emailId,
+      userId,
+      result.category,
+      result.confidence,
+      result.source,
+      JSON.stringify(result.evidence || {}),
+    ]
   );
 }
 

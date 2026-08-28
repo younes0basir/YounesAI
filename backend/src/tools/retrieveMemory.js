@@ -2,8 +2,14 @@ const pool = require('../db');
 const fallbackManager = require('../agents/fallbackManager');
 
 function cosineSimilarity(a, b) {
-  let dot = 0, na = 0, nb = 0;
-  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
+  let dot = 0,
+    na = 0,
+    nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
   if (na === 0 || nb === 0) return 0;
   return dot / (Math.sqrt(na) * Math.sqrt(nb));
 }
@@ -38,7 +44,9 @@ async function retrieveMemory(context, query, topK = 5) {
       content: row.content,
       metadata: row.metadata,
       created_at: row.created_at,
-      similarity: embeddingResult.success ? cosineSimilarity(embeddingResult.embedding, row.embedding_json) : 0,
+      similarity: embeddingResult.success
+        ? cosineSimilarity(embeddingResult.embedding, row.embedding_json)
+        : 0,
     }))
     .sort((a, b) => b.similarity - a.similarity)
     .slice(0, topK);

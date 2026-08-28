@@ -5,12 +5,20 @@ const { Router } = require('express');
 const router = Router();
 
 const ENGINES = {
-  reminders:            ['runReminderWarningEngine', 'runReminderEngine'],
-  tasks:                ['runTaskDueNotificationEngine'],
-  recurring:            ['runRecurringTaskEngine', 'runRecurringEventEngine'],
-  overdue:              ['runOverdueTaskEngine'],
-  gmail:                ['runGmailSyncEngine'],
-  all:                  ['runReminderWarningEngine', 'runReminderEngine', 'runTaskDueNotificationEngine', 'runRecurringTaskEngine', 'runRecurringEventEngine', 'runOverdueTaskEngine', 'runGmailSyncEngine'],
+  reminders: ['runReminderWarningEngine', 'runReminderEngine'],
+  tasks: ['runTaskDueNotificationEngine'],
+  recurring: ['runRecurringTaskEngine', 'runRecurringEventEngine'],
+  overdue: ['runOverdueTaskEngine'],
+  gmail: ['runGmailSyncEngine'],
+  all: [
+    'runReminderWarningEngine',
+    'runReminderEngine',
+    'runTaskDueNotificationEngine',
+    'runRecurringTaskEngine',
+    'runRecurringEventEngine',
+    'runOverdueTaskEngine',
+    'runGmailSyncEngine',
+  ],
 };
 
 router.post('/', async (req, res) => {

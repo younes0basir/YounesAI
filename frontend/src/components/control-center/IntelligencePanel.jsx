@@ -1,9 +1,16 @@
-import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Target, ListTodo, Brain, Wrench, Coins, Activity, Zap, ChevronRight,
+  Target,
+  ListTodo,
+  Brain,
+  Wrench,
+  Coins,
+  Activity,
+  Zap,
+  ChevronRight,
   Sparkles,
-} from 'lucide-react'
+} from 'lucide-react';
 
 const REASONING_POOL = [
   'Intent parsed — route matched: specialist agent',
@@ -11,42 +18,74 @@ const REASONING_POOL = [
   'Tool args validated against entity schema',
   'Result reconciled across two sources',
   'Fallback chain consulted: Groq → OpenRouter',
-]
+];
 
-export default function IntelligencePanel({ counters, live, onNavigate, onToggle, collapsed }) {
+import { formatCost, formatLatency, formatTokenCount } from './intelStats';
+
+export default function IntelligencePanel({
+  stats,
+  counters,
+  live,
+  onNavigate,
+  onToggle,
+  collapsed,
+}) {
   const [reasoning, setReasoning] = useState([
     'Standing by for the next request.',
     'Monitoring provider queue depth.',
-  ])
+  ]);
 
   useEffect(() => {
     if (live.some((l) => l.liveliness?.phase === 'working')) {
       const timer = setInterval(() => {
         setReasoning((prev) => {
-          const next = REASONING_POOL[Math.floor(Math.random() * REASONING_POOL.length)]
-          if (prev[prev.length - 1] !== next) return [...prev.slice(-3), next]
-          return prev
-        })
-      }, 2200)
-      return () => clearInterval(timer)
+          const next = REASONING_POOL[Math.floor(Math.random() * REASONING_POOL.length)];
+          if (prev[prev.length - 1] !== next) return [...prev.slice(-3), next];
+          return prev;
+        });
+      }, 2200);
+      return () => clearInterval(timer);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live.some((l) => l.liveliness?.phase === 'working')])
+  }, [live.some((l) => l.liveliness?.phase === 'working')]);
 
-  const working = live.filter((l) => l.liveliness?.phase === 'working').length
-  const thinking = live.filter((l) => l.liveliness?.phase === 'thinking').length
-  const runningTools = ['retrieve_documents', 'route_request', 'semantic_search'].filter((_, i) => i < 1 + thinking)
+  const working = live.filter((l) => l.liveliness?.phase === 'working').length;
+  const thinking = live.filter((l) => l.liveliness?.phase === 'thinking').length;
+  const runningTools = ['retrieve_documents', 'route_request', 'semantic_search'].filter(
+    (_, i) => i < 1 + thinking
+  );
+
+  const tokenValue = formatTokenCount(stats?.tokens ?? counters?.tokens ?? 0);
+  const latencyValue = formatLatency(stats?.latency ?? counters?.latency ?? 0);
+  const costValue = formatCost(stats?.cost ?? counters?.cost ?? 0);
+  const activeCount = stats?.activeAgents ?? working + thinking;
+  const activeLabel = activeCount === 1 ? '1 agent' : `${activeCount} agents`;
 
   return (
     <div className={`cc-intel ${collapsed ? 'cc-intel-collapsed' : ''}`}>
-      <button type="button" className="cc-intel-toggle" onClick={onToggle} aria-label="Toggle intelligence panel">
+      <button
+        type="button"
+        className="cc-intel-toggle"
+        onClick={onToggle}
+        aria-label="Toggle intelligence panel"
+      >
         <AnimatePresence mode="wait">
           {collapsed ? (
-            <motion.span key="open" initial={{ opacity: 0, rotate: -90 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0 }}>
+            <motion.span
+              key="open"
+              initial={{ opacity: 0, rotate: -90 }}
+              animate={{ opacity: 1, rotate: 0 }}
+              exit={{ opacity: 0 }}
+            >
               <ChevronRight size={16} />
             </motion.span>
           ) : (
-            <motion.span key="close" initial={{ opacity: 0, rotate: 90 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0 }}>
+            <motion.span
+              key="close"
+              initial={{ opacity: 0, rotate: 90 }}
+              animate={{ opacity: 1, rotate: 0 }}
+              exit={{ opacity: 0 }}
+            >
               <ChevronRight size={16} className="cc-intel-chev" />
             </motion.span>
           )}
@@ -69,12 +108,14 @@ export default function IntelligencePanel({ counters, live, onNavigate, onToggle
 
           <Section icon={ListTodo} label="Active Tasks" badge={counters.tasks}>
             <div className="cc-intel-tasks">
-              {['Handle inbox triage', 'Verify image pipeline', 'Re-index folder changes'].slice(0, counters.tasks).map((t, i) => (
-                <div key={i} className="cc-task-row">
-                  <span className={`cc-task-pip cc-task-pip-${i % 3}`} />
-                  <span className="cc-task-name">{t}</span>
-                </div>
-              ))}
+              {['Handle inbox triage', 'Verify image pipeline', 'Re-index folder changes']
+                .slice(0, counters.tasks)
+                .map((t, i) => (
+                  <div key={i} className="cc-task-row">
+                    <span className={`cc-task-pip cc-task-pip-${i % 3}`} />
+                    <span className="cc-task-name">{t}</span>
+                  </div>
+                ))}
             </div>
           </Section>
 
@@ -110,41 +151,50 @@ export default function IntelligencePanel({ counters, live, onNavigate, onToggle
           </Section>
 
           <div className="cc-metrics-grid">
-            <MiniMetric icon={Zap} label="Tokens" value={counters.tokens > 0 ? `${Math.round(counters.tokens / 1000)}k` : '—'} />
-            <MiniMetric icon={Activity} label="Latency" value={counters.latency ? `${counters.latency}ms` : '—'} />
-            <MiniMetric icon={Coins} label="Est. cost" value={counters.cost > 0 ? `$${counters.cost.toFixed(4)}` : '—'} />
-            <MiniMetric icon={Sparkles} label="Active" value={`${working + thinking} agents`} />
+            <MiniMetric icon={Zap} label="Tokens" value={tokenValue} sub="logged usage" />
+            <MiniMetric icon={Activity} label="Latency" value={latencyValue} sub="avg call time" />
+            <MiniMetric icon={Coins} label="Est. cost" value={costValue} sub="window total" />
+            <MiniMetric icon={Sparkles} label="Active" value={activeLabel} sub="used recently" />
           </div>
 
-          <button type="button" className="cc-intel-action" onClick={() => onNavigate?.('timeline')}>
+          <button
+            type="button"
+            className="cc-intel-action"
+            onClick={() => onNavigate?.('timeline')}
+          >
             Open timeline <ChevronRight size={13} />
           </button>
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function Section({ icon: Icon, label, badge, livePulse, children }) {
   return (
     <section className="cc-section">
       <h4 className="cc-section-title">
-        <span className="cc-section-icon"><Icon size={12} /></span>
+        <span className="cc-section-icon">
+          <Icon size={12} />
+        </span>
         {label}
         {badge != null && <span className="cc-badge">{badge}</span>}
         {livePulse && <span className="cc-live-pulse" />}
       </h4>
       {children}
     </section>
-  )
+  );
 }
 
-function MiniMetric({ icon: Icon, label, value }) {
+function MiniMetric({ icon: Icon, label, value, sub }) {
   return (
     <div className="cc-metric">
-      <span className="cc-metric-icon"><Icon size={12} /></span>
+      <span className="cc-metric-icon">
+        <Icon size={12} />
+      </span>
       <span className="cc-metric-label">{label}</span>
       <span className="cc-metric-value">{value}</span>
+      {sub ? <span className="cc-metric-sub">{sub}</span> : null}
     </div>
-  )
+  );
 }

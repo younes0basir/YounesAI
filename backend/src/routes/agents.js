@@ -1,13 +1,22 @@
 const express = require('express');
 const multer = require('multer');
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const router = express.Router();
 const agentCoordinator = require('../agents');
 const voiceAgent = require('../agents/voiceAgent');
 const pool = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { buildContext } = require('../agents/context');
-const { getAgentMetrics, getAgentSummary, getAgentBenchmarkMetrics, getAgentPerformanceTrends } = require('../agents/metricsLogger');
+const ConversationContext = require('../conversation/ConversationContext');
+const {
+  getAgentMetrics,
+  getAgentSummary,
+  getAgentBenchmarkMetrics,
+  getAgentPerformanceTrends,
+} = require('../agents/metricsLogger');
 
 // Uploads go to the OS temp dir so file routes work on Vercel serverless too.
 const upload = multer({ dest: os.tmpdir() });
@@ -17,23 +26,29 @@ const uploadVoice = multer({
   fileFilter: (req, file, cb) => {
     const allowed = /audio\/(mp3|mp4|mpeg|mpga|wav|webm|m4a|ogg|flac)/.test(file.mimetype);
     cb(allowed ? null : new Error('Only audio files are allowed'), allowed);
-  }
+  },
 });
 
 router.post('/chat', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
-    const { message } = req.body;
+    const { message, sessionId } = req.body;
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ success: false, error: 'Message is required' });
     }
 
+    const sid = sessionId || crypto.randomUUID();
+    context.sessionId = sid;
+    context.conversationSession = await ConversationContext.load(context.userId, sid);
+
     const recent = await pool.query(
       `SELECT role, content FROM conversations WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5`,
       [context.userId]
     );
-    context.recentMessages = recent.rows.reverse().map((r) => ({ role: r.role, content: r.content }));
+    context.recentMessages = recent.rows
+      .reverse()
+      .map((r) => ({ role: r.role, content: r.content }));
 
     await pool.query(
       `INSERT INTO conversations (user_id, role, content, created_at) VALUES ($1, 'user', $2, NOW())`,
@@ -43,12 +58,14 @@ router.post('/chat', authMiddleware, async (req, res) => {
     const result = await agentCoordinator.processRequest(message, context);
 
     const responseText = result.response || result.message || '';
+    const entitiesJson = result.entities ? JSON.stringify(result.entities) : null;
+
     await pool.query(
-      `INSERT INTO conversations (user_id, role, content, intent, created_at) VALUES ($1, 'assistant', $2, $3, NOW())`,
-      [context.userId, responseText, result.agents?.join(',') || 'general']
+      `INSERT INTO conversations (user_id, role, content, intent, entities, created_at) VALUES ($1, 'assistant', $2, $3, $4, NOW())`,
+      [context.userId, responseText, result.agents?.join(',') || 'general', entitiesJson]
     );
 
-    res.json(result);
+    res.json({ ...result, sessionId: sid });
   } catch (error) {
     console.error('❌ Chat endpoint error:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -59,17 +76,17 @@ router.get('/conversations', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
     const { archived } = req.query;
-    let query = `SELECT id, role, content, intent, created_at FROM conversations WHERE user_id = $1`;
+    let query = `SELECT id, role, content, intent, entities, created_at FROM conversations WHERE user_id = $1`;
     const params = [context.userId];
-    
+
     if (archived === 'true') {
       query += ' AND archived = TRUE';
     } else if (archived === 'false') {
       query += ' AND (archived = FALSE OR archived IS NULL)';
     }
-    
+
     query += ' ORDER BY created_at DESC LIMIT 100';
-    
+
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (error) {
@@ -80,10 +97,9 @@ router.get('/conversations', authMiddleware, async (req, res) => {
 router.delete('/conversations', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
-    const result = await pool.query(
-      `DELETE FROM conversations WHERE user_id = $1`,
-      [context.userId]
-    );
+    const result = await pool.query(`DELETE FROM conversations WHERE user_id = $1`, [
+      context.userId,
+    ]);
     res.json({ success: true, deleted: result.rowCount });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -93,10 +109,10 @@ router.delete('/conversations', authMiddleware, async (req, res) => {
 router.delete('/conversations/:id', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
-    const result = await pool.query(
-      `DELETE FROM conversations WHERE id = $1 AND user_id = $2`,
-      [req.params.id, context.userId]
-    );
+    const result = await pool.query(`DELETE FROM conversations WHERE id = $1 AND user_id = $2`, [
+      req.params.id,
+      context.userId,
+    ]);
     if (result.rowCount === 0) {
       return res.status(404).json({ success: false, error: 'Conversation not found' });
     }
@@ -126,7 +142,8 @@ router.patch('/conversations/:id/archive', authMiddleware, async (req, res) => {
 router.post('/task', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
-    if (!req.body.message) return res.status(400).json({ success: false, error: 'Message is required' });
+    if (!req.body.message)
+      return res.status(400).json({ success: false, error: 'Message is required' });
     context.message = req.body.message;
     const result = await agentCoordinator.callAgent('task', 'run', context);
     res.json(result);
@@ -138,7 +155,8 @@ router.post('/task', authMiddleware, async (req, res) => {
 router.post('/event', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
-    if (!req.body.message) return res.status(400).json({ success: false, error: 'Message is required' });
+    if (!req.body.message)
+      return res.status(400).json({ success: false, error: 'Message is required' });
     context.message = req.body.message;
     const result = await agentCoordinator.callAgent('event', 'run', context);
     res.json(result);
@@ -150,7 +168,8 @@ router.post('/event', authMiddleware, async (req, res) => {
 router.post('/place', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
-    if (!req.body.message) return res.status(400).json({ success: false, error: 'Message is required' });
+    if (!req.body.message)
+      return res.status(400).json({ success: false, error: 'Message is required' });
     context.message = req.body.message;
     const result = await agentCoordinator.callAgent('place', 'run', context);
     res.json(result);
@@ -162,7 +181,8 @@ router.post('/place', authMiddleware, async (req, res) => {
 router.post('/file', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
-    if (!req.body.message) return res.status(400).json({ success: false, error: 'Message is required' });
+    if (!req.body.message)
+      return res.status(400).json({ success: false, error: 'Message is required' });
     context.message = req.body.message;
     const result = await agentCoordinator.callAgent('file', 'run', context);
     res.json(result);
@@ -174,7 +194,8 @@ router.post('/file', authMiddleware, async (req, res) => {
 router.post('/gemma', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
-    if (!req.body.message) return res.status(400).json({ success: false, error: 'Message is required' });
+    if (!req.body.message)
+      return res.status(400).json({ success: false, error: 'Message is required' });
     context.message = req.body.message;
     const result = await agentCoordinator.callAgent('gemma', 'run', context);
     res.json(result);
@@ -213,8 +234,10 @@ router.get('/status', authMiddleware, async (req, res) => {
   try {
     const status = agentCoordinator.getStatus();
     let metrics = [];
-    const hours = req.query.hours ? parseInt(req.query.hours, 10) : 20;
-    try { metrics = await getAgentMetrics(50, { hours }); } catch {}
+    const hours = req.query.hours ? parseInt(req.query.hours, 10) : 24;
+    try {
+      metrics = await getAgentMetrics(100, { hours, userId: req.user.id });
+    } catch {}
     res.json({ success: true, status, metrics });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -233,7 +256,7 @@ router.get('/metrics', authMiddleware, async (req, res) => {
 router.get('/metrics/summary', authMiddleware, async (req, res) => {
   try {
     const hours = parseInt(req.query.hours || '24', 10);
-    const summary = await getAgentSummary(Math.min(hours, 168)); // max 7 days
+    const summary = await getAgentSummary(Math.min(hours, 168), req.user.id); // max 7 days
     res.json({ success: true, summary });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -243,7 +266,7 @@ router.get('/metrics/summary', authMiddleware, async (req, res) => {
 router.get('/metrics/benchmark', authMiddleware, async (req, res) => {
   try {
     const hours = parseInt(req.query.hours || '24', 10);
-    const benchmark = await getAgentBenchmarkMetrics(Math.min(hours, 168));
+    const benchmark = await getAgentBenchmarkMetrics(Math.min(hours, 168), req.user.id);
     res.json({ success: true, benchmark });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -264,10 +287,9 @@ router.post('/memory/clear', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
     const pool = require('../db');
-    const result = await pool.query(
-      `DELETE FROM memory_embeddings WHERE user_id = $1`,
-      [context.userId]
-    );
+    const result = await pool.query(`DELETE FROM memory_embeddings WHERE user_id = $1`, [
+      context.userId,
+    ]);
     res.json({ success: true, deleted: result.rowCount });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

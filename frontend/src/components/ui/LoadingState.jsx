@@ -1,4 +1,4 @@
-import { Loader } from 'lucide-react'
+import { Loader } from 'lucide-react';
 
 export default function LoadingState({ message = 'Loading...' }) {
   return (
@@ -6,5 +6,5 @@ export default function LoadingState({ message = 'Loading...' }) {
       <Loader size={18} className="animate-spin text-primary-500" />
       <span className="text-sm">{message}</span>
     </div>
-  )
+  );
 }

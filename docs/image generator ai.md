@@ -27,10 +27,10 @@ Architecture Type: Transformer and Convolutional Neural Network (CNN)
 Network Architecture: Diffusion Transformer
 
 Number of Model Parameters:
-Component	Parameter Count
-Qwen3ForCausalLM	~4B
-Diffusion Transformer	~4B
-Total	~8B
+Component Parameter Count
+Qwen3ForCausalLM ~4B
+Diffusion Transformer ~4B
+Total ~8B
 Input:
 Input Type(s):
 [Text, Image]

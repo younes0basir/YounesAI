@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   useEmails,
   useEmailDetail,
@@ -12,46 +12,59 @@ import {
   useGmailSyncStatus,
   EMAIL_CATEGORIES,
   AI_INBOX_FILTER,
-} from '../hooks/useEmail'
-import PageHeader from '../components/ui/PageHeader'
-import FilterPills from '../components/ui/FilterPills'
-import EmptyState from '../components/ui/EmptyState'
-import LoadingState from '../components/ui/LoadingState'
-import ErrorState from '../components/ui/ErrorState'
-import AIStateCard from '../components/ui/AIStateCard'
-import ConfirmModal from '../components/ui/ConfirmModal'
-import toast from 'react-hot-toast'
+} from '../hooks/useEmail';
+import PageHeader from '../components/ui/PageHeader';
+import FilterPills from '../components/ui/FilterPills';
+import EmptyState from '../components/ui/EmptyState';
+import LoadingState from '../components/ui/LoadingState';
+import ErrorState from '../components/ui/ErrorState';
+import AIStateCard from '../components/ui/AIStateCard';
+import ConfirmModal from '../components/ui/ConfirmModal';
+import toast from 'react-hot-toast';
 import {
-  Archive, Trash2, Star, VolumeX, CheckSquare, RefreshCw,
-  MessageSquare, ChevronDown, ChevronUp, HelpCircle, Search,
-  Loader2, Mail, Unplug, CheckCircle2, AlertTriangle,
-} from 'lucide-react'
-import { format, formatDistanceToNow, isValid } from 'date-fns'
+  Archive,
+  Trash2,
+  Star,
+  VolumeX,
+  CheckSquare,
+  RefreshCw,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle,
+  Search,
+  Loader2,
+  Mail,
+  Unplug,
+  CheckCircle2,
+  AlertTriangle,
+} from 'lucide-react';
+import { format, formatDistanceToNow, isValid } from 'date-fns';
 
-const PAGE_SIZE = 50
+const PAGE_SIZE = 50;
 
 const categoryFilters = [
   { key: AI_INBOX_FILTER, label: 'AI Inbox' },
   ...EMAIL_CATEGORIES.map((c) => ({ key: c.id, label: c.label })),
   { key: 'ALL', label: 'All synced' },
-]
+];
 
 function categoryTone(cat) {
-  return EMAIL_CATEGORIES.find((c) => c.id === cat)?.tone || 'bg-slate-50 text-slate-500'
+  return EMAIL_CATEGORIES.find((c) => c.id === cat)?.tone || 'bg-slate-50 text-slate-500';
 }
 
 function EvidencePanel({ evidence, source }) {
-  if (!evidence) return null
-  let parsed = evidence
+  if (!evidence) return null;
+  let parsed = evidence;
   try {
-    parsed = typeof evidence === 'string' ? JSON.parse(evidence) : evidence
+    parsed = typeof evidence === 'string' ? JSON.parse(evidence) : evidence;
   } catch {
     return (
       <div className="mt-2 p-3 rounded-xl bg-white/60 border border-slate-200/60 text-xs text-slate-600">
         <div className="font-semibold text-slate-700">Classification evidence ({source})</div>
         <p className="mt-1">{parsed}</p>
       </div>
-    )
+    );
   }
   return (
     <div className="mt-2 p-3 rounded-xl bg-white/60 border border-slate-200/60 text-xs text-slate-600 space-y-1">
@@ -60,195 +73,199 @@ function EvidencePanel({ evidence, source }) {
       {parsed.ruleName && <p>Rule: {parsed.ruleName}</p>}
       {Array.isArray(parsed.signals) && parsed.signals.length > 0 && (
         <ul className="list-disc pl-4">
-          {parsed.signals.map((s, i) => <li key={i}>{s}</li>)}
+          {parsed.signals.map((s, i) => (
+            <li key={i}>{s}</li>
+          ))}
         </ul>
       )}
       {parsed.senderAddress && <p>Learned from sender: {parsed.senderAddress}</p>}
     </div>
-  )
+  );
 }
 
 export default function Inbox() {
-  const nav = useNavigate()
-  const [category, setCategory] = useState(AI_INBOX_FILTER)
-  const [query, setQuery] = useState('')
-  const [page, setPage] = useState(1)
-  const [loaded, setLoaded] = useState([])
-  const [selected, setSelected] = useState(new Set())
-  const [expandedId, setExpandedId] = useState(null)
-  const [busyMap, setBusyMap] = useState({})
-  const [summaries, setSummaries] = useState({})
-  const [confirm, setConfirm] = useState(null)
+  const nav = useNavigate();
+  const [category, setCategory] = useState(AI_INBOX_FILTER);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [loaded, setLoaded] = useState([]);
+  const [selected, setSelected] = useState(new Set());
+  const [expandedId, setExpandedId] = useState(null);
+  const [busyMap, setBusyMap] = useState({});
+  const [summaries, setSummaries] = useState({});
+  const [confirm, setConfirm] = useState(null);
 
-  const { data: accounts } = useGmailAccounts()
-  const { data: syncStatus } = useGmailSyncStatus()
-  const { data: emailsPage, isLoading, isFetching, isError, refetch } = useEmails(category, page)
-  const { data: detail } = useEmailDetail(expandedId)
-  const { data: approvals = [] } = usePendingApprovals()
-  const emailAction = useEmailAction()
-  const batchAction = useEmailBatchAction()
-  const resolveApproval = useResolveApproval()
-  const syncGmail = useSyncGmail()
+  const { data: accounts } = useGmailAccounts();
+  const { data: syncStatus } = useGmailSyncStatus();
+  const { data: emailsPage, isLoading, isFetching, isError, refetch } = useEmails(category, page);
+  const { data: detail } = useEmailDetail(expandedId);
+  const { data: approvals = [] } = usePendingApprovals();
+  const emailAction = useEmailAction();
+  const batchAction = useEmailBatchAction();
+  const resolveApproval = useResolveApproval();
+  const syncGmail = useSyncGmail();
 
-  const list = useMemo(() => (Array.isArray(emailsPage) ? emailsPage : []), [emailsPage])
-  const accountList = Array.isArray(accounts) ? accounts : []
-  const syncRows = Array.isArray(syncStatus) ? syncStatus : []
-  const pending = Array.isArray(approvals) ? approvals : []
-
-  useEffect(() => {
-    setPage(1)
-    setLoaded([])
-  }, [category])
+  const list = useMemo(() => (Array.isArray(emailsPage) ? emailsPage : []), [emailsPage]);
+  const accountList = Array.isArray(accounts) ? accounts : [];
+  const syncRows = Array.isArray(syncStatus) ? syncStatus : [];
+  const pending = Array.isArray(approvals) ? approvals : [];
 
   useEffect(() => {
-    if (list.length === 0) return
+    setPage(1);
+    setLoaded([]);
+  }, [category]);
+
+  useEffect(() => {
+    if (list.length === 0) return;
     if (page === 1) {
-      setLoaded(list)
-      return
+      setLoaded(list);
+      return;
     }
     setLoaded((prev) => {
-      const ids = new Set(prev.map((e) => e.id))
-      return [...prev, ...list.filter((e) => !ids.has(e.id))]
-    })
-  }, [list, page])
+      const ids = new Set(prev.map((e) => e.id));
+      return [...prev, ...list.filter((e) => !ids.has(e.id))];
+    });
+  }, [list, page]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return loaded
+    const q = query.trim().toLowerCase();
+    if (!q) return loaded;
     return loaded.filter((e) =>
       [e.subject, e.from_name, e.from_address, e.snippet, e.body_text]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q))
-    )
-  }, [loaded, query])
+    );
+  }, [loaded, query]);
 
-  const visibleIds = filtered.map((e) => e.id)
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
-  const hasMore = list.length === PAGE_SIZE
+  const visibleIds = filtered.map((e) => e.id);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
+  const hasMore = list.length === PAGE_SIZE;
 
   const toggleSelect = (id) => {
     setSelected((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const toggleAllVisible = () => {
     setSelected((prev) => {
-      const next = new Set(prev)
-      if (allVisibleSelected) visibleIds.forEach((id) => next.delete(id))
-      else visibleIds.forEach((id) => next.add(id))
-      return next
-    })
-  }
+      const next = new Set(prev);
+      if (allVisibleSelected) visibleIds.forEach((id) => next.delete(id));
+      else visibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
 
-  const startBusy = (id, action) => setBusyMap((m) => ({ ...m, [id]: action }))
-  const stopBusy = (id) => setBusyMap((m) => {
-    const next = { ...m }
-    delete next[id]
-    return next
-  })
+  const startBusy = (id, action) => setBusyMap((m) => ({ ...m, [id]: action }));
+  const stopBusy = (id) =>
+    setBusyMap((m) => {
+      const next = { ...m };
+      delete next[id];
+      return next;
+    });
 
   const refetchFirstPage = () => {
-    setPage(1)
-    setSelected(new Set())
-    refetch()
-  }
+    setPage(1);
+    setSelected(new Set());
+    refetch();
+  };
 
   const runAction = async (emailId, action) => {
-    startBusy(emailId, action)
+    startBusy(emailId, action);
     try {
-      const res = await emailAction.mutateAsync({ emailId, action })
+      const res = await emailAction.mutateAsync({ emailId, action });
       if (res?.summary) {
-        setSummaries((s) => ({ ...s, [emailId]: res.summary }))
-        toast.success(action === 'summarize' ? 'Summary ready' : res.summary.slice(0, 120))
+        setSummaries((s) => ({ ...s, [emailId]: res.summary }));
+        toast.success(action === 'summarize' ? 'Summary ready' : res.summary.slice(0, 120));
       } else {
-        toast.success(`Action "${action}" completed`)
+        toast.success(`Action "${action}" completed`);
       }
-      refetchFirstPage()
+      refetchFirstPage();
     } catch (err) {
-      toast.error(err.response?.data?.error || err.message)
+      toast.error(err.response?.data?.error || err.message);
     } finally {
-      stopBusy(emailId)
+      stopBusy(emailId);
     }
-  }
+  };
 
   const requestDelete = (emailId, subject) => {
     setConfirm({
       kind: 'single',
       emailId,
       description: `Permanently delete "${subject || '(no subject)'}" and its attachments (if synced)?`,
-    })
-  }
+    });
+  };
 
   const requestBatchDelete = (ids) => {
     setConfirm({
       kind: 'batch',
       description: `Permanently delete ${ids.length} selected email(s)?`,
-    })
-  }
+    });
+  };
 
   const confirmDelete = async () => {
-    setConfirm(null)
+    setConfirm(null);
     if (confirm.kind === 'single') {
-      await runAction(confirm.emailId, 'delete')
+      await runAction(confirm.emailId, 'delete');
     } else {
-      await runBatch('delete')
+      await runBatch('delete');
     }
-  }
+  };
 
   const runBatch = async (action) => {
-    const ids = [...selected]
-    if (ids.length === 0) return
+    const ids = [...selected];
+    if (ids.length === 0) return;
     try {
-      const res = await batchAction.mutateAsync({ action, emailIds: ids })
+      const res = await batchAction.mutateAsync({ action, emailIds: ids });
       if (res.requiresApproval) {
-        toast('Batch action sent for approval', { icon: '🛡️' })
+        toast('Batch action sent for approval', { icon: '🛡️' });
       } else {
-        toast.success(`Applied ${action} to ${ids.length} email(s)`)
+        toast.success(`Applied ${action} to ${ids.length} email(s)`);
       }
-      setSelected(new Set())
-      refetchFirstPage()
+      setSelected(new Set());
+      refetchFirstPage();
     } catch (err) {
-      toast.error(err.response?.data?.error || err.message)
+      toast.error(err.response?.data?.error || err.message);
     }
-  }
+  };
 
   const runSync = () => {
     syncGmail.mutate(null, {
       onSuccess: () => toast.success('Sync started'),
       onError: (e) => toast.error(e.response?.data?.error || 'Sync failed'),
-    })
-  }
+    });
+  };
 
-  const connected = accountList.length > 0
-  const failedSync = syncRows.find((s) => s.sync_status === 'error' || s.last_sync_error)
-  const totalSynced = syncRows.reduce((n, s) => n + (Number(s.messages_synced) || 0), 0)
+  const connected = accountList.length > 0;
+  const failedSync = syncRows.find((s) => s.sync_status === 'error' || s.last_sync_error);
+  const totalSynced = syncRows.reduce((n, s) => n + (Number(s.messages_synced) || 0), 0);
   const latestSyncAt = syncRows
     .map((s) => s.last_sync_at)
     .filter(Boolean)
     .sort()
-    .pop()
+    .pop();
 
   const subtitle = () => {
-    const parts = []
-    if (pending.length > 0) parts.push(`${pending.length} approval(s) pending`)
-    if (!connected) parts.push('Gmail not connected')
+    const parts = [];
+    if (pending.length > 0) parts.push(`${pending.length} approval(s) pending`);
+    if (!connected) parts.push('Gmail not connected');
     else {
-      parts.push(`${syncRows.length} account(s)`)
-      if (totalSynced > 0) parts.push(`${totalSynced} message(s) synced`)
-      if (latestSyncAt) parts.push(`last sync ${formatDistanceToNow(new Date(latestSyncAt), { addSuffix: true })}`)
+      parts.push(`${syncRows.length} account(s)`);
+      if (totalSynced > 0) parts.push(`${totalSynced} message(s) synced`);
+      if (latestSyncAt)
+        parts.push(`last sync ${formatDistanceToNow(new Date(latestSyncAt), { addSuffix: true })}`);
     }
-    parts.push(`${filtered.length} message(s) shown`)
-    return parts.join(' · ')
-  }
+    parts.push(`${filtered.length} message(s) shown`);
+    return parts.join(' · ');
+  };
 
-  const busyLabel = (id, action) => (busyMap[id] === action ? 'running' : 'idle')
+  const busyLabel = (id, action) => (busyMap[id] === action ? 'running' : 'idle');
 
   const renderActionButton = (id, action, label, icon, opts = {}) => {
-    const running = busyLabel(id, action) === 'running'
+    const running = busyLabel(id, action) === 'running';
     return (
       <button
         type="button"
@@ -260,8 +277,8 @@ export default function Inbox() {
         {running ? <Loader2 size={13} className="animate-spin" /> : icon}
         {label}
       </button>
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -310,30 +327,46 @@ export default function Inbox() {
           ) : connected ? (
             <>
               <div className="text-sm font-semibold text-slate-800 truncate">
-                {syncRows.map((s) => s.email_address).filter(Boolean).join(', ') || accountList.map((a) => a.email_address).join(', ')}
+                {syncRows
+                  .map((s) => s.email_address)
+                  .filter(Boolean)
+                  .join(', ') || accountList.map((a) => a.email_address).join(', ')}
               </div>
               <div className="text-xs text-slate-500">
-                {totalSynced > 0 ? `${totalSynced} message(s) synced` : 'Connected'} · {latestSyncAt
+                {totalSynced > 0 ? `${totalSynced} message(s) synced` : 'Connected'} ·{' '}
+                {latestSyncAt
                   ? `last sync ${formatDistanceToNow(new Date(latestSyncAt), { addSuffix: true })}`
                   : 'not synced yet'}
               </div>
             </>
           ) : (
             <>
-              <div className="text-sm font-semibold text-slate-800">Connect Gmail to unlock the AI Inbox</div>
+              <div className="text-sm font-semibold text-slate-800">
+                Connect Gmail to unlock the AI Inbox
+              </div>
               <div className="text-xs text-slate-500">
-                Syncing brings messages in and lets the AI classify, summarize, and triage them automatically.
+                Syncing brings messages in and lets the AI classify, summarize, and triage them
+                automatically.
               </div>
             </>
           )}
         </div>
         {connected ? (
-          <button type="button" className="btn btn-secondary text-xs" onClick={runSync} disabled={syncGmail.isPending}>
+          <button
+            type="button"
+            className="btn btn-secondary text-xs"
+            onClick={runSync}
+            disabled={syncGmail.isPending}
+          >
             <RefreshCw size={13} className={syncGmail.isPending ? 'animate-spin' : ''} />
             Retry sync
           </button>
         ) : (
-          <button type="button" className="btn btn-primary text-xs" onClick={() => nav('/settings')}>
+          <button
+            type="button"
+            className="btn btn-primary text-xs"
+            onClick={() => nav('/settings')}
+          >
             <Mail size={13} /> Connect Gmail
           </button>
         )}
@@ -350,10 +383,15 @@ export default function Inbox() {
                 type="button"
                 className="btn btn-primary text-xs"
                 disabled={resolveApproval.isPending}
-                onClick={() => resolveApproval.mutate({ id: ap.id, approve: true }, {
-                  onSuccess: (r) => toast.success(`Approved — ${r.executed} executed`),
-                  onError: (e) => toast.error(e.response?.data?.error || 'Approval failed'),
-                })}
+                onClick={() =>
+                  resolveApproval.mutate(
+                    { id: ap.id, approve: true },
+                    {
+                      onSuccess: (r) => toast.success(`Approved — ${r.executed} executed`),
+                      onError: (e) => toast.error(e.response?.data?.error || 'Approval failed'),
+                    }
+                  )
+                }
               >
                 Approve
               </button>
@@ -361,10 +399,15 @@ export default function Inbox() {
                 type="button"
                 className="btn btn-secondary text-xs"
                 disabled={resolveApproval.isPending}
-                onClick={() => resolveApproval.mutate({ id: ap.id, approve: false }, {
-                  onSuccess: () => toast.success('Rejected'),
-                  onError: (e) => toast.error(e.response?.data?.error || 'Rejection failed'),
-                })}
+                onClick={() =>
+                  resolveApproval.mutate(
+                    { id: ap.id, approve: false },
+                    {
+                      onSuccess: () => toast.success('Rejected'),
+                      onError: (e) => toast.error(e.response?.data?.error || 'Rejection failed'),
+                    }
+                  )
+                }
               >
                 Reject
               </button>
@@ -387,7 +430,12 @@ export default function Inbox() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <button type="button" className="btn btn-secondary text-xs" onClick={toggleAllVisible} disabled={visibleIds.length === 0}>
+        <button
+          type="button"
+          className="btn btn-secondary text-xs"
+          onClick={toggleAllVisible}
+          disabled={visibleIds.length === 0}
+        >
           {allVisibleSelected ? 'Deselect all' : `Select all (${visibleIds.length})`}
         </button>
         {query && (
@@ -416,7 +464,11 @@ export default function Inbox() {
           >
             <Trash2 size={14} /> Delete selected
           </button>
-          <button type="button" className="btn btn-ghost text-xs" onClick={() => setSelected(new Set())}>
+          <button
+            type="button"
+            className="btn btn-ghost text-xs"
+            onClick={() => setSelected(new Set())}
+          >
             Clear
           </button>
         </div>
@@ -434,7 +486,11 @@ export default function Inbox() {
               : 'Connect Gmail in Settings and run a sync to populate your AI Inbox.'
           }
           action={
-            <button type="button" className="btn btn-primary text-sm" onClick={() => nav('/settings')}>
+            <button
+              type="button"
+              className="btn btn-primary text-sm"
+              onClick={() => nav('/settings')}
+            >
               Go to Settings
             </button>
           }
@@ -445,18 +501,29 @@ export default function Inbox() {
         <EmptyState
           title={`No results for "${query}"`}
           description="Try different keywords, or clear the search to see all messages."
-          action={<button type="button" className="btn btn-secondary text-sm" onClick={() => setQuery('')}>Clear search</button>}
+          action={
+            <button
+              type="button"
+              className="btn btn-secondary text-sm"
+              onClick={() => setQuery('')}
+            >
+              Clear search
+            </button>
+          }
         />
       )}
 
       <div className="space-y-3">
         {filtered.map((email) => {
-          const isExpanded = expandedId === email.id
-          const isBusy = Boolean(busyMap[email.id])
-          const summary = summaries[email.id]
-          const expandedDetail = isExpanded ? detail : null
+          const isExpanded = expandedId === email.id;
+          const isBusy = Boolean(busyMap[email.id]);
+          const summary = summaries[email.id];
+          const expandedDetail = isExpanded ? detail : null;
           return (
-            <article key={email.id} className={`surface p-4 ${isExpanded ? 'ring-1 ring-primary-200' : ''}`}>
+            <article
+              key={email.id}
+              className={`surface p-4 ${isExpanded ? 'ring-1 ring-primary-200' : ''}`}
+            >
               <div className="flex items-start gap-3">
                 <input
                   type="checkbox"
@@ -481,14 +548,21 @@ export default function Inbox() {
                         : ''}
                     </span>
                   </div>
-                  <h3 className={`text-sm truncate ${email.is_read ? 'font-medium text-slate-700' : 'font-bold text-slate-900'}`}>
+                  <h3
+                    className={`text-sm truncate ${email.is_read ? 'font-medium text-slate-700' : 'font-bold text-slate-900'}`}
+                  >
                     {email.subject || '(no subject)'}
                   </h3>
                   <p className="text-xs font-medium text-slate-500">
-                    {email.from_name || email.from_address} {email.from_name && email.from_address ? `· ${email.from_address}` : ''}
-                    {email.account_email && <span className="text-slate-400"> · via {email.account_email}</span>}
+                    {email.from_name || email.from_address}{' '}
+                    {email.from_name && email.from_address ? `· ${email.from_address}` : ''}
+                    {email.account_email && (
+                      <span className="text-slate-400"> · via {email.account_email}</span>
+                    )}
                   </p>
-                  <p className="text-sm text-slate-600 mt-1 line-clamp-2">{email.snippet || email.body_text}</p>
+                  <p className="text-sm text-slate-600 mt-1 line-clamp-2">
+                    {email.snippet || email.body_text}
+                  </p>
 
                   {summary && (
                     <div className="mt-2 p-3 rounded-xl bg-primary-50 border border-primary-200/60 text-xs text-slate-700">
@@ -515,7 +589,11 @@ export default function Inbox() {
                           {expandedDetail.received_at && (
                             <>
                               <dt className="font-semibold text-slate-700">Received</dt>
-                              <dd>{isValid(new Date(expandedDetail.received_at)) ? format(new Date(expandedDetail.received_at), 'PPP · p') : expandedDetail.received_at}</dd>
+                              <dd>
+                                {isValid(new Date(expandedDetail.received_at))
+                                  ? format(new Date(expandedDetail.received_at), 'PPP · p')
+                                  : expandedDetail.received_at}
+                              </dd>
                             </>
                           )}
                           {expandedDetail.account_email && (
@@ -526,18 +604,44 @@ export default function Inbox() {
                           )}
                         </dl>
                       )}
-                      <EvidencePanel evidence={email.evidence} source={email.classification_source} />
+                      <EvidencePanel
+                        evidence={email.evidence}
+                        source={email.classification_source}
+                      />
                     </div>
                   )}
 
                   <div className="flex flex-wrap gap-1.5 mt-3">
-                    <button type="button" className="btn btn-ghost text-xs" onClick={() => runAction(email.id, 'archive')}>
-                      {busyMap[email.id] === 'archive' ? <Loader2 size={13} className="animate-spin" /> : <Archive size={13} />} Archive
+                    <button
+                      type="button"
+                      className="btn btn-ghost text-xs"
+                      onClick={() => runAction(email.id, 'archive')}
+                    >
+                      {busyMap[email.id] === 'archive' ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <Archive size={13} />
+                      )}{' '}
+                      Archive
                     </button>
-                    <button type="button" className="btn btn-ghost text-xs text-rose-600" onClick={() => requestDelete(email.id, email.subject)}>
-                      {busyMap[email.id] === 'delete' ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />} Delete
+                    <button
+                      type="button"
+                      className="btn btn-ghost text-xs text-rose-600"
+                      onClick={() => requestDelete(email.id, email.subject)}
+                    >
+                      {busyMap[email.id] === 'delete' ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <Trash2 size={13} />
+                      )}{' '}
+                      Delete
                     </button>
-                    {renderActionButton(email.id, 'mark_important', 'Important', <Star size={13} />)}
+                    {renderActionButton(
+                      email.id,
+                      'mark_important',
+                      'Important',
+                      <Star size={13} />
+                    )}
                     {renderActionButton(email.id, 'mute_sender', 'Mute', <VolumeX size={13} />)}
                     {renderActionButton(email.id, 'create_task', 'Task', <CheckSquare size={13} />)}
                     <button
@@ -546,12 +650,23 @@ export default function Inbox() {
                       onClick={() => runAction(email.id, 'summarize')}
                       disabled={busyMap[email.id] === 'summarize'}
                     >
-                      {busyMap[email.id] === 'summarize' ? <Loader2 size={13} className="animate-spin" /> : <SparkleSvg />} Summarize
+                      {busyMap[email.id] === 'summarize' ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <SparkleSvg />
+                      )}{' '}
+                      Summarize
                     </button>
                     <button
                       type="button"
                       className="btn btn-ghost text-xs"
-                      onClick={() => nav('/chat', { state: { prefilled: `Tell me about this email from ${email.from_address}: "${email.subject}"` } })}
+                      onClick={() =>
+                        nav('/chat', {
+                          state: {
+                            prefilled: `Tell me about this email from ${email.from_address}: "${email.subject}"`,
+                          },
+                        })
+                      }
                     >
                       <MessageSquare size={13} /> Ask AI
                     </button>
@@ -568,7 +683,7 @@ export default function Inbox() {
                 </div>
               </div>
             </article>
-          )
+          );
         })}
       </div>
 
@@ -580,7 +695,11 @@ export default function Inbox() {
             onClick={() => setPage((p) => p + 1)}
             disabled={isFetching}
           >
-            {isFetching ? <Loader2 size={15} className="animate-spin" /> : <ChevronDown size={15} />}
+            {isFetching ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <ChevronDown size={15} />
+            )}
             {isFetching ? 'Loading…' : 'Load more'}
           </button>
         </div>
@@ -598,14 +717,23 @@ export default function Inbox() {
         />
       )}
     </div>
-  )
+  );
 }
 
 function SparkleSvg() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" />
       <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z" />
     </svg>
-  )
+  );
 }

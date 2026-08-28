@@ -1,5 +1,10 @@
 const pool = require('../db');
-const { archiveEmail, deleteEmail, markImportant, muteSender } = require('../integrations/gmail/actions');
+const {
+  archiveEmail,
+  deleteEmail,
+  markImportant,
+  muteSender,
+} = require('../integrations/gmail/actions');
 
 const BATCH_APPROVAL_THRESHOLD = 1;
 

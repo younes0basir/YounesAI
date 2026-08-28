@@ -96,15 +96,33 @@ router.get('/rules', authMiddleware, async (req, res) => {
 
 router.post('/rules', authMiddleware, async (req, res) => {
   try {
-    const { name, match_sender, match_domain, match_subject_contains, match_label, category, action, priority } = req.body;
+    const {
+      name,
+      match_sender,
+      match_domain,
+      match_subject_contains,
+      match_label,
+      category,
+      action,
+      priority,
+    } = req.body;
     if (!name) return res.status(400).json({ error: 'name is required' });
     const result = await pool.query(
       `INSERT INTO email_rules
          (user_id, name, match_sender, match_domain, match_subject_contains, match_label, category, action, priority)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [req.user.id, name, match_sender || null, match_domain || null, match_subject_contains || null,
-        match_label || null, category || null, action || 'classify', priority || 0]
+      [
+        req.user.id,
+        name,
+        match_sender || null,
+        match_domain || null,
+        match_subject_contains || null,
+        match_label || null,
+        category || null,
+        action || 'classify',
+        priority || 0,
+      ]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -168,13 +186,19 @@ router.post('/:id/actions', authMiddleware, async (req, res) => {
       mark_important: markImportant,
       mute_sender: muteSender,
       reclassify: async (uid, eid) => {
-        const row = await pool.query('SELECT * FROM emails WHERE id = $1 AND user_id = $2', [eid, uid]);
+        const row = await pool.query('SELECT * FROM emails WHERE id = $1 AND user_id = $2', [
+          eid,
+          uid,
+        ]);
         if (row.rowCount === 0) throw new Error('Email not found');
         const classification = await classifyEmail(uid, row.rows[0]);
         return { success: true, classification };
       },
       summarize: async (uid, eid) => {
-        const row = await pool.query('SELECT * FROM emails WHERE id = $1 AND user_id = $2', [eid, uid]);
+        const row = await pool.query('SELECT * FROM emails WHERE id = $1 AND user_id = $2', [
+          eid,
+          uid,
+        ]);
         if (row.rowCount === 0) throw new Error('Email not found');
         return summarizeEmailContent(row.rows[0]);
       },

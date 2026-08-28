@@ -13,9 +13,9 @@ class BaseModelClient {
       baseURL: baseUrl,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        Authorization: `Bearer ${apiKey}`,
       },
-      timeout: config.system.timeout
+      timeout: config.system.timeout,
     });
   }
 
@@ -38,7 +38,7 @@ class BaseModelClient {
       baseURL: agentConfig.baseUrl || this.baseUrl,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${agentConfig.apiKey || this.apiKey}`,
+        Authorization: `Bearer ${agentConfig.apiKey || this.apiKey}`,
         ...(this.extraHeaders || {}),
       },
       timeout: config.system.timeout,
@@ -51,10 +51,10 @@ class BaseModelClient {
   async generate(model, messages, options = {}, agentConfig = null) {
     const maxRetries = options.maxRetries || config.system.maxRetries;
     const retryDelay = options.retryDelay || config.system.retryDelay;
-    
+
     let lastError = null;
     let jsonModeAttempted = false;
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         const body = {
@@ -70,49 +70,56 @@ class BaseModelClient {
         }
         const httpClient = this.resolveClient(agentConfig);
         const response = await httpClient.post('/chat/completions', body);
-        
+
         return {
           success: true,
           content: response.data.choices[0].message.content,
           usage: response.data.usage,
           model: response.data.model,
-          provider: this.provider
+          provider: this.provider,
         };
       } catch (error) {
         lastError = error;
-        
+
         // Check if it's a rate limit error (429)
         if (error.response?.status === 429) {
           console.log(`${this.provider} rate limited, attempt ${attempt + 1}/${maxRetries}`);
-          
+
           // Exponential backoff
           const delay = retryDelay * Math.pow(2, attempt);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
 
         // If response_format (JSON mode) caused a 400/422 error, retry without it.
         // Some models/providers don't support response_format — the fallback parser
         // in each agent can handle non-JSON output.
-        if (jsonModeAttempted && (error.response?.status === 400 || error.response?.status === 422)) {
+        if (
+          jsonModeAttempted &&
+          (error.response?.status === 400 || error.response?.status === 422)
+        ) {
           const errData = JSON.stringify(error.response?.data || {}).toLowerCase();
-          if (errData.includes('response_format') || errData.includes('json') || errData.includes('unsupported')) {
+          if (
+            errData.includes('response_format') ||
+            errData.includes('json') ||
+            errData.includes('unsupported')
+          ) {
             console.warn(`${this.provider} rejected response_format — retrying without JSON mode`);
             jsonModeAttempted = false;
             options.json = false;
             continue; // retry without json mode on next loop iteration
           }
         }
-        
+
         // For other errors, don't retry
         break;
       }
     }
-    
+
     return {
       success: false,
       error: lastError?.message || 'Unknown error',
-      provider: this.provider
+      provider: this.provider,
     };
   }
 
@@ -125,20 +132,20 @@ class BaseModelClient {
       const response = await httpClient.post('/embeddings', {
         model,
         input: text,
-        encoding_format: 'float'
+        encoding_format: 'float',
       });
-      
+
       return {
         success: true,
         embedding: response.data.data[0].embedding,
         usage: response.data.usage,
-        provider: this.provider
+        provider: this.provider,
       };
     } catch (error) {
       return {
         success: false,
         error: error.message,
-        provider: this.provider
+        provider: this.provider,
       };
     }
   }
@@ -178,7 +185,7 @@ class NvidiaClient extends BaseModelClient {
 class OpenRouterClient extends BaseModelClient {
   constructor() {
     super('openrouter', config.openrouter.baseUrl, config.openrouter.apiKey);
-    
+
     // OpenRouter requires additional headers — store them so resolveClient()
     // can apply them to per-agent override clients too
     this.extraHeaders = {
@@ -197,5 +204,5 @@ module.exports = {
   BaseModelClient,
   GroqClient,
   NvidiaClient,
-  OpenRouterClient
+  OpenRouterClient,
 };

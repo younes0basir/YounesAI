@@ -9,10 +9,11 @@ class FallbackManager {
     this.groqClient = new GroqClient();
     this.nvidiaClient = new NvidiaClient();
     this.openRouterClient = new OpenRouterClient();
-    
+
     // Provider priority for each agent type
     this.providerPriority = {
-      orchestrator: ['nvidia', 'groq', 'openrouter'],
+      orchestrator: ['groq', 'nvidia', 'openrouter'],
+      orchestratorFast: ['groq'],
       task: ['nvidia', 'groq', 'openrouter'],
       event: ['nvidia', 'groq', 'openrouter'],
       place: ['nvidia', 'groq', 'openrouter'],
@@ -22,7 +23,7 @@ class FallbackManager {
       desktop: ['nvidia', 'groq', 'openrouter'],
       image: ['groq', 'openrouter'],
       email: ['nvidia', 'groq', 'openrouter'],
-      gemma: ['openrouter', 'groq']
+      gemma: ['openrouter', 'groq'],
     };
   }
 
@@ -32,21 +33,21 @@ class FallbackManager {
   async execute(agentType, operation, ...args) {
     const providers = this.providerPriority[agentType] || ['groq', 'openrouter'];
     let lastError = null;
-    
+
     for (const provider of providers) {
       try {
         const client = this.getClient(provider);
         console.log(`Attempting ${agentType} with ${provider}...`);
-        
+
         const result = await client[operation](...args);
-        
+
         if (result.success) {
           console.log(`✓ ${agentType} succeeded with ${provider}`);
           return result;
         } else {
           console.log(`✗ ${agentType} failed with ${provider}: ${result.error}`);
           lastError = result.error;
-          
+
           // If it's not a rate limit error, try next provider immediately
           if (!result.error.includes('rate limit')) {
             continue;
@@ -57,12 +58,12 @@ class FallbackManager {
         lastError = error.message;
       }
     }
-    
+
     // All providers failed
     return {
       success: false,
       error: `All providers failed for ${agentType}. Last error: ${lastError}`,
-      agentType
+      agentType,
     };
   }
 
@@ -125,22 +126,22 @@ class FallbackManager {
    */
   async generateText(agentType, messages, options = {}) {
     const providers = this.providerPriority[agentType] || ['groq', 'openrouter'];
-    
+
     for (const provider of providers) {
       try {
         const agentConfig = this.getAgentConfig(agentType, provider);
         const client = this.getClient(provider);
-        
+
         console.log(`Attempting ${agentType} with ${provider} using model ${agentConfig.model}...`);
-        
+
         const result = await client.generate(agentConfig.model, messages, options, agentConfig);
-        
+
         if (result.success) {
           console.log(`✓ ${agentType} succeeded with ${provider}`);
           return result;
         } else {
           console.log(`✗ ${agentType} failed with ${provider}: ${result.error}`);
-          
+
           // If not rate limited, try next provider
           if (!result.error.includes('rate limit')) {
             continue;
@@ -150,11 +151,11 @@ class FallbackManager {
         console.log(`✗ ${agentType} failed with ${provider}: ${error.message}`);
       }
     }
-    
+
     return {
       success: false,
       error: `All providers failed for ${agentType}`,
-      agentType
+      agentType,
     };
   }
 
@@ -163,16 +164,18 @@ class FallbackManager {
    */
   async generateEmbedding(text, options = {}) {
     const providers = this.providerPriority.memory || ['nvidia', 'openrouter'];
-    
+
     for (const provider of providers) {
       try {
         const agentConfig = this.getAgentConfig('memory', provider);
         const client = this.getClient(provider);
-        
-        console.log(`Attempting memory embedding with ${provider} using model ${agentConfig.model}...`);
-        
+
+        console.log(
+          `Attempting memory embedding with ${provider} using model ${agentConfig.model}...`
+        );
+
         const result = await client.generateEmbedding(agentConfig.model, text, agentConfig);
-        
+
         if (result.success) {
           console.log(`✓ Memory embedding succeeded with ${provider}`);
           return result;
@@ -183,10 +186,10 @@ class FallbackManager {
         console.log(`✗ Memory embedding failed with ${provider}: ${error.message}`);
       }
     }
-    
+
     return {
       success: false,
-      error: 'All providers failed for memory embedding'
+      error: 'All providers failed for memory embedding',
     };
   }
 }

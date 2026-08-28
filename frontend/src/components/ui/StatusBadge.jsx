@@ -5,8 +5,8 @@ const TONE_CLASS = {
   info: 'badge-progress',
   ai: 'badge-repeat',
   muted: 'badge-muted',
-}
+};
 
 export default function StatusBadge({ tone = 'muted', children }) {
-  return <span className={`badge ${TONE_CLASS[tone] || TONE_CLASS.muted}`}>{children}</span>
+  return <span className={`badge ${TONE_CLASS[tone] || TONE_CLASS.muted}`}>{children}</span>;
 }

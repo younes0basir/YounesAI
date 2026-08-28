@@ -508,6 +508,34 @@ CREATE TABLE IF NOT EXISTS retrieval_logs (
 CREATE INDEX IF NOT EXISTS idx_retrieval_logs_user_source ON retrieval_logs (user_id, source, created_at DESC);
 
 -- =========================================================
+-- UNIFIED CHAT: entity links, event attendees, event metadata
+-- =========================================================
+ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+
+CREATE TABLE IF NOT EXISTS event_attendees (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID REFERENCES calendar_events(id) ON DELETE CASCADE,
+    name TEXT,
+    email TEXT,
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_event_attendees_event ON event_attendees (event_id);
+
+CREATE TABLE IF NOT EXISTS entity_links (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    source_type TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    target_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (user_id, source_type, source_id, target_type, target_id)
+);
+CREATE INDEX IF NOT EXISTS idx_entity_links_user_source ON entity_links (user_id, source_type, source_id);
+
+-- =========================================================
 -- EMAIL INTELLIGENCE (Stage C) — see backend/db/email.sql
 -- =========================================================
 

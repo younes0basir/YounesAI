@@ -1,10 +1,10 @@
 /**
  * Document Processor — Full understanding pipeline
- * 
+ *
  * Pipeline:
  *   Read file → Extract text → Chunk → Extract entities (people, orgs, dates, locations, action items)
  *   → Generate embedding → Store in document_embeddings → Register in knowledge graph
- * 
+ *
  * Supports: PDF, DOCX, TXT, CSV
  * Inspired by NVIDIA NeMo Retriever document ingestion patterns.
  */
@@ -59,7 +59,7 @@ function chunkText(text, chunkSize = 1500, overlap = 200) {
   }
   // Always include the last segment
   if (i < text.length) chunks.push(text.slice(i));
-  return chunks.filter(c => c.trim().length > 50);
+  return chunks.filter((c) => c.trim().length > 50);
 }
 
 /**
@@ -69,12 +69,24 @@ function chunkText(text, chunkSize = 1500, overlap = 200) {
  */
 async function extractEntities(textExcerpt) {
   try {
-    const result = await fallbackManager.generateText('general', [
-      { role: 'system', content: ENTITY_EXTRACTION_PROMPT },
-      { role: 'user', content: textExcerpt.slice(0, 3000) },
-    ], { temperature: 0.1, maxTokens: 600 });
+    const result = await fallbackManager.generateText(
+      'general',
+      [
+        { role: 'system', content: ENTITY_EXTRACTION_PROMPT },
+        { role: 'user', content: textExcerpt.slice(0, 3000) },
+      ],
+      { temperature: 0.1, maxTokens: 600 }
+    );
 
-    if (!result.success) return { people: [], organizations: [], dates: [], locations: [], actionItems: [], summary: '' };
+    if (!result.success)
+      return {
+        people: [],
+        organizations: [],
+        dates: [],
+        locations: [],
+        actionItems: [],
+        summary: '',
+      };
 
     const m = result.content.match(/\{[\s\S]*\}/);
     if (m) return JSON.parse(m[0]);
@@ -88,7 +100,17 @@ async function extractEntities(textExcerpt) {
  * Generate and store embeddings for a single text chunk.
  * @returns {Promise<string|null>} — inserted document_embeddings.id or null
  */
-async function storeChunk({ userId, filePath, chunk, chunkIndex, chunkTotal, entities, summary, fileType, wordCount }) {
+async function storeChunk({
+  userId,
+  filePath,
+  chunk,
+  chunkIndex,
+  chunkTotal,
+  entities,
+  summary,
+  fileType,
+  wordCount,
+}) {
   try {
     // Generate embedding
     const embResult = await fallbackManager.generateEmbedding(chunk);
@@ -104,9 +126,17 @@ async function storeChunk({ userId, filePath, chunk, chunkIndex, chunkTotal, ent
        ON CONFLICT DO NOTHING
        RETURNING id`,
       [
-        userId, filePath, chunk, embeddingLiteral, embeddingJson,
-        JSON.stringify(entities), summary, fileType,
-        wordCount, chunkIndex, chunkTotal,
+        userId,
+        filePath,
+        chunk,
+        embeddingLiteral,
+        embeddingJson,
+        JSON.stringify(entities),
+        summary,
+        fileType,
+        wordCount,
+        chunkIndex,
+        chunkTotal,
       ]
     );
     return res.rows[0]?.id || null;
@@ -118,7 +148,7 @@ async function storeChunk({ userId, filePath, chunk, chunkIndex, chunkTotal, ent
 
 /**
  * Full document processing pipeline.
- * 
+ *
  * @param {object} opts
  * @param {string} opts.userId
  * @param {string} opts.filePath — absolute path to the file
@@ -150,7 +180,10 @@ async function processDocument({ userId, filePath }) {
       chunk: chunks[i],
       chunkIndex: i,
       chunkTotal: chunks.length,
-      entities: i === 0 ? entities : { people: [], organizations: [], dates: [], locations: [], actionItems: [] },
+      entities:
+        i === 0
+          ? entities
+          : { people: [], organizations: [], dates: [], locations: [], actionItems: [] },
       summary: i === 0 ? entities.summary : null,
       fileType,
       wordCount,
@@ -168,7 +201,9 @@ async function processDocument({ userId, filePath }) {
     });
   }
 
-  console.log(`[documentProcessor] Done: ${filePath} → ${chunks.length} chunks, ${docIds.length} stored`);
+  console.log(
+    `[documentProcessor] Done: ${filePath} → ${chunks.length} chunks, ${docIds.length} stored`
+  );
   return {
     success: true,
     chunks: chunks.length,

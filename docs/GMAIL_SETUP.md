@@ -66,22 +66,22 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| `Gmail OAuth is not configured` | Set `GOOGLE_GMAIL_*` env vars and restart backend |
-| `OAUTH_TOKEN_ENCRYPTION_KEY must be 64 hex characters` | Generate a 32-byte hex key |
-| `No refresh token received` | Revoke app in Google Account → Security → Third-party access, reconnect with `prompt=consent` |
-| Empty inbox after sync | Check sync status in Settings; verify Gmail API is enabled |
-| Empty AI Inbox after sync | Set `NVIDIA_EMAIL_API_KEY` in `backend/.env`, restart backend, sync again |
-| Classification fails | Set `NVIDIA_NIM_API_KEY` or `NVIDIA_EMAIL_API_KEY` |
+| Issue                                                  | Fix                                                                                           |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `Gmail OAuth is not configured`                        | Set `GOOGLE_GMAIL_*` env vars and restart backend                                             |
+| `OAUTH_TOKEN_ENCRYPTION_KEY must be 64 hex characters` | Generate a 32-byte hex key                                                                    |
+| `No refresh token received`                            | Revoke app in Google Account → Security → Third-party access, reconnect with `prompt=consent` |
+| Empty inbox after sync                                 | Check sync status in Settings; verify Gmail API is enabled                                    |
+| Empty AI Inbox after sync                              | Set `NVIDIA_EMAIL_API_KEY` in `backend/.env`, restart backend, sync again                     |
+| Classification fails                                   | Set `NVIDIA_NIM_API_KEY` or `NVIDIA_EMAIL_API_KEY`                                            |
 
 ## API endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/integrations/gmail/connect` | Start OAuth (auth required) |
-| GET | `/api/integrations/gmail/callback` | OAuth callback |
-| GET | `/api/integrations/gmail/accounts` | List connected accounts |
-| POST | `/api/integrations/gmail/sync/all` | Sync all accounts |
-| GET | `/api/email` | List classified emails |
-| GET | `/api/email/approvals/pending` | Pending batch approvals |
+| Method | Path                               | Description                 |
+| ------ | ---------------------------------- | --------------------------- |
+| GET    | `/api/integrations/gmail/connect`  | Start OAuth (auth required) |
+| GET    | `/api/integrations/gmail/callback` | OAuth callback              |
+| GET    | `/api/integrations/gmail/accounts` | List connected accounts     |
+| POST   | `/api/integrations/gmail/sync/all` | Sync all accounts           |
+| GET    | `/api/email`                       | List classified emails      |
+| GET    | `/api/email/approvals/pending`     | Pending batch approvals     |

@@ -132,7 +132,7 @@ async function runMigration() {
     console.log('Checking available extensions...');
 
     // Find CREATE EXTENSION statements and remove the ones not available in this PG cluster
-    const extRegex = /CREATE\s+EXTENSION\s+(IF\s+NOT\s+EXISTS\s+)?("?)([a-zA-Z0-9_\-]+)\2\s*;/ig;
+    const extRegex = /CREATE\s+EXTENSION\s+(IF\s+NOT\s+EXISTS\s+)?("?)([a-zA-Z0-9_\-]+)\2\s*;/gi;
     let match;
     const skipped = [];
     let adjustedSql = sql;
@@ -140,9 +140,14 @@ async function runMigration() {
     while ((match = extRegex.exec(sql)) !== null) {
       const extName = match[3];
       try {
-        const res = await client.query('SELECT 1 FROM pg_available_extensions WHERE name = $1', [extName]);
+        const res = await client.query('SELECT 1 FROM pg_available_extensions WHERE name = $1', [
+          extName,
+        ]);
         if (res.rowCount === 0) {
-          adjustedSql = adjustedSql.replace(match[0], `-- skipped CREATE EXTENSION ${extName} (not available)\n`);
+          adjustedSql = adjustedSql.replace(
+            match[0],
+            `-- skipped CREATE EXTENSION ${extName} (not available)\n`
+          );
           skipped.push(extName);
         }
       } catch (err) {
@@ -160,8 +165,12 @@ async function runMigration() {
     }
 
     // Ensure UUID helper is available or adapt SQL
-    const hasUuidGenerate = (await client.query("SELECT 1 FROM pg_proc WHERE proname = 'uuid_generate_v4' LIMIT 1")).rowCount > 0;
-    const hasGenRandom = (await client.query("SELECT 1 FROM pg_proc WHERE proname = 'gen_random_uuid' LIMIT 1")).rowCount > 0;
+    const hasUuidGenerate =
+      (await client.query("SELECT 1 FROM pg_proc WHERE proname = 'uuid_generate_v4' LIMIT 1"))
+        .rowCount > 0;
+    const hasGenRandom =
+      (await client.query("SELECT 1 FROM pg_proc WHERE proname = 'gen_random_uuid' LIMIT 1"))
+        .rowCount > 0;
 
     if (!hasUuidGenerate) {
       if (hasGenRandom) {
@@ -173,9 +182,13 @@ async function runMigration() {
           console.log('Attempting to create extension "uuid-ossp"');
           await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
           // re-check
-          const nowHas = (await client.query("SELECT 1 FROM pg_proc WHERE proname = 'uuid_generate_v4' LIMIT 1")).rowCount > 0;
+          const nowHas =
+            (await client.query("SELECT 1 FROM pg_proc WHERE proname = 'uuid_generate_v4' LIMIT 1"))
+              .rowCount > 0;
           if (!nowHas) {
-            console.warn('uuid_generate_v4 still not available after creating extension; removing DEFAULT uuid_generate_v4() clauses.');
+            console.warn(
+              'uuid_generate_v4 still not available after creating extension; removing DEFAULT uuid_generate_v4() clauses.'
+            );
             adjustedSql = adjustedSql.replace(/DEFAULT\s+uuid_generate_v4\(\)\s*/g, '');
           }
         } catch (err) {
@@ -205,7 +218,9 @@ async function runMigration() {
           await client.query(executable);
           console.log(`OK [pass ${pass}] stmt ${idx + 1}/${toRun.length}: ${head}`);
         } catch (err) {
-          console.warn(`FAIL [pass ${pass}] stmt ${idx + 1}/${toRun.length}: ${head} -> ${err.message}`);
+          console.warn(
+            `FAIL [pass ${pass}] stmt ${idx + 1}/${toRun.length}: ${head} -> ${err.message}`
+          );
           failed.push({ stmt, err, head });
           newToRun.push(stmt);
         }

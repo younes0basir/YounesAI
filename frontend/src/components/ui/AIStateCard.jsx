@@ -1,4 +1,4 @@
-import { Lightbulb, ShieldQuestion, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { Lightbulb, ShieldQuestion, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
 const STATE_CONFIG = {
   suggestion: { icon: Lightbulb, label: 'Suggested', className: 'ai-state-suggestion' },
@@ -6,7 +6,7 @@ const STATE_CONFIG = {
   running: { icon: Loader2, label: 'Running', className: 'ai-state-running', spin: true },
   completed: { icon: CheckCircle2, label: 'Completed', className: 'ai-state-completed' },
   failed: { icon: XCircle, label: 'Failed', className: 'ai-state-failed' },
-}
+};
 
 /**
  * Reusable AI execution/state indicator used across Home, Assistant, and Activity.
@@ -20,8 +20,8 @@ export default function AIStateCard({
   actions,
   className = '',
 }) {
-  const config = STATE_CONFIG[state] || STATE_CONFIG.completed
-  const Icon = config.icon
+  const config = STATE_CONFIG[state] || STATE_CONFIG.completed;
+  const Icon = config.icon;
 
   return (
     <div className={`ai-state-card ${config.className} ${className}`}>
@@ -37,14 +37,19 @@ export default function AIStateCard({
         {typeof progress === 'number' ? (
           <div className="mt-2 flex items-center gap-2">
             <div className="progress-track flex-1">
-              <div className="progress-fill" style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
+              <div
+                className="progress-fill"
+                style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+              />
             </div>
-            <span className="text-[11px] font-semibold text-slate-500 shrink-0">{Math.round(progress)}%</span>
+            <span className="text-[11px] font-semibold text-slate-500 shrink-0">
+              {Math.round(progress)}%
+            </span>
           </div>
         ) : null}
         {meta ? <div className="ai-state-meta">{meta}</div> : null}
         {actions ? <div className="ai-state-actions">{actions}</div> : null}
       </div>
     </div>
-  )
+  );
 }

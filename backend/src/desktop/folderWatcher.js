@@ -15,18 +15,22 @@ async function indexFile(filePath, userId) {
 
     // Register in files table
     const filename = path.basename(filePath);
-    await pool.query(
-      `INSERT INTO files (user_id, name, path, extension, size_bytes, indexed_at)
+    await pool
+      .query(
+        `INSERT INTO files (user_id, name, path, extension, size_bytes, indexed_at)
        VALUES ($1, $2, $3, $4, $5, NOW())
        ON CONFLICT DO NOTHING`,
-      [userId, filename, filePath, ext, null]
-    ).catch(() => {});
+        [userId, filename, filePath, ext, null]
+      )
+      .catch(() => {});
 
     // Delete existing embeddings for this file
-    await pool.query(
-      'DELETE FROM document_embeddings WHERE user_id = $1 AND file_path = $2',
-      [userId, filePath]
-    ).catch(() => {});
+    await pool
+      .query('DELETE FROM document_embeddings WHERE user_id = $1 AND file_path = $2', [
+        userId,
+        filePath,
+      ])
+      .catch(() => {});
 
     // Process using document understanding pipeline
     const result = await processDocument({ userId, filePath });
@@ -43,15 +47,19 @@ async function indexFile(filePath, userId) {
 async function unindexFile(filePath, userId) {
   try {
     console.log(`[Watcher] Unindexing file: ${filePath}`);
-    await pool.query(
-      'DELETE FROM document_embeddings WHERE user_id = $1 AND file_path = $2',
-      [userId, filePath]
-    ).catch(() => {});
+    await pool
+      .query('DELETE FROM document_embeddings WHERE user_id = $1 AND file_path = $2', [
+        userId,
+        filePath,
+      ])
+      .catch(() => {});
     // Soft-delete in files table
-    await pool.query(
-      'UPDATE files SET is_deleted = TRUE WHERE user_id = $1 AND path = $2',
-      [userId, filePath]
-    ).catch(() => {});
+    await pool
+      .query('UPDATE files SET is_deleted = TRUE WHERE user_id = $1 AND path = $2', [
+        userId,
+        filePath,
+      ])
+      .catch(() => {});
   } catch (error) {
     console.error(`[Watcher] Error unindexing file ${filePath}:`, error);
   }

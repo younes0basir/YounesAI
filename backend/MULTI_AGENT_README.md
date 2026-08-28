@@ -51,16 +51,19 @@ User Request → Orchestrator → Specialized Agent → Response
 ## Features
 
 ### 🔄 Automatic Fallback
+
 - **Rate Limit Handling**: Automatic retry with exponential backoff (max 3 retries)
 - **Provider Switching**: Seamless fallback from Groq → NVIDIA → OpenRouter
 - **Error Recovery**: Graceful degradation when services are unavailable
 
 ### 🧠 Intelligent Routing
+
 - **Semantic Analysis**: Orchestrator understands request context
 - **Keyword Fallback**: Backup routing based on pattern matching
 - **Direct Access**: Bypass orchestrator for specific agent calls
 
 ### 💾 Memory System
+
 - **Embedding Generation**: Semantic understanding of stored information
 - **Vector Search**: Cosine similarity for relevant retrieval
 - **Context Management**: Automatic cleanup of old memories
@@ -84,6 +87,7 @@ Process user message through the multi-agent system.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -105,7 +109,9 @@ Process user message through the multi-agent system.
 ### Direct Agent Access
 
 #### Task Agent
+
 **POST** `/api/agents/task`
+
 ```json
 {
   "message": "What are the best practices for task prioritization?",
@@ -116,7 +122,9 @@ Process user message through the multi-agent system.
 ```
 
 #### Event Agent
+
 **POST** `/api/agents/event`
+
 ```json
 {
   "message": "Schedule a team meeting for next Tuesday",
@@ -127,7 +135,9 @@ Process user message through the multi-agent system.
 ```
 
 #### Place Agent
+
 **POST** `/api/agents/place`
+
 ```json
 {
   "message": "Validate this address: 123 Main St, New York, NY",
@@ -138,7 +148,9 @@ Process user message through the multi-agent system.
 ```
 
 #### File Agent
+
 **POST** `/api/agents/file`
+
 ```json
 {
   "message": "Analyze this document content",
@@ -152,7 +164,9 @@ Process user message through the multi-agent system.
 ### Memory Operations
 
 #### Store Information
+
 **POST** `/api/agents/memory/store`
+
 ```json
 {
   "text": "The project deadline is June 30th, 2026",
@@ -164,7 +178,9 @@ Process user message through the multi-agent system.
 ```
 
 #### Semantic Search
+
 **POST** `/api/agents/memory/search`
+
 ```json
 {
   "query": "project deadline",
@@ -173,6 +189,7 @@ Process user message through the multi-agent system.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -193,10 +210,12 @@ Process user message through the multi-agent system.
 ```
 
 #### Clear Old Memories
+
 **POST** `/api/agents/memory/clear`
+
 ```json
 {
-  "maxAge": 604800000  // 7 days in milliseconds
+  "maxAge": 604800000 // 7 days in milliseconds
 }
 ```
 
@@ -231,8 +250,8 @@ const response = await fetch('http://localhost:3000/api/agents/chat', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    message: 'Create a task to review the mobile app documentation'
-  })
+    message: 'Create a task to review the mobile app documentation',
+  }),
 });
 
 const data = await response.json();
@@ -322,16 +341,19 @@ The system provides detailed error responses:
 ## Performance Considerations
 
 ### Latency
+
 - **Groq**: ~500-1000ms (fastest)
 - **NVIDIA**: ~1000-2000ms
 - **OpenRouter**: ~1500-3000ms (fallback)
 
 ### Rate Limits
+
 - **Groq**: 30 requests/minute (free tier)
 - **NVIDIA**: Varies by model
 - **OpenRouter**: 200 requests/day (free tier)
 
 ### Optimization Tips
+
 1. Use context efficiently to reduce token usage
 2. Cache frequent queries
 3. Batch similar requests
@@ -354,6 +376,7 @@ LOG_LEVEL=debug
 ```
 
 Monitor:
+
 - Request/response times
 - Provider usage distribution
 - Error rates and fallback frequency
@@ -382,6 +405,7 @@ Monitor:
 ## Support
 
 For issues or questions:
+
 1. Check the SETUP_GUIDE.md for configuration
 2. Review API endpoint documentation
 3. Check console logs for error details

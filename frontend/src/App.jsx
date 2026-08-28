@@ -1,23 +1,23 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import Layout from './components/Layout'
-import ProtectedRoute from './components/ProtectedRoute'
-import Dashboard from './pages/Dashboard'
-import Tasks from './pages/Tasks'
-import Reminders from './pages/Reminders'
-import Events from './pages/Events'
-import Places from './pages/Places'
-import Files from './pages/Files'
-import Notifications from './pages/Notifications'
-import Search from './pages/Search'
-import Projects from './pages/Projects'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Agents from './pages/Agents'
-import Voice from './pages/Voice'
-import Chat from './pages/Chat'
-import ImageGenerator from './pages/ImageGenerator'
-import Inbox from './pages/Inbox'
-import Settings from './pages/Settings'
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+import Dashboard from './pages/Dashboard';
+import Tasks from './pages/Tasks';
+import Reminders from './pages/Reminders';
+import Events from './pages/Events';
+import Places from './pages/Places';
+import Files from './pages/Files';
+import Notifications from './pages/Notifications';
+import Search from './pages/Search';
+import Projects from './pages/Projects';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Agents from './pages/Agents';
+import Voice from './pages/Voice';
+import Chat from './pages/Chat';
+import ImageGenerator from './pages/ImageGenerator';
+import Inbox from './pages/Inbox';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
@@ -49,5 +49,5 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  )
+  );
 }

@@ -2,8 +2,15 @@ const pool = require('../db');
 
 // Whitelist of allowed columns for event updates
 const ALLOWED_FIELDS = new Set([
-  'title', 'description', 'starts_at', 'ends_at', 'is_all_day',
-  'color', 'location_text', 'recurrence_rule', 'place_id',
+  'title',
+  'description',
+  'starts_at',
+  'ends_at',
+  'is_all_day',
+  'color',
+  'location_text',
+  'recurrence_rule',
+  'place_id',
 ]);
 
 async function updateEvent(context, id, data) {

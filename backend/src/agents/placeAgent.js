@@ -30,10 +30,17 @@ Only use action "chat" if the message is purely conversational with zero place/l
   async run(context) {
     const start = Date.now();
     try {
-      const result = await fallbackManager.generateText('place', [
-        { role: 'system', content: this.systemPrompt },
-        { role: 'user', content: `Message: "${context.message}"\nContext: ${JSON.stringify({ userId: context.userId })}\n\nRecent conversation:\n${context.recentMessages?.length > 0 ? context.recentMessages.map((m) => `${m.role}: "${m.content}"`).join('\n') : '(no prior messages)'}` }
-      ], { temperature: 0.3, maxTokens: 500 });
+      const result = await fallbackManager.generateText(
+        'place',
+        [
+          { role: 'system', content: this.systemPrompt },
+          {
+            role: 'user',
+            content: `Message: "${context.message}"\nContext: ${JSON.stringify({ userId: context.userId })}\n\nRecent conversation:\n${context.recentMessages?.length > 0 ? context.recentMessages.map((m) => `${m.role}: "${m.content}"`).join('\n') : '(no prior messages)'}`,
+          },
+        ],
+        { temperature: 0.3, maxTokens: 500 }
+      );
 
       if (!result.success) throw new Error(result.error);
       let parsed = this.parseResponse(result.content);
@@ -42,22 +49,56 @@ Only use action "chat" if the message is purely conversational with zero place/l
 
       if (parsed.action === 'search' && parsed.query) {
         const searchResult = await tools.searchPlaces(context, parsed.query);
-        await logAgentCall({ agentName: 'place', provider: result.provider, latency: Date.now() - start, success: true, context });
+        await logAgentCall({
+          agentName: 'place',
+          provider: result.provider,
+          latency: Date.now() - start,
+          success: true,
+          context,
+        });
         const count = searchResult.places.length;
-        const summary = count === 0 ? 'No places found.' : `Found ${count} place(s):\n${searchResult.places.map((p) => `- ${p.name}${p.address ? ` (${p.address})` : ''}`).join('\n')}`;
-        return { success: true, content: prefixWithSourceCheck(summary, context, ['place search results']), metadata: { provider: result.provider, model: result.model } };
+        const summary =
+          count === 0
+            ? 'No places found.'
+            : `Found ${count} place(s):\n${searchResult.places.map((p) => `- ${p.name}${p.address ? ` (${p.address})` : ''}`).join('\n')}`;
+        return {
+          success: true,
+          content: prefixWithSourceCheck(summary, context, ['place search results']),
+          metadata: { provider: result.provider, model: result.model },
+        };
       }
 
-      await logAgentCall({ agentName: 'place', provider: result.provider, latency: Date.now() - start, success: true, context });
-      return { success: true, content: prefixWithSourceCheck(parsed.response || result.content, context, ['place agent reasoning']), metadata: { provider: result.provider, model: result.model } };
+      await logAgentCall({
+        agentName: 'place',
+        provider: result.provider,
+        latency: Date.now() - start,
+        success: true,
+        context,
+      });
+      return {
+        success: true,
+        content: prefixWithSourceCheck(parsed.response || result.content, context, [
+          'place agent reasoning',
+        ]),
+        metadata: { provider: result.provider, model: result.model },
+      };
     } catch (error) {
-      await logAgentCall({ agentName: 'place', latency: Date.now() - start, success: false, error: error.message, context });
+      await logAgentCall({
+        agentName: 'place',
+        latency: Date.now() - start,
+        success: false,
+        error: error.message,
+        context,
+      });
       return { success: false, error: error.message };
     }
   }
 
   parseResponse(content) {
-    try { const m = content.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); } catch {}
+    try {
+      const m = content.match(/\{[\s\S]*\}/);
+      if (m) return JSON.parse(m[0]);
+    } catch {}
     return { action: 'chat', response: content };
   }
 }

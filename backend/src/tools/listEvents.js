@@ -11,7 +11,10 @@ async function listEvents(context, filters = {}) {
     where.push(`starts_at >= NOW()`);
   }
 
-  if (filters.color) { where.push(`color = $${idx++}`); params.push(filters.color); }
+  if (filters.color) {
+    where.push(`color = $${idx++}`);
+    params.push(filters.color);
+  }
 
   const result = await pool.query(
     `SELECT id, title, description, starts_at, ends_at, is_all_day, color, location_text, created_at

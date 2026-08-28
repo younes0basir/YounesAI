@@ -37,9 +37,7 @@ async function getGmailClient(accountId, userId) {
   oauth2.setCredentials({
     refresh_token: refreshToken,
     access_token: accessToken,
-    expiry_date: account.token_expires_at
-      ? new Date(account.token_expires_at).getTime()
-      : null,
+    expiry_date: account.token_expires_at ? new Date(account.token_expires_at).getTime() : null,
   });
 
   oauth2.on('tokens', (tokens) => {

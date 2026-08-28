@@ -25,9 +25,7 @@ function looksLikeDateFragment(text) {
 function extractNamedTitle(message) {
   if (!message) return null;
 
-  const normalized = message
-    .replace(/\bmounth\b/gi, 'month')
-    .replace(/\bcretae\b/gi, 'create');
+  const normalized = message.replace(/\bmounth\b/gi, 'month').replace(/\bcretae\b/gi, 'create');
 
   // "named allo", "called team sync", etc. — anywhere in the message
   const namedMatch = normalized.match(
@@ -59,14 +57,11 @@ function applyExtractedTitle(entity, defaultTitles, message, originalMessage) {
   if (!entity) return;
 
   const current = (entity.title || '').trim();
-  const isPlaceholder = !current || defaultTitles.some(
-    (t) => t.toLowerCase() === current.toLowerCase()
-  );
+  const isPlaceholder =
+    !current || defaultTitles.some((t) => t.toLowerCase() === current.toLowerCase());
   if (!isPlaceholder) return;
 
-  const extracted =
-    extractNamedTitle(originalMessage || message) ||
-    extractNamedTitle(message);
+  const extracted = extractNamedTitle(originalMessage || message) || extractNamedTitle(message);
 
   if (extracted) {
     entity.title = extracted;

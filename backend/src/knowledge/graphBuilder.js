@@ -1,9 +1,9 @@
 /**
  * Knowledge Graph Builder
- * 
+ *
  * Creates and maintains entity nodes and relationships in the entity_relationships table.
  * No external graph database required — uses PostgreSQL adjacency table.
- * 
+ *
  * Supported relationship types:
  *   USER_OWNS_PROJECT, PROJECT_HAS_TASK, TASK_REFERENCES_FILE,
  *   PROJECT_HAShhhhhhh_EVENT, FbbbbhhhILE_CREATES_MEMORY, PROJECT_HAS_PLACE,
@@ -34,8 +34,16 @@ async function addRelationship({
        DO UPDATE SET
          metadata = EXCLUDED.metadata,
          weight = EXCLUDED.weight`,
-      [userId, fromEntityType, fromEntityId, relationshipType,
-       toEntityType, toEntityId, JSON.stringify(metadata), weight]
+      [
+        userId,
+        fromEntityType,
+        fromEntityId,
+        relationshipType,
+        toEntityType,
+        toEntityId,
+        JSON.stringify(metadata),
+        weight,
+      ]
     );
   } catch (err) {
     console.error('[graphBuilder] addRelationship error:', err.message);
@@ -76,19 +84,21 @@ async function createDocumentNode({ userId, documentId, filePath, entities = {} 
 
     // If entities were extracted, link them
     const allEntities = [
-      ...(entities.people || []).map(e => ({ type: 'person', name: e })),
-      ...(entities.organizations || []).map(e => ({ type: 'organization', name: e })),
-      ...(entities.locations || []).map(e => ({ type: 'location', name: e })),
+      ...(entities.people || []).map((e) => ({ type: 'person', name: e })),
+      ...(entities.organizations || []).map((e) => ({ type: 'organization', name: e })),
+      ...(entities.locations || []).map((e) => ({ type: 'location', name: e })),
     ];
 
     // Store entity mentions in metadata (not creating individual entity nodes to avoid bloat)
     if (allEntities.length > 0) {
-      await pool.query(
-        `UPDATE document_embeddings
+      await pool
+        .query(
+          `UPDATE document_embeddings
          SET entities = $1
          WHERE id = $2`,
-        [JSON.stringify(entities), documentId]
-      ).catch(() => {});
+          [JSON.stringify(entities), documentId]
+        )
+        .catch(() => {});
     }
 
     return true;
@@ -122,7 +132,9 @@ async function buildProjectGraph(userId, projectId) {
 
     // Link events to project (via place or title correlation — basic approach)
     // In a full implementation this would use the event.project_id FK
-    console.log(`[graphBuilder] Built graph for project ${projectId} with ${tasks.rows.length} tasks`);
+    console.log(
+      `[graphBuilder] Built graph for project ${projectId} with ${tasks.rows.length} tasks`
+    );
     return true;
   } catch (err) {
     console.error('[graphBuilder] buildProjectGraph error:', err.message);

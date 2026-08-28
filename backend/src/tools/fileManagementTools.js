@@ -125,7 +125,7 @@ async function getFolderStatistics(context) {
     foldersCount: folderCountRes.rows[0]?.count || 0,
     chunksCount: docCountRes.rows[0]?.count || 0,
     filesCount: docCountRes.rows[0]?.files_count || 0,
-    types: typesRes.rows
+    types: typesRes.rows,
   };
 
   console.log(`[INDEXED_FOLDERS_FOUND] Folders: ${stats.foldersCount}, Files: ${stats.filesCount}`);
@@ -140,7 +140,7 @@ async function listFolderContents(folderPath) {
   console.log('[FILE_TOOL_CALLED] listFolderContents()', folderPath);
   try {
     const entries = await fs.readdir(folderPath, { withFileTypes: true });
-    const contents = entries.map(entry => {
+    const contents = entries.map((entry) => {
       const fullPath = path.join(folderPath, entry.name);
       const ext = entry.isFile() ? path.extname(entry.name).toLowerCase() : '';
       return {
@@ -148,7 +148,7 @@ async function listFolderContents(folderPath) {
         isDirectory: entry.isDirectory(),
         isFile: entry.isFile(),
         extension: ext,
-        path: fullPath
+        path: fullPath,
       };
     });
     console.log(`[FOLDER_CONTENTS] Found ${contents.length} items in ${folderPath}`);
@@ -166,5 +166,5 @@ module.exports = {
   getIndexedDocumentCount,
   getRecentIndexedFiles,
   getFolderStatistics,
-  listFolderContents
+  listFolderContents,
 };

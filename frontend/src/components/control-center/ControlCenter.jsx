@@ -1,67 +1,98 @@
-import { useEffect, useState } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import {
-  Command, Sparkles, ShieldCheck, Zap, Activity, Cpu, MoreHorizontal, Timer,
-} from 'lucide-react'
-import CcBackground from './Background'
-import NetworkGraph from './NetworkGraph'
-import AgentCapsules from './AgentCapsules'
-import IntelligencePanel from './IntelligencePanel'
-import AITimeline, { TimelineInspector } from './AITimeline'
-import ActivityStream from './ActivityStream'
-import CommandPalette from './CommandPalette'
-import ConversationInspector from './ConversationInspector'
-import AgentDetailPanel from './AgentDetailPanel'
-import ModeTabs from './ModeTabs'
-import WorkflowView from './WorkflowView'
-import TimelineView from './TimelineView'
-import AnalyticsView from './AnalyticsView'
-import DebugView from './DebugView'
-import { useControlSimulation } from './useControlSimulation'
-import toast from 'react-hot-toast'
+  Command,
+  Sparkles,
+  ShieldCheck,
+  Zap,
+  Activity,
+  Cpu,
+  MoreHorizontal,
+  Timer,
+} from 'lucide-react';
+import CcBackground from './Background';
+import NetworkGraph from './NetworkGraph';
+import AgentCapsules from './AgentCapsules';
+import IntelligencePanel from './IntelligencePanel';
+import AITimeline, { TimelineInspector } from './AITimeline';
+import ActivityStream from './ActivityStream';
+import CommandPalette from './CommandPalette';
+import ConversationInspector from './ConversationInspector';
+import AgentDetailPanel from './AgentDetailPanel';
+import ModeTabs from './ModeTabs';
+import WorkflowView from './WorkflowView';
+import TimelineView from './TimelineView';
+import AnalyticsView from './AnalyticsView';
+import DebugView from './DebugView';
+import { useControlSimulation } from './useControlSimulation';
+import toast from 'react-hot-toast';
 
 function useClock() {
-  const [now, setNow] = useState(() => Date.now())
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(t)
-  }, [])
-  return now
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
 }
 
 export default function ControlCenter({
-  agents, status, metrics, onOpenWorkflow, onOpenChat,
+  agents,
+  status,
+  metrics,
+  benchmark,
+  usageTotals,
+  intelStats,
+  usageStorageKey,
+  onOpenWorkflow,
+  onOpenChat,
 }) {
   const {
-    live, roster, events, pulses, timeline, history, counters, log, uptime,
-    dismissEvent, actions,
-  } = useControlSimulation({ agents, status, metrics })
+    live,
+    roster,
+    events,
+    pulses,
+    timeline,
+    history,
+    counters,
+    log,
+    uptime,
+    dismissEvent,
+    actions,
+  } = useControlSimulation({
+    agents,
+    status,
+    metrics,
+    benchmark,
+    usageTotals,
+    usageStorageKey,
+  });
 
-  const [focusedAgent, setFocusedAgent] = useState(null)
-  const [hoveringAgent, setHoveringAgent] = useState(null)
-  const [intelCollapsed, setIntelCollapsed] = useState(false)
-  const [paletteOpen, setPaletteOpen] = useState(false)
-  const [convPair, setConvPair] = useState(null)
-  const [inspectorStep, setInspectorStep] = useState(null)
-  const [actionScop, setActionScop] = useState(null)
-  const [mode, setMode] = useState(() => localStorage.getItem('cc:mode') || 'network')
-  const now = useClock()
+  const [focusedAgent, setFocusedAgent] = useState(null);
+  const [hoveringAgent, setHoveringAgent] = useState(null);
+  const [intelCollapsed, setIntelCollapsed] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [convPair, setConvPair] = useState(null);
+  const [inspectorStep, setInspectorStep] = useState(null);
+  const [actionScop, setActionScop] = useState(null);
+  const [mode, setMode] = useState(() => localStorage.getItem('cc:mode') || 'network');
+  const now = useClock();
 
   useEffect(() => {
-    localStorage.setItem('cc:mode', mode)
-  }, [mode])
+    localStorage.setItem('cc:mode', mode);
+  }, [mode]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('cc:intel')
-    if (stored) setIntelCollapsed(stored === '1')
-  }, [])
+    const stored = localStorage.getItem('cc:intel');
+    if (stored) setIntelCollapsed(stored === '1');
+  }, []);
   useEffect(() => {
-    localStorage.setItem('cc:intel', intelCollapsed ? '1' : '0')
-  }, [intelCollapsed])
+    localStorage.setItem('cc:intel', intelCollapsed ? '1' : '0');
+  }, [intelCollapsed]);
 
   // expose cloned/created agents too
   const liveAll = live.map((l) => {
-    const base = (roster || agents).find((a) => a.name === l.name)
+    const base = (roster || agents).find((a) => a.name === l.name);
     return {
       name: l.name,
       label: base?.label || l.name,
@@ -73,71 +104,75 @@ export default function ControlCenter({
       fallback: base?.fallback,
       ll: l.liveliness,
       online: Boolean(l.online),
-    }
-  })
+    };
+  });
 
-  const working = liveAll.filter((a) => a.ll?.phase === 'working').length
-  const thinking = liveAll.filter((a) => a.ll?.phase === 'thinking').length
-  const idle = liveAll.filter((a) => a.ll?.phase === 'idle').length
-  const resting = liveAll.filter((a) => a.ll?.phase === 'resting').length
+  const working = liveAll.filter((a) => a.ll?.phase === 'working').length;
+  const thinking = liveAll.filter((a) => a.ll?.phase === 'thinking').length;
+  const idle = liveAll.filter((a) => a.ll?.phase === 'idle').length;
+  const resting = liveAll.filter((a) => a.ll?.phase === 'resting').length;
 
-  const focused = liveAll.find((a) => a.name === focusedAgent) || null
+  const focused = liveAll.find((a) => a.name === focusedAgent) || null;
 
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'Escape') {
-        if (convPair) setConvPair(null)
-        else if (paletteOpen) setPaletteOpen(false)
-        else if (inspectorStep) setInspectorStep(null)
-        else if (focusedAgent && actionScop !== 'detail') setFocusedAgent(null)
+        if (convPair) setConvPair(null);
+        else if (paletteOpen) setPaletteOpen(false);
+        else if (inspectorStep) setInspectorStep(null);
+        else if (focusedAgent && actionScop !== 'detail') setFocusedAgent(null);
       }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [convPair, paletteOpen, inspectorStep, focusedAgent])
+  }, [convPair, paletteOpen, inspectorStep, focusedAgent]);
 
   const handleCommand = (id, name) => {
-    const target = name || focusedAgent || 'orchestrator'
+    const target = name || focusedAgent || 'orchestrator';
     switch (id) {
       case 'create-agent':
-        if (actions.createAgent()) toast.success('Agent spawned into the network')
-        break
+        if (actions.createAgent()) toast.success('Agent spawned into the network');
+        break;
       case 'clone-agent':
-        if (actions.cloneAgent(target)) toast.success(`Cloned ${target}`)
-        else toast.error('No agent to clone')
-        break
+        if (actions.cloneAgent(target)) toast.success(`Cloned ${target}`);
+        else toast.error('No agent to clone');
+        break;
       case 'pause-agent':
-        if (actions.pauseAgent(target)) toast.success(`${target} set to rest`)
-        break
+        if (actions.pauseAgent(target)) toast.success(`${target} set to rest`);
+        break;
       case 'resume-agent':
-        if (actions.resumeAgent(target)) toast.success(`${target} resumed`)
-        break
+        if (actions.resumeAgent(target)) toast.success(`${target} resumed`);
+        break;
       case 'run-workflow':
-        setMode('workflow')
-        toast.success('Workflow fired — follow the pipeline below')
-        break
+        setMode('workflow');
+        toast.success('Workflow fired — follow the pipeline below');
+        break;
       case 'open-logs':
-        setMode('debug')
-        onOpenWorkflow?.()
-        break
+        setMode('debug');
+        onOpenWorkflow?.();
+        break;
       case 'inspect-memory':
-        setConvPair({ agentA: agents.find((a) => a.name === 'orchestrator'), agentB: liveAll.find((a) => a.name === target) || null })
-        break
+        setConvPair({
+          agentA: agents.find((a) => a.name === 'orchestrator'),
+          agentB: liveAll.find((a) => a.name === target) || null,
+        });
+        break;
       case 'assign-task':
-        setMode('workflow')
-        toast.success(`Task assigned to ${target}`)
-        break
+        setMode('workflow');
+        toast.success(`Task assigned to ${target}`);
+        break;
       default:
-        toast(`Commanded: ${id.replace(/-/g, ' ')}`)
+        toast(`Commanded: ${id.replace(/-/g, ' ')}`);
     }
-  }
+  };
 
   const openConversation = (name) => {
-    const orb = agents.find((a) => a.name === 'orchestrator')
-    const other = (roster || agents).find((a) => a.name === name) || liveAll.find((a) => a.name === name)
-    setConvPair({ agentA: orb, agentB: other })
-  }
+    const orb = agents.find((a) => a.name === 'orchestrator');
+    const other =
+      (roster || agents).find((a) => a.name === name) || liveAll.find((a) => a.name === name);
+    setConvPair({ agentA: orb, agentB: other });
+  };
 
   const modeProps = {
     steps: timeline,
@@ -148,10 +183,10 @@ export default function ControlCenter({
     uptime,
     onInspect: (id) => setInspectorStep(id),
     onFire: () => {
-      setMode('workflow')
-      toast.success('Workflow fired')
+      setMode('workflow');
+      toast.success('Workflow fired');
     },
-  }
+  };
 
   return (
     <div className="cc-root">
@@ -161,7 +196,9 @@ export default function ControlCenter({
       <div className="cc-topbar">
         <div className="cc-topbar-left">
           <div className="cc-brand">
-            <span className="cc-brand-icon"><Sparkles size={15} /></span>
+            <span className="cc-brand-icon">
+              <Sparkles size={15} />
+            </span>
             <div>
               <span className="cc-brand-title">AI Ecosystem</span>
               <span className="cc-brand-sub">living agent control</span>
@@ -177,9 +214,16 @@ export default function ControlCenter({
         <div className="cc-topbar-right">
           <span className="cc-clock" title="Session uptime">
             <Timer size={12} />
-            {new Date(now - uptime).toLocaleTimeString([], { minute: '2-digit', second: '2-digit' })}
+            {new Date(now - uptime).toLocaleTimeString([], {
+              minute: '2-digit',
+              second: '2-digit',
+            })}
           </span>
-          <button type="button" className="cc-tool-btn cc-open-palette" onClick={() => setPaletteOpen(true)}>
+          <button
+            type="button"
+            className="cc-tool-btn cc-open-palette"
+            onClick={() => setPaletteOpen(true)}
+          >
             <Command size={14} /> <span>Command</span> <kbd>space</kbd>
           </button>
           <button type="button" className="cc-tool-btn" onClick={() => onOpenChat?.()}>
@@ -190,7 +234,14 @@ export default function ControlCenter({
 
       {/* mode switch */}
       <div className="cc-stagebar">
-        <ModeTabs mode={mode} onChange={(m) => { setMode(m); setFocusedAgent(null); setActionScop(null) }} />
+        <ModeTabs
+          mode={mode}
+          onChange={(m) => {
+            setMode(m);
+            setFocusedAgent(null);
+            setActionScop(null);
+          }}
+        />
       </div>
 
       {/* main stage */}
@@ -198,7 +249,14 @@ export default function ControlCenter({
         <div className="cc-main">
           {mode === 'network' && (
             <>
-              <AgentCapsules agents={liveAll} live={live} onOpen={(name) => { setFocusedAgent(name); setActionScop('detail') }} />
+              <AgentCapsules
+                agents={liveAll}
+                live={live}
+                onOpen={(name) => {
+                  setFocusedAgent(name);
+                  setActionScop('detail');
+                }}
+              />
               <div className="cc-network-wrap">
                 <NetworkGraph
                   agents={liveAll}
@@ -206,17 +264,27 @@ export default function ControlCenter({
                   pulses={pulses}
                   focusedAgent={focusedAgent}
                   hoveringAgent={hoveringAgent}
-                  onSelect={(name) => { setFocusedAgent(name); setActionScop('detail') }}
+                  onSelect={(name) => {
+                    setFocusedAgent(name);
+                    setActionScop('detail');
+                  }}
                   onHover={setHoveringAgent}
-                  onClear={() => { setFocusedAgent(null); setActionScop(null) }}
+                  onClear={() => {
+                    setFocusedAgent(null);
+                    setActionScop(null);
+                  }}
                   onOpenConnection={(name) => {
-                    setFocusedAgent(null)
-                    setActionScop(null)
-                    openConversation(name)
+                    setFocusedAgent(null);
+                    setActionScop(null);
+                    openConversation(name);
                   }}
                 />
                 <div className="cc-network-hint">
-                  hover an agent · click to zoom · <button type="button" className="cc-link-inline" onClick={openConversation}>click a line</button> to inspect a conversation
+                  hover an agent · click to zoom ·{' '}
+                  <button type="button" className="cc-link-inline" onClick={openConversation}>
+                    click a line
+                  </button>{' '}
+                  to inspect a conversation
                 </div>
               </div>
               <AITimeline
@@ -228,11 +296,25 @@ export default function ControlCenter({
           )}
           {mode === 'workflow' && <WorkflowView {...modeProps} />}
           {mode === 'timeline' && <TimelineView {...modeProps} />}
-          {mode === 'analytics' && <AnalyticsView history={history} counters={counters} />}
-          {mode === 'debug' && <DebugView log={log} counters={counters} uptime={uptime} onClear={() => actions.clearLog()} />}
+          {mode === 'analytics' && (
+            <AnalyticsView
+              history={history}
+              counters={counters}
+              stats={intelStats || usageTotals}
+            />
+          )}
+          {mode === 'debug' && (
+            <DebugView
+              log={log}
+              counters={counters}
+              uptime={uptime}
+              onClear={() => actions.clearLog()}
+            />
+          )}
         </div>
 
         <IntelligencePanel
+          stats={intelStats || usageTotals}
           counters={counters}
           live={liveAll}
           collapsed={intelCollapsed}
@@ -247,7 +329,10 @@ export default function ControlCenter({
         agent={focused}
         ll={focused?.ll}
         online={focused?.online}
-        onClose={() => { setFocusedAgent(null); setActionScop(null) }}
+        onClose={() => {
+          setFocusedAgent(null);
+          setActionScop(null);
+        }}
         onCommand={handleCommand}
       />
       <ConversationInspector
@@ -273,7 +358,7 @@ export default function ControlCenter({
         targetName={focusedAgent}
       />
     </div>
-  )
+  );
 }
 
 function HealthPill({ icon: Icon, label, value, tone }) {
@@ -283,5 +368,5 @@ function HealthPill({ icon: Icon, label, value, tone }) {
       <span className="cc-health-label">{label}</span>
       <span className="cc-health-value">{value}</span>
     </div>
-  )
+  );
 }

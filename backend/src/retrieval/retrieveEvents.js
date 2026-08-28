@@ -42,15 +42,17 @@ async function retrieveEvents({ userId, query, limit = 10, window = '14 days' })
          LIMIT $3`,
         [userId, window, limit - results.length]
       );
-      const seen = new Set(results.map(r => r.id));
-      results = results.concat(res.rows.filter(r => !seen.has(r.id)));
+      const seen = new Set(results.map((r) => r.id));
+      results = results.concat(res.rows.filter((r) => !seen.has(r.id)));
     }
 
-    await pool.query(
-      `INSERT INTO retrieval_logs (user_id, query, source, result_count, latency_ms, had_results)
+    await pool
+      .query(
+        `INSERT INTO retrieval_logs (user_id, query, source, result_count, latency_ms, had_results)
        VALUES ($1,$2,'events',$3,$4,$5)`,
-      [userId, query || '', results.length, Date.now() - start, results.length > 0]
-    ).catch(() => {});
+        [userId, query || '', results.length, Date.now() - start, results.length > 0]
+      )
+      .catch(() => {});
 
     return results;
   } catch (err) {
