@@ -43,9 +43,7 @@ import {
 import { useAgentStore } from '@/stores/useAgentStore';
 import type { ConversationMessage } from '@/lib/types';
 
-function parseEntities(
-  raw: unknown
-): {
+function parseEntities(raw: unknown): {
   attachments?: { type: string; url: string; agent?: string; prompt?: string }[];
   steps?: { summary: string; agent: string; success: boolean }[];
 } | null {
@@ -58,23 +56,47 @@ function parseEntities(
   }
 }
 
-function MobileChatImage({ url, prompt }: { url: string; prompt?: string | null }) {
+function MobileChatImage({
+  url,
+  prompt,
+  truncated,
+}: {
+  url: string;
+  prompt?: string | null;
+  truncated?: boolean;
+}) {
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(!!truncated);
   const [fullscreen, setFullscreen] = useState(false);
   const [aspect, setAspect] = useState(1);
+  const [retryKey, setRetryKey] = useState(0);
+
+  React.useEffect(() => {
+    if (truncated) setError(true);
+  }, [truncated]);
+
+  React.useEffect(() => {
+    if (loaded || error || truncated) return;
+    const t = setTimeout(() => setError(true), 15000);
+    return () => clearTimeout(t);
+  }, [loaded, error, truncated, retryKey, url]);
 
   if (error) {
     return (
       <View className="mt-2 flex-row items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3">
         <AlertTriangle size={16} color="#D97706" />
-        <Text className="flex-1 text-xs text-amber-800">Image failed — tap to retry</Text>
+        <Text className="flex-1 text-xs text-amber-800">
+          {truncated ? 'Image truncated (old limit) — regenerate' : 'Image failed — tap to retry'}
+        </Text>
         <Pressable
           onPress={() => {
+            if (truncated) return;
             setError(false);
             setLoaded(false);
+            setRetryKey((k) => k + 1);
           }}
-          className="rounded-full bg-white px-3 py-1.5 border border-amber-200"
+          disabled={!!truncated}
+          className={`rounded-full bg-white px-3 py-1.5 border border-amber-200 ${truncated ? 'opacity-50' : ''}`}
         >
           <Text className="text-xs font-semibold text-amber-800">Retry</Text>
         </Pressable>
@@ -96,6 +118,7 @@ function MobileChatImage({ url, prompt }: { url: string; prompt?: string | null 
           </View>
         )}
         <Image
+          key={retryKey}
           source={{ uri: url }}
           onLoad={(e) => {
             const { width, height } = e.nativeEvent.source;
@@ -189,7 +212,12 @@ function MessageAttachments({ entities, content }: { entities: unknown; content?
     <View className="gap-2">
       {attachments.map((att, i) =>
         att.type === 'image' && att.url ? (
-          <MobileChatImage key={i} url={att.url} prompt={prompt || (att as any).prompt} />
+          <MobileChatImage
+            key={i}
+            url={att.url}
+            prompt={prompt || (att as any).prompt}
+            truncated={(att as any).truncated}
+          />
         ) : null
       )}
     </View>

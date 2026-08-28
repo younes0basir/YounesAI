@@ -38,10 +38,25 @@ function parseEntities(raw) {
   }
 }
 
-function ChatImage({ url, prompt }) {
+function ChatImage({ url, prompt, truncated }) {
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(!!truncated);
   const [fullscreen, setFullscreen] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
+
+  // If the backend flagged the attachment as truncated (old rows with 50k cap) never
+  // attempt to render the broken data URL – show error immediately.
+  useEffect(() => {
+    if (truncated) setError(true);
+  }, [truncated]);
+
+  // Safety net: if neither onLoad nor onError fires (broken base64, network
+  // issues) don't stay on "Loading image…" forever – auto-fail after 15s.
+  useEffect(() => {
+    if (loaded || error || truncated) return;
+    const t = setTimeout(() => setError(true), 15000);
+    return () => clearTimeout(t);
+  }, [loaded, error, truncated, retryKey, url]);
 
   const handleDownload = () => {
     try {
@@ -59,14 +74,19 @@ function ChatImage({ url, prompt }) {
       <div className="mt-2 flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
         <AlertTriangle size={16} className="shrink-0" />
         <span className="flex-1">
-          Image failed to load — base64 may be truncated or model timed out.
+          {truncated
+            ? 'Image was truncated when saved (old 50k limit) — please regenerate the image.'
+            : 'Image failed to load — model may have timed out or returned invalid data.'}
         </span>
         <button
           onClick={() => {
+            if (truncated) return;
             setError(false);
             setLoaded(false);
+            setRetryKey((k) => k + 1);
           }}
-          className="rounded-full bg-white px-3 py-1 text-xs font-medium text-amber-800 border border-amber-200 hover:bg-amber-100"
+          disabled={!!truncated}
+          className={`rounded-full bg-white px-3 py-1 text-xs font-medium border border-amber-200 ${truncated ? 'opacity-50 cursor-not-allowed text-amber-400' : 'text-amber-800 hover:bg-amber-100'}`}
         >
           Retry
         </button>
@@ -84,12 +104,13 @@ function ChatImage({ url, prompt }) {
           </div>
         )}
         <img
+          key={retryKey}
           src={url}
           alt={prompt || 'Generated image'}
           onLoad={() => setLoaded(true)}
           onError={() => setError(true)}
           className={`max-h-[420px] w-full object-contain bg-white ${loaded ? 'block' : 'hidden'}`}
-          loading="lazy"
+          loading="eager"
         />
         {loaded && (
           <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -169,7 +190,12 @@ function MessageAttachments({ entities, content }) {
     <div className="mt-2 space-y-2">
       {attachments.map((att, i) =>
         att.type === 'image' && att.url ? (
-          <ChatImage key={i} url={att.url} prompt={prompt || att.prompt} />
+          <ChatImage
+            key={i}
+            url={att.url}
+            prompt={prompt || att.prompt}
+            truncated={att.truncated}
+          />
         ) : null
       )}
     </div>

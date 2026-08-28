@@ -126,9 +126,13 @@ function setLastAgent(state, agent, tool = null) {
 
 function toPersistedPayload(state, extras = {}) {
   const attachments = extras.attachments || [];
+  // Base64 PNG for 768x1344 is ~2-4MB (base64 ~2.7-5.5M chars). Previous 50k cap broke every
+  // image and caused Chat to stay on "Loading image…" forever. Cap at 8MB to stay within
+  // JSONB/row limits while preserving valid data URLs.
+  const IMAGE_URL_CAP = 8_000_000;
   const cappedAttachments = attachments.map((a) => {
-    if (a.type === 'image' && a.url && a.url.length > 50000) {
-      return { ...a, url: a.url.slice(0, 50000), truncated: true };
+    if (a.type === 'image' && a.url && a.url.length > IMAGE_URL_CAP) {
+      return { ...a, url: a.url.slice(0, IMAGE_URL_CAP), truncated: true };
     }
     return a;
   });
