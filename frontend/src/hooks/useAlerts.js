@@ -78,6 +78,11 @@ export function usePendingAlerts() {
       } else if (alert.type === 'reminder_due') {
         playRing();
         setTimeout(() => speak(`Reminder: ${alert.title} is due now`), 300);
+      } else if (alert.type === 'task_due') {
+        speak(`Task due soon: ${alert.title}. ${alert.body || ''}`);
+      } else if (alert.type === 'task_overdue') {
+        playRing();
+        setTimeout(() => speak(`Overdue task: ${alert.title}. ${alert.body || ''}`), 300);
       }
 
       markRead.mutate(alert.id);

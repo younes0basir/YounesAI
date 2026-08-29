@@ -135,8 +135,8 @@ router.get('/alerts/pending', authMiddleware, async (req, res) => {
        FROM notifications
        WHERE user_id = $1
          AND read_at IS NULL
-         AND type IN ('reminder_warning', 'reminder_due')
-       ORDER BY created_at DESC
+         AND type IN ('reminder_warning', 'reminder_due', 'task_due', 'task_overdue')
+         ORDER BY created_at DESC
        LIMIT 20`,
       [userId]
     );

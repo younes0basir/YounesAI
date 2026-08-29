@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Pressable, Text, TextInput, View } from 'react-native';
 import { Link } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Fingerprint, ScanFace, Sparkles } from 'lucide-react-native';
+import { Fingerprint, ScanFace } from 'lucide-react-native';
+import { AppLogo } from '@/components/ui/AppLogo';
 import { useAuthStore } from '@/stores/useAuthStore';
 import {
   authenticate,
@@ -12,6 +13,8 @@ import {
   type BiometricKind,
 } from '@/services/biometrics';
 import { hapticTap } from '@/lib/haptics';
+import { API_BASE_URL } from '@/lib/apiUrl';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 
 export default function LoginScreen() {
   const { login, biometricLocked, unlockWithBiometrics } = useAuthStore();
@@ -52,8 +55,8 @@ export default function LoginScreen() {
     try {
       await login(email.trim(), password);
       maybeOfferBiometrics();
-    } catch {
-      setError('Invalid email or password.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Sign in failed.'));
     } finally {
       setBusy(false);
     }
@@ -66,9 +69,7 @@ export default function LoginScreen() {
     <KeyboardAvoidingView behavior="padding" className="flex-1 bg-canvas">
       <View className="flex-1 justify-center px-8">
         <Animated.View entering={FadeInDown.duration(400)} className="mb-8 items-center">
-          <View className="h-16 w-16 items-center justify-center rounded-3xl bg-accent">
-            <Sparkles size={30} color="#FFFFFF" />
-          </View>
+          <AppLogo size={80} rounded={28} />
           <Text className="mt-4 text-3xl font-bold text-ink">Welcome back</Text>
           <Text className="mt-1 text-ink-soft">Your AI productivity hub awaits</Text>
         </Animated.View>
@@ -138,6 +139,10 @@ export default function LoginScreen() {
             Create an account
           </Link>
         </View>
+
+        <Text className="mt-6 text-center text-[11px] text-ink-faint" numberOfLines={2}>
+          Server: {API_BASE_URL}
+        </Text>
       </View>
     </KeyboardAvoidingView>
   );

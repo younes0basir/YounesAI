@@ -18,7 +18,16 @@ export function useCreateEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (event: Partial<CalendarEvent>) => {
-      const { data } = await api.post<CalendarEvent>('/api/calendar_events', event);
+      const startsAt = event.starts_at ?? new Date().toISOString();
+      const endsAt =
+        event.ends_at ?? new Date(new Date(startsAt).getTime() + 60 * 60 * 1000).toISOString();
+      const { data } = await api.post<CalendarEvent>('/api/calendar_events', {
+        title: event.title,
+        description: event.description ?? null,
+        starts_at: startsAt,
+        ends_at: endsAt,
+        location_text: event.location_text ?? null,
+      });
       return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: EVENTS_KEY }),

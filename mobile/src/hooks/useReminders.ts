@@ -18,7 +18,11 @@ export function useCreateReminder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<Reminder>) => {
-      const { data } = await api.post<Reminder>('/api/reminders', payload);
+      const { data } = await api.post<Reminder>('/api/reminders', {
+        title: payload.title,
+        message: payload.message ?? null,
+        trigger_at: payload.trigger_at ?? null,
+      });
       return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),

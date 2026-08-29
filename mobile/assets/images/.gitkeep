@@ -1,2 +1,3 @@
-# Placeholder so Metro's asset scanner finds this directory.
-# Add icon.png / splash-icon.png here when branding the app.
+# App branding assets
+# icon.png       — 1024x1024 launcher icon (source: vite.png)
+# splash-icon.png — splash screen artwork (same portrait on black)

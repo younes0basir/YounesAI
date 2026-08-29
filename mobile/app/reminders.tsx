@@ -29,7 +29,7 @@ export default function RemindersScreen() {
     if (!title.trim()) return;
     createReminder.mutate({
       title: title.trim(),
-      remind_at: remindAt.trim() ? new Date(remindAt.trim()).toISOString() : null,
+      trigger_at: remindAt.trim() ? new Date(remindAt.trim()).toISOString() : null,
     });
     setTitle('');
     setRemindAt('');
@@ -68,9 +68,9 @@ export default function RemindersScreen() {
         renderItem={({ item }) => (
           <GlassCard className="p-4">
             <Text className="text-[15px] font-semibold text-ink">{item.title}</Text>
-            {item.remind_at ? (
+            {item.trigger_at ? (
               <Text className="mt-0.5 text-xs text-ink-soft">
-                {new Date(item.remind_at).toLocaleString()}
+                {new Date(item.trigger_at).toLocaleString()}
               </Text>
             ) : null}
             <View className="mt-3 flex-row items-center gap-2">

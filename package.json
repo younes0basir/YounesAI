@@ -40,8 +40,8 @@
     ]
   },
   "build": {
-    "appId": "com.antigravity.desktop-assistant",
-    "productName": "Desktop Assistant",
+    "appId": "com.younesai.mobile",
+    "productName": "YounesAI",
     "directories": {
       "output": "dist-desktop"
     },
@@ -51,11 +51,13 @@
       "package.json"
     ],
     "asar": true,
+    "icon": "electron/icon.png",
     "win": {
       "target": [
         "nsis"
       ],
-      "artifactName": "${productName}-${version}-setup.${ext}"
+      "artifactName": "${productName}-${version}-setup.${ext}",
+      "icon": "electron/icon.png"
     },
     "nsis": {
       "oneClick": false,

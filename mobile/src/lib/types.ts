@@ -24,9 +24,9 @@ export interface CalendarEvent {
   id: string;
   title: string;
   description?: string | null;
-  start_at?: string | null;
-  end_at?: string | null;
-  location?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  location_text?: string | null;
   created_at?: string;
 }
 
@@ -90,8 +90,8 @@ export interface EmailApproval {
 export interface Reminder {
   id: string;
   title: string;
-  notes?: string | null;
-  remind_at?: string | null;
+  message?: string | null;
+  trigger_at?: string | null;
   status?: string | null;
   created_at?: string;
 }
@@ -102,6 +102,8 @@ export interface AppNotification {
   body?: string | null;
   message?: string | null;
   type?: string | null;
+  entity_type?: string | null;
+  entity_id?: string | null;
   read_at?: string | null;
   created_at?: string;
 }

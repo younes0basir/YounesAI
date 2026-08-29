@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Fingerprint, LogOut, MapPin, RefreshCw, ScanFace } from 'lucide-react-native';
+import { Fingerprint, LogOut, MapPin, RefreshCw, ScanFace, Volume2 } from 'lucide-react-native';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -14,6 +14,13 @@ import {
   setBiometricsEnabled,
   type BiometricKind,
 } from '@/services/biometrics';
+import { API_BASE_URL } from '@/lib/apiUrl';
+import { api } from '@/services/api';
+import {
+  ensureNotificationPermissions,
+  setVoiceAlertsEnabled,
+  voiceAlertsEnabled,
+} from '@/services/notificationVoice';
 
 export default function SettingsScreen() {
   const { user, logout } = useAuthStore();
@@ -21,6 +28,8 @@ export default function SettingsScreen() {
   const [geofences, setGeofences] = useState<number | null>(null);
   const [bioKind, setBioKind] = useState<BiometricKind>(null);
   const [bioOn, setBioOn] = useState(biometricsEnabled());
+  const [voiceAlertsOn, setVoiceAlertsOn] = useState(voiceAlertsEnabled());
+  const [backendStatus, setBackendStatus] = useState<string | null>(null);
 
   useEffect(() => {
     setQueued(getQueue().length);
@@ -43,6 +52,25 @@ export default function SettingsScreen() {
 
   const enablePlaces = async () => {
     setGeofences(await syncGeofences());
+  };
+
+  const testBackend = async () => {
+    setBackendStatus('Checking…');
+    try {
+      const { data } = await api.get('/api/health');
+      setBackendStatus(data?.status === 'ok' ? 'Connected' : 'Unexpected response');
+    } catch {
+      setBackendStatus('Unreachable');
+    }
+  };
+
+  const toggleVoiceAlerts = async (next: boolean) => {
+    if (next) {
+      const ok = await ensureNotificationPermissions();
+      if (!ok) return;
+    }
+    setVoiceAlertsEnabled(next);
+    setVoiceAlertsOn(next);
   };
 
   return (
@@ -86,15 +114,42 @@ export default function SettingsScreen() {
         ) : null}
 
         <GlassCard className="p-4">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-1 flex-row items-center gap-3 pr-3">
+              <View className="h-10 w-10 items-center justify-center rounded-xl bg-accent-soft">
+                <Volume2 size={18} color="#6366F1" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-sm font-semibold text-ink">Voice alerts</Text>
+                <Text className="mt-0.5 text-xs text-ink-soft">
+                  Speak reminders and task alerts aloud · shows phone notifications
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={voiceAlertsOn}
+              onValueChange={(v) => void toggleVoiceAlerts(v)}
+              trackColor={{ false: '#E2E8F0', true: '#6366F1' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+        </GlassCard>
+
+        <GlassCard className="p-4">
           <Text className="text-xs font-bold uppercase tracking-widest text-ink-faint">
             Backend
           </Text>
           <Text className="mt-2 text-sm text-ink" numberOfLines={1}>
-            {process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001'}
+            {API_BASE_URL}
           </Text>
-          <Text className="mt-1 text-xs text-ink-soft">
-            Set EXPO_PUBLIC_API_URL in mobile/.env to point at your server.
-          </Text>
+          <Pressable
+            onPress={testBackend}
+            className="mt-3 self-start rounded-full bg-accent-soft px-3.5 py-2"
+          >
+            <Text className="text-xs font-semibold text-accent">
+              {backendStatus ? `Status: ${backendStatus}` : 'Test connection'}
+            </Text>
+          </Pressable>
         </GlassCard>
 
         <GlassCard className="p-4">

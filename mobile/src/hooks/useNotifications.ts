@@ -24,6 +24,29 @@ export function useMarkNotificationRead() {
       });
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: KEY });
+      void queryClient.invalidateQueries({ queryKey: ['pending-alerts'] });
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data: items } = await api.get<AppNotification[]>('/api/notifications');
+      const unread = (items ?? []).filter((n) => !n.read_at);
+      await Promise.all(
+        unread.map((n) =>
+          api.put(`/api/notifications/${n.id}`, { read_at: new Date().toISOString() })
+        )
+      );
+      return unread.length;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: KEY });
+      void queryClient.invalidateQueries({ queryKey: ['pending-alerts'] });
+    },
   });
 }

@@ -26,8 +26,11 @@ cp .env.example .env   # set EXPO_PUBLIC_API_URL to your backend
 npm start
 ```
 
-On a physical device, `EXPO_PUBLIC_API_URL` must be your machine's LAN IP
-(e.g. `http://192.168.1.20:3001`), not `localhost`.
+On a physical device, `EXPO_PUBLIC_API_URL` must be a reachable server URL
+(e.g. `http://84.8.220.241:3000` or your LAN IP), not `localhost`.
+
+EAS cloud builds do **not** upload gitignored `mobile/.env` — the URL is set in
+`mobile/eas.json` under each profile's `env` block. Rebuild after changing it.
 
 ## Backend endpoints consumed
 
@@ -43,8 +46,10 @@ On a physical device, `EXPO_PUBLIC_API_URL` must be your machine's LAN IP
 
 ## Notes
 
-- Geofencing and MMKV require a development build (`npx expo run:android` or EAS);
-  they no-op in Expo Go.
-- The offline mutation queue lives in MMKV and flushes automatically when
-  connectivity returns; manual retry is in Settings.
+- **Expo Go** loads JS from your PC (`expo start`) — closing the PC stops the app shell.
+  Login JWT persists via SecureStore; cache/offline queue now use AsyncStorage in Expo Go.
+- **Standalone APK** (persists like a normal app, no PC): `.\scripts\build-mobile-apk.ps1`
+  or `cd mobile && eas build --platform android --profile preview`. Install APK on phone;
+  only Oracle backend (`EXPO_PUBLIC_API_URL`) must be running.
+- Geofencing requires a standalone build; it no-ops in Expo Go.
 - Project conventions for AI agents are in `.cursor/rules/mobile-app.mdc`.

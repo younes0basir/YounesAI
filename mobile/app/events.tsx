@@ -19,17 +19,21 @@ export default function EventsScreen() {
   const deleteEvent = useDeleteEvent();
 
   const sorted = [...(events.data ?? [])].sort((a, b) => {
-    const da = a.start_at ? new Date(a.start_at).getTime() : Infinity;
-    const db = b.start_at ? new Date(b.start_at).getTime() : Infinity;
+    const da = a.starts_at ? new Date(a.starts_at).getTime() : Infinity;
+    const db = b.starts_at ? new Date(b.starts_at).getTime() : Infinity;
     return da - db;
   });
 
   const submit = () => {
     if (!title.trim()) return;
+    const startsAt = startAt.trim()
+      ? new Date(startAt.trim()).toISOString()
+      : new Date().toISOString();
     createEvent.mutate({
       title: title.trim(),
-      location: location.trim() || null,
-      start_at: startAt.trim() ? new Date(startAt.trim()).toISOString() : null,
+      location_text: location.trim() || null,
+      starts_at: startsAt,
+      ends_at: new Date(new Date(startsAt).getTime() + 60 * 60 * 1000).toISOString(),
     });
     setTitle('');
     setLocation('');

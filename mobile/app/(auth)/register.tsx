@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, Pressable, Text, TextInput, View } from 'react-native';
 import { Link } from 'expo-router';
-import { Sparkles } from 'lucide-react-native';
+import { AppLogo } from '@/components/ui/AppLogo';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { API_BASE_URL } from '@/lib/apiUrl';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 
 export default function RegisterScreen() {
   const register = useAuthStore((s) => s.register);
@@ -18,7 +20,7 @@ export default function RegisterScreen() {
     try {
       await register(email.trim(), password, name.trim() || undefined);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create account.');
+      setError(getApiErrorMessage(err, 'Could not create account.'));
     } finally {
       setBusy(false);
     }
@@ -28,9 +30,7 @@ export default function RegisterScreen() {
     <KeyboardAvoidingView behavior="padding" className="flex-1 bg-canvas">
       <View className="flex-1 justify-center px-8">
         <View className="mb-8 items-center">
-          <View className="h-16 w-16 items-center justify-center rounded-3xl bg-accent">
-            <Sparkles size={30} color="#FFFFFF" />
-          </View>
+          <AppLogo size={80} rounded={28} />
           <Text className="mt-4 text-3xl font-bold text-ink">Create account</Text>
           <Text className="mt-1 text-ink-soft">Set up your AI workspace</Text>
         </View>
@@ -82,6 +82,10 @@ export default function RegisterScreen() {
             Sign in
           </Link>
         </View>
+
+        <Text className="mt-6 text-center text-[11px] text-ink-faint" numberOfLines={2}>
+          Server: {API_BASE_URL}
+        </Text>
       </View>
     </KeyboardAvoidingView>
   );

@@ -3,6 +3,7 @@ import { api } from '@/services/api';
 import { mmkvGet, mmkvSet } from '@/services/mmkv';
 import { getChatSessionId, SESSION_KEY } from '@/hooks/useChat';
 import { queryClient } from '@/lib/queryClient';
+import { getApiErrorMessage } from '@/lib/apiErrors';
 import type { AgentChatResult, AgentStep } from '@/lib/types';
 
 const AGENT_LABELS: Record<string, string> = {
@@ -84,7 +85,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       set({
         isProcessing: false,
         steps: [{ id: 'error', agent: 'general', label: 'Request failed', status: 'error' }],
-        lastResponse: error instanceof Error ? error.message : 'Something went wrong',
+        lastResponse: getApiErrorMessage(error, 'Something went wrong'),
       });
     }
   },
@@ -131,7 +132,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       set({
         isProcessing: false,
         steps: [{ id: 'error', agent: 'general', label: 'Voice request failed', status: 'error' }],
-        lastResponse: error instanceof Error ? error.message : 'Something went wrong',
+        lastResponse: getApiErrorMessage(error, 'Something went wrong'),
       });
     }
   },

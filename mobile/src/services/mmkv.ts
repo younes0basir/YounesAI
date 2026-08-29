@@ -1,4 +1,7 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MMKV } from 'react-native-mmkv';
+
+const ASYNC_PREFIX = 'younesai-mmkv:';
 
 // Mirrors the (unexported) Storage contract of createSyncStoragePersister.
 interface SyncStorage {
@@ -14,24 +17,57 @@ interface KeyValueStorage {
 }
 
 /**
- * react-native-mmkv is not bundled into Expo Go, so construction throws there.
- * Fall back to an in-memory shim so the app stays usable in Expo Go; dev
- * builds (expo run:android / EAS) get real persisted MMKV automatically.
+ * Expo Go has no native MMKV — use AsyncStorage-backed cache so query/offline
+ * data survives app restarts. Standalone builds (EAS / expo run:android) use MMKV.
  */
-function createStorage(): KeyValueStorage {
+function createAsyncStorageShim(): KeyValueStorage {
+  const map = new Map<string, string>();
+
+  return {
+    getString: (key) => map.get(key),
+    set: (key, value) => {
+      map.set(key, value);
+      void AsyncStorage.setItem(ASYNC_PREFIX + key, value).catch(() => {});
+    },
+    delete: (key) => {
+      map.delete(key);
+      void AsyncStorage.removeItem(ASYNC_PREFIX + key).catch(() => {});
+    },
+  };
+}
+
+function initStorage(): { storage: KeyValueStorage; usingAsyncFallback: boolean } {
   try {
-    return new MMKV({ id: 'younesai-app' });
+    return { storage: new MMKV({ id: 'younesai-app' }), usingAsyncFallback: false };
   } catch {
-    const map = new Map<string, string>();
-    return {
-      getString: (key) => map.get(key),
-      set: (key, value) => void map.set(key, value),
-      delete: (key) => void map.delete(key),
-    };
+    return { storage: createAsyncStorageShim(), usingAsyncFallback: true };
   }
 }
 
-export const storage = createStorage();
+const { storage: mmkvStorage, usingAsyncFallback } = initStorage();
+
+export const storage = mmkvStorage;
+
+/** Load persisted keys from AsyncStorage before first render (Expo Go only). */
+export async function hydrateMmkv(): Promise<void> {
+  if (!usingAsyncFallback) return;
+
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const ours = keys.filter((k) => k.startsWith(ASYNC_PREFIX));
+    if (ours.length === 0) return;
+
+    const pairs = await Promise.all(
+      ours.map(async (fullKey) => [fullKey, await AsyncStorage.getItem(fullKey)] as const)
+    );
+    for (const [fullKey, value] of pairs) {
+      if (value == null) continue;
+      storage.set(fullKey.slice(ASYNC_PREFIX.length), value);
+    }
+  } catch {
+    // Non-fatal — app still runs with empty cache.
+  }
+}
 
 export function mmkvGet<T>(key: string): T | null {
   const raw = storage.getString(key);

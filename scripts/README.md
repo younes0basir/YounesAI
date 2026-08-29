@@ -50,6 +50,41 @@ Optional flags:
 
 Then on phone: Expo Go → `exp://<your-pc-lan-ip>:8082` or scan QR at http://localhost:8082
 
+## Mobile — install APK on phone via USB (standalone app)
+
+Phone: USB debugging ON, shows `device` in `adb devices`.
+
+**Option A — local build (JDK + SDK on PC, no Android Studio app):**
+
+```powershell
+winget install Microsoft.OpenJDK.17
+# Close and reopen PowerShell after JDK installs
+
+.\scripts\setup-android-sdk.ps1
+# Close and reopen PowerShell after SDK installs
+
+.\scripts\install-mobile-usb.ps1
+```
+
+**Option B — cloud build (no SDK on PC, needs free Expo account):**
+
+```powershell
+npm install -g eas-cli
+eas login
+cd mobile
+eas build:configure
+cd ..
+.\scripts\install-mobile-usb.ps1 -EasCloud
+```
+
+**Option C — install an APK you already downloaded:**
+
+```powershell
+.\scripts\install-mobile-usb.ps1 -Apk C:\path\to\app.apk
+```
+
+After install, the app runs without Expo Go or your PC — only Oracle backend must be up.
+
 ## Frontend
 
 `frontend/.env` → `VITE_API_URL=http://84.8.220.241:3000/api`

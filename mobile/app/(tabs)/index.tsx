@@ -29,7 +29,7 @@ export default function DashboardScreen() {
     (t) => t.status !== 'done' && t.status !== 'completed'
   );
   const upcomingEvents = (events.data ?? [])
-    .filter((e) => e.start_at && new Date(e.start_at) >= new Date())
+    .filter((e) => e.starts_at && new Date(e.starts_at) >= new Date())
     .slice(0, 2);
 
   const refreshing = tasks.isRefetching || events.isRefetching;

@@ -168,9 +168,18 @@ router.post('/event', authMiddleware, async (req, res) => {
 router.post('/place', authMiddleware, async (req, res) => {
   try {
     const context = await buildContext(req);
-    if (!req.body.message)
-      return res.status(400).json({ success: false, error: 'Message is required' });
-    context.message = req.body.message;
+    const { message, latitude, longitude, source } = req.body;
+    if (!message && (latitude == null || longitude == null)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message or coordinates required',
+      });
+    }
+    context.message =
+      message || `User location update at ${latitude}, ${longitude}${source ? ` (${source})` : ''}`;
+    if (latitude != null && longitude != null) {
+      context.parameters = { ...(context.parameters || {}), latitude, longitude, source };
+    }
     const result = await agentCoordinator.callAgent('place', 'run', context);
     res.json(result);
   } catch (error) {

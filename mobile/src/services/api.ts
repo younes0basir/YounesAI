@@ -1,15 +1,16 @@
 import axios, { AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { API_BASE_URL } from '@/lib/apiUrl';
 
 export const TOKEN_KEY = 'younesai.jwt';
 
-const baseURL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001';
-
 export const api = axios.create({
-  baseURL,
+  baseURL: API_BASE_URL,
   timeout: 20000,
   headers: { 'Content-Type': 'application/json' },
 });
+
+export { API_BASE_URL };
 
 export async function getToken(): Promise<string | null> {
   try {

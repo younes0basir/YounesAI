@@ -23,7 +23,7 @@ export function BentoEventCard({ event }: { event: CalendarEvent }) {
     transform: [{ scale: withSpring(pressed.value ? 0.96 : 1, SPRING) }],
   }));
 
-  const start = event.start_at ? new Date(event.start_at) : null;
+  const start = event.starts_at ? new Date(event.starts_at) : null;
 
   return (
     <GestureDetector gesture={tap}>
@@ -40,11 +40,11 @@ export function BentoEventCard({ event }: { event: CalendarEvent }) {
           <Text className="mt-2 text-[15px] font-semibold text-ink" numberOfLines={2}>
             {event.title}
           </Text>
-          {event.location ? (
+          {event.location_text ? (
             <View className="mt-1.5 flex-row items-center gap-1">
               <MapPin size={12} color="#94A3B8" />
               <Text className="text-xs text-ink-soft" numberOfLines={1}>
-                {event.location}
+                {event.location_text}
               </Text>
             </View>
           ) : null}
