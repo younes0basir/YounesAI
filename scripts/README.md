@@ -35,6 +35,26 @@ ORACLE_HOST=opc@84.8.220.241 ORACLE_KEY=~/.ssh/oracle.key ./scripts/deploy.sh
 4. `pm2 restart younesai-backend --update-env`
 5. Health check on `localhost:3000/api/health`
 
+### Mobile API on port 80 (nginx)
+
+Phones on mobile data often cannot reach `:3000`. On the Oracle VM, nginx proxies **port 80 → localhost:3000**:
+
+```bash
+# Once on the VM (after git pull):
+chmod +x scripts/setup-nginx-oracle.sh
+./scripts/setup-nginx-oracle.sh
+```
+
+**Oracle Cloud Console (required once):** Networking → Virtual Cloud Networks → your VCN → Security List → Add Ingress Rule:
+
+| Source      | IP Protocol | Destination port |
+| ----------- | ----------- | ---------------- |
+| `0.0.0.0/0` | TCP         | 80               |
+
+Verify: `curl http://84.8.220.241/api/health` from your PC (should return JSON, not timeout).
+
+Mobile APK uses `http://84.8.220.241` (no port) via `mobile/eas.json` and `mobile/app.config.js`.
+
 Optional flags:
 
 ```powershell
