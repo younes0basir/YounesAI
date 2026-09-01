@@ -15,8 +15,7 @@ import {
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { getApiBaseUrl, DEFAULT_API_URL, LOCAL_API_URL } from '@/lib/apiUrl';
-import { getStoredBackendUrl, setStoredBackendUrl } from '@/lib/apiUrl';
+import { API_BASE_URL, DEFAULT_API_URL, LOCAL_API_URL } from '@/lib/apiUrl';
 import { flushQueue, getQueue } from '@/services/offlineQueue';
 import { syncGeofences } from '@/services/geofence';
 import {
@@ -44,13 +43,12 @@ export default function SettingsScreen() {
   const [bioOn, setBioOn] = useState(biometricsEnabled());
   const [voiceAlertsOn, setVoiceAlertsOn] = useState(voiceAlertsEnabled());
   const [backendStatus, setBackendStatus] = useState<string | null>(null);
-  const [backendUrl, setBackendUrl] = useState(getApiBaseUrl());
+  const [backendUrl] = useState(API_BASE_URL);
   const isAdmin = Boolean(user?.is_admin);
 
   useEffect(() => {
     setQueued(getQueue().length);
     void getBiometricKind().then(setBioKind);
-    setBackendUrl(getApiBaseUrl());
   }, []);
 
   const toggleBiometrics = async (next: boolean) => {
@@ -81,13 +79,9 @@ export default function SettingsScreen() {
     }
   };
 
-  const switchBackend = (mode: 'deployed' | 'local') => {
-    const url = mode === 'local' ? LOCAL_API_URL : DEFAULT_API_URL;
-    setStoredBackendUrl(mode === 'deployed' ? null : url);
-    setBackendUrl(url);
-    setBackendStatus(null);
-    // Force re-test so user sees result
-    setTimeout(() => void testBackend(), 120);
+  const switchBackend = (_mode: 'deployed' | 'local') => {
+    // Runtime switch removed to avoid Reanimated/MMKV crash — use env var EXPO_PUBLIC_API_URL_LOCAL and restart Expo
+    setBackendStatus('Set EXPO_PUBLIC_API_URL and restart Expo to switch backend');
   };
 
   const toggleVoiceAlerts = async (next: boolean) => {
