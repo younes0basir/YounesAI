@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { ImageResult } from '@/lib/types';
 
 export interface GenerateImageInput {
@@ -17,6 +18,9 @@ export function useGenerateImage() {
         timeout: 120000,
       });
       return data;
+    },
+    onSuccess: () => {
+      void useAuthStore.getState().refreshUser();
     },
   });
 }

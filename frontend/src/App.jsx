@@ -18,6 +18,8 @@ import Chat from './pages/Chat';
 import ImageGenerator from './pages/ImageGenerator';
 import Inbox from './pages/Inbox';
 import Settings from './pages/Settings';
+import Plans from './pages/Plans';
+import Admin from './pages/Admin';
 
 export default function App() {
   return (
@@ -38,6 +40,8 @@ export default function App() {
           <Route path="chat" element={<Chat />} />
           <Route path="inbox" element={<Inbox />} />
           <Route path="image-generator" element={<ImageGenerator />} />
+          <Route path="plans" element={<Plans />} />
+          <Route path="admin" element={<Admin />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Route>

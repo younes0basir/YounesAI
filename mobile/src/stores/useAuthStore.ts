@@ -33,6 +33,7 @@ interface AuthState {
   logout: () => Promise<void>;
   hydrate: () => Promise<void>;
   unlockWithBiometrics: () => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -93,6 +94,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       purgeAccountCaches();
       set({ user: null, hydrated: true, biometricLocked: false });
       return false;
+    }
+  },
+
+  async refreshUser() {
+    try {
+      const { data } = await api.get('/api/auth/me');
+      set({ user: data });
+    } catch {
+      // ignore — session refresh is best-effort
     }
   },
 }));

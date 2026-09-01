@@ -35,25 +35,22 @@ ORACLE_HOST=opc@84.8.220.241 ORACLE_KEY=~/.ssh/oracle.key ./scripts/deploy.sh
 4. `pm2 restart younesai-backend --update-env`
 5. Health check on `localhost:3000/api/health`
 
-### Mobile API on port 80 (nginx)
+### Mobile API (HTTPS)
 
-Phones on mobile data often cannot reach `:3000`. On the Oracle VM, nginx proxies **port 80 → localhost:3000**:
+Android blocks plain HTTP to public IPs on many devices (Poco/Xiaomi, etc.). Use **HTTPS**:
 
-```bash
-# Once on the VM (after git pull):
-chmod +x scripts/setup-nginx-oracle.sh
-./scripts/setup-nginx-oracle.sh
+- Mobile APK: `https://84-8-220-241.sslip.io` (`mobile/eas.json`, `mobile/app.config.js`)
+- nginx on the VM terminates TLS and proxies to `localhost:3000`
+
+**Oracle Cloud Security List — add ingress for TCP 80 and TCP 443** (443 is required for phones).
+
+Verify from your PC:
+
+```powershell
+curl https://84-8-220-241.sslip.io/api/health
 ```
 
-**Oracle Cloud Console (required once):** Networking → Virtual Cloud Networks → your VCN → Security List → Add Ingress Rule:
-
-| Source      | IP Protocol | Destination port |
-| ----------- | ----------- | ---------------- |
-| `0.0.0.0/0` | TCP         | 80               |
-
-Verify: `curl http://84.8.220.241/api/health` from your PC (should return JSON, not timeout).
-
-Mobile APK uses `http://84.8.220.241` (no port) via `mobile/eas.json` and `mobile/app.config.js`.
+Then rebuild the APK. VM setup (once): `./scripts/setup-nginx-oracle.sh`
 
 Optional flags:
 

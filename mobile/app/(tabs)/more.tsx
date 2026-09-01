@@ -6,14 +6,19 @@ import { useRouter, type Href } from 'expo-router';
 import {
   Bell,
   Calendar,
+  Crown,
   FileText,
   FolderKanban,
   Image as ImageIcon,
+  Lock,
   MapPin,
   Mic,
   Settings,
+  Shield,
   Timer,
 } from 'lucide-react-native';
+import { useEntitlement } from '@/hooks/useEntitlement';
+import type { EntitlementFeature } from '@/lib/types';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -25,6 +30,8 @@ interface Module {
   icon: React.ComponentType<{ size: number; color: string }>;
   color: string;
   bg: string;
+  proFeature?: EntitlementFeature;
+  adminOnly?: boolean;
 }
 
 const MODULES: Module[] = [
@@ -83,6 +90,7 @@ const MODULES: Module[] = [
     icon: ImageIcon,
     color: '#EC4899',
     bg: '#FCE7F3',
+    proFeature: 'image',
   },
   {
     label: 'Voice',
@@ -91,6 +99,24 @@ const MODULES: Module[] = [
     icon: Mic,
     color: '#0EA5E9',
     bg: '#E0F2FE',
+    proFeature: 'voice',
+  },
+  {
+    label: 'Plans',
+    description: 'Starter · Pro · Platinum',
+    href: '/plans',
+    icon: Crown,
+    color: '#EAB308',
+    bg: '#FEF9C3',
+  },
+  {
+    label: 'Admin',
+    description: 'Plan management',
+    href: '/admin' as unknown as Href,
+    icon: Shield,
+    color: '#7C3AED',
+    bg: '#EDE9FE',
+    adminOnly: true,
   },
   {
     label: 'Settings',
@@ -105,6 +131,28 @@ const MODULES: Module[] = [
 export default function MoreScreen() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
+  const voiceEntitlement = useEntitlement('voice');
+  const imageEntitlement = useEntitlement('image');
+
+  const isAdmin = Boolean(user?.is_admin);
+  const isLocked = (mod: Module) => {
+    if (mod.adminOnly) return !isAdmin;
+    if (mod.proFeature === 'voice') return !voiceEntitlement.allowed && voiceEntitlement.limit <= 0;
+    if (mod.proFeature === 'image') return !imageEntitlement.allowed && imageEntitlement.limit <= 0;
+    return false;
+  };
+
+  const openModule = (mod: Module) => {
+    if (mod.adminOnly && !isAdmin) {
+      router.push('/admin' as any);
+      return;
+    }
+    if (isLocked(mod)) {
+      router.push('/plans');
+      return;
+    }
+    router.push(mod.href);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-canvas-soft" edges={['top']}>
@@ -147,13 +195,20 @@ export default function MoreScreen() {
               entering={FadeInDown.delay(i * 40).duration(340)}
               className="w-[48.8%]"
             >
-              <PressableScale onPress={() => router.push(mod.href)}>
+              <PressableScale onPress={() => openModule(mod)}>
                 <GlassCard className="p-3.5" style={{ minHeight: 122 }}>
-                  <View
-                    className="h-9 w-9 items-center justify-center rounded-xl border"
-                    style={{ backgroundColor: mod.bg, borderColor: `${mod.color}18` }}
-                  >
-                    <mod.icon size={17} color={mod.color} />
+                  <View className="flex-row items-start justify-between">
+                    <View
+                      className="h-9 w-9 items-center justify-center rounded-xl border"
+                      style={{ backgroundColor: mod.bg, borderColor: `${mod.color}18` }}
+                    >
+                      <mod.icon size={17} color={mod.color} />
+                    </View>
+                    {isLocked(mod) ? (
+                      <View className="h-6 w-6 items-center justify-center rounded-full bg-slate-100">
+                        <Lock size={12} color="#64748B" />
+                      </View>
+                    ) : null}
                   </View>
                   <View className="mt-2.5 flex-1">
                     <Text

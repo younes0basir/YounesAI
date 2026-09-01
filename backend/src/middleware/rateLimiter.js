@@ -1,4 +1,5 @@
 const rateLimit = require('express-rate-limit');
+const { getAgentRateLimit } = require('../plans/config');
 
 /**
  * Auth endpoints — strict: 20 attempts per 15 minutes per IP
@@ -26,11 +27,11 @@ const apiLimiter = rateLimit({
 });
 
 /**
- * AI Agent endpoints — 30 req/min per user (AI calls are expensive)
+ * AI Agent endpoints — plan-aware req/min per user (fallback: IP, default 30)
  */
 const agentLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 30,
+  max: (req) => getAgentRateLimit(req.user?.plan || 'starter'),
   message: { error: 'AI rate limit exceeded. Please wait before sending more messages.' },
   standardHeaders: true,
   legacyHeaders: false,

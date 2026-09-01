@@ -63,6 +63,7 @@ export function useSendMessage() {
       if (data?.sessionId) mmkvSet(SESSION_KEY, data.sessionId);
       await invalidateAfterAgents(data?.agents);
       await queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      void useAuthStore.getState().refreshUser();
     },
   });
 }
@@ -96,6 +97,7 @@ export function useSendVoice() {
       if (data?.sessionId) mmkvSet(SESSION_KEY, data.sessionId);
       await invalidateAfterAgents(data?.agents);
       await queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      void useAuthStore.getState().refreshUser();
     },
   });
 }

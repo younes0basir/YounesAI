@@ -2,7 +2,20 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../stores/useAuth';
 import PageHeader from '../components/ui/PageHeader';
-import { LogOut, Mail, User, Shield, Link2, Unlink, RefreshCw } from 'lucide-react';
+import {
+  LogOut,
+  Mail,
+  User,
+  Shield,
+  Link2,
+  Unlink,
+  RefreshCw,
+  Crown,
+  BarChart3,
+  MessageSquare,
+  Mic,
+  Image as ImageIcon,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   useGmailAccounts,
@@ -41,6 +54,16 @@ export default function Settings() {
   const accountList = Array.isArray(accounts) ? accounts : [];
   const statusList = Array.isArray(syncStatus) ? syncStatus : [];
 
+  const planTier = (user?.plan_tier || 'starter').toLowerCase();
+  const usage = user?.usage || null;
+  const limits = user?.limits || null;
+  const tierBadge =
+    planTier === 'platinum'
+      ? 'bg-cyan-100 text-cyan-700 border-cyan-200'
+      : planTier === 'pro'
+        ? 'bg-violet-100 text-violet-700 border-violet-200'
+        : 'bg-slate-100 text-slate-700 border-slate-200';
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -74,6 +97,77 @@ export default function Settings() {
                 <div className="text-sm font-semibold text-slate-800">{user?.email || '—'}</div>
                 <div className="text-xs text-slate-500">Account email</div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="section-block">
+          <div className="section-block-head">
+            <h2>Subscription</h2>
+            <p>Your current plan and daily AI usage.</p>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className={`badge border text-xs ${tierBadge}`}>
+                <Crown size={11} /> {planTier}
+              </span>
+              <span className="text-xs text-slate-500">Plan tier (managed by admin)</span>
+              <button onClick={() => nav('/plans')} className="ml-auto btn btn-secondary text-xs">
+                View plans
+              </button>
+            </div>
+            {usage ? (
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: 'ai_chat', label: 'AI chat', icon: MessageSquare },
+                  { key: 'voice', label: 'Voice', icon: Mic },
+                  { key: 'image', label: 'Image', icon: ImageIcon },
+                ].map(({ key, label, icon: Icon }) => {
+                  const u = usage[key];
+                  if (!u) return null;
+                  const pct = u.limit > 0 ? Math.min(100, Math.round((u.used / u.limit) * 100)) : 0;
+                  return (
+                    <div
+                      key={key}
+                      className="rounded-xl bg-slate-50 border border-slate-200/60 p-2.5"
+                    >
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-600">
+                        <Icon size={11} /> {label}
+                      </div>
+                      <div className="text-sm font-bold text-slate-800 mt-1">
+                        {u.limit === 0 ? 'Blocked' : `${u.used} / ${u.limit}`}
+                      </div>
+                      {u.limit > 0 && (
+                        <div className="progress-track h-1.5 mt-1.5">
+                          <div
+                            className="progress-fill"
+                            style={{
+                              width: `${pct}%`,
+                              background:
+                                pct >= 100 ? '#dc2626' : pct >= 80 ? '#f59e0b' : undefined,
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">
+                Usage will appear here after you sign in.{' '}
+                <button onClick={() => nav('/plans')} className="text-violet-600 underline">
+                  See plans
+                </button>
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button onClick={() => nav('/plans')} className="btn btn-ghost text-xs">
+                <BarChart3 size={13} /> Plans & usage
+              </button>
+              <button onClick={() => nav('/admin')} className="btn btn-ghost text-xs">
+                <Shield size={13} /> Admin dashboard
+              </button>
             </div>
           </div>
         </div>

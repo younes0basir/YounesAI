@@ -13,7 +13,7 @@
     "generate": "node scripts/generate.js",
     "migrate": "node src/migrate.js",
     "migrate:email": "node scripts/migrate-email.js",
-    "test": "node --test tests/conversation.test.js",
+    "test": "node --test tests/conversation.test.js tests/plans.test.js",
     "test:acceptance": "node --test tests/acceptance-conversations.test.js"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
 const { EMAIL_CATEGORIES, AI_INBOX_CATEGORIES } = require('../agents/email/constants');
+const { getMaxGmailAccounts } = require('../plans/config');
 
 const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
@@ -7,7 +8,10 @@ const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email',
 ];
 
-function getMaxAccountsPerUser() {
+function getMaxAccountsPerUser(planTier) {
+  if (planTier) {
+    return getMaxGmailAccounts(planTier);
+  }
   return parseInt(process.env.GMAIL_MAX_ACCOUNTS_PER_USER || '2', 10);
 }
 

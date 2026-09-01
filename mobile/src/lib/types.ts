@@ -1,8 +1,21 @@
+export type PlanTier = 'starter' | 'pro' | 'platinum';
+
+export type EntitlementFeature = 'ai_chat' | 'voice' | 'image';
+
+export interface PlanUsage {
+  used: number;
+  limit: number;
+}
+
 export interface User {
   id: string;
   email: string;
   display_name: string;
   created_at?: string;
+  plan_tier?: PlanTier;
+  is_admin?: boolean;
+  usage?: Partial<Record<EntitlementFeature, PlanUsage>>;
+  limits?: Record<string, number | boolean>;
 }
 
 export interface Task {

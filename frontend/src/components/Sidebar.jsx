@@ -13,6 +13,8 @@ import {
   Bell,
   Settings as SettingsIcon,
   Inbox as InboxIcon,
+  Crown,
+  Shield,
 } from 'lucide-react';
 import { useAgentStatus } from '../hooks/useAgents';
 import { useNotifications } from '../hooks/useNotifications';
@@ -129,6 +131,32 @@ export default function Sidebar({ onNavigate }) {
           <p className="px-2 mt-1 text-[11px] leading-snug text-slate-400">
             Agents, pipeline, RAG, metrics &amp; sandbox — developer view.
           </p>
+        </div>
+
+        <div>
+          <div className="section-label">Billing</div>
+          <nav className="flex flex-col gap-0.5">
+            <NavLink
+              to="/plans"
+              onClick={onNavigate}
+              className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}
+            >
+              <span className="nav-icon bg-amber-50 text-amber-600">
+                <Crown size={16} strokeWidth={2} />
+              </span>
+              <span className="flex-1">Plans</span>
+            </NavLink>
+            <NavLink
+              to="/admin"
+              onClick={onNavigate}
+              className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}
+            >
+              <span className="nav-icon bg-slate-800 text-white">
+                <Shield size={16} strokeWidth={2} />
+              </span>
+              <span className="flex-1">Admin</span>
+            </NavLink>
+          </nav>
         </div>
       </div>
 

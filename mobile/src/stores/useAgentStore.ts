@@ -3,7 +3,8 @@ import { api } from '@/services/api';
 import { mmkvGet, mmkvSet } from '@/services/mmkv';
 import { getChatSessionId, SESSION_KEY } from '@/hooks/useChat';
 import { queryClient } from '@/lib/queryClient';
-import { getApiErrorMessage } from '@/lib/apiErrors';
+import { getApiErrorMessage, isQuotaError } from '@/lib/apiErrors';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { AgentChatResult, AgentStep } from '@/lib/types';
 
 const AGENT_LABELS: Record<string, string> = {
@@ -81,7 +82,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         void queryClient.invalidateQueries({ queryKey: ['events'] });
       if (data.agents?.includes('image'))
         void queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      void useAuthStore.getState().refreshUser();
     } catch (error) {
+      if (isQuotaError(error)) {
+        void useAuthStore.getState().refreshUser();
+      }
       set({
         isProcessing: false,
         steps: [{ id: 'error', agent: 'general', label: 'Request failed', status: 'error' }],
@@ -128,7 +133,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         void queryClient.invalidateQueries({ queryKey: ['tasks'] });
       if (data.agents?.includes('event'))
         void queryClient.invalidateQueries({ queryKey: ['events'] });
+      void useAuthStore.getState().refreshUser();
     } catch (error) {
+      if (isQuotaError(error)) {
+        void useAuthStore.getState().refreshUser();
+      }
       set({
         isProcessing: false,
         steps: [{ id: 'error', agent: 'general', label: 'Voice request failed', status: 'error' }],

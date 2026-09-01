@@ -51,7 +51,9 @@ async function handleCallback(code, state) {
     'SELECT COUNT(*)::int AS cnt FROM email_accounts WHERE user_id = $1 AND is_active = TRUE',
     [userId]
   );
-  const maxAccounts = getMaxAccountsPerUser();
+  const userRes = await pool.query('SELECT plan_tier FROM users WHERE id = $1', [userId]);
+  const planTier = userRes.rows[0]?.plan_tier || 'starter';
+  const maxAccounts = getMaxAccountsPerUser(planTier);
   if (countRes.rows[0].cnt >= maxAccounts) {
     throw new Error(`Maximum of ${maxAccounts} Gmail accounts allowed`);
   }

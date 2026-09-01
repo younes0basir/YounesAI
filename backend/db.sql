@@ -536,6 +536,23 @@ CREATE TABLE IF NOT EXISTS entity_links (
 CREATE INDEX IF NOT EXISTS idx_entity_links_user_source ON entity_links (user_id, source_type, source_id);
 
 -- =========================================================
+-- SUBSCRIPTION PLANS (Starter / Pro / Platinum)
+-- =========================================================
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_tier TEXT NOT NULL DEFAULT 'starter';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_updated_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS usage_counters (
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    period_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    ai_chat_count INT NOT NULL DEFAULT 0,
+    voice_count INT NOT NULL DEFAULT 0,
+    image_count INT NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, period_date)
+);
+
+-- =========================================================
 -- EMAIL INTELLIGENCE (Stage C) — see backend/db/email.sql
 -- =========================================================
 

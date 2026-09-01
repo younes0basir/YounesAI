@@ -21,12 +21,15 @@ import {
   ensureMicPermission,
   releaseAudioMode,
 } from '@/services/voice';
+import { useEntitlement } from '@/hooks/useEntitlement';
+import { UpgradeLock } from '@/components/plans/QuotaBanner';
 import { hapticSuccess, hapticTap } from '@/lib/haptics';
 
 export default function VoiceScreen() {
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const level = useSharedValue(0.1);
   const pulse = useSharedValue(1);
+  const voice = useEntitlement('voice');
   const { isRecording, isProcessing, lastResponse, steps, sendVoice, setRecording } =
     useAgentStore();
 
@@ -47,6 +50,7 @@ export default function VoiceScreen() {
   }));
 
   const start = async () => {
+    if (!voice.allowed) return;
     if (!(await ensureMicPermission())) return;
     hapticTap();
     await recorder.prepareToRecordAsync();
@@ -69,12 +73,18 @@ export default function VoiceScreen() {
       <ScreenHeader title="Voice" subtitle="Hands-free orchestrator commands" />
 
       <ScrollView contentContainerClassName="gap-4 px-4 pb-12 pt-1">
-        <GlassCard className="items-center p-6">
+        <UpgradeLock
+          feature="voice"
+          title="Voice AI is a Pro feature"
+          description="Upgrade to Pro or Platinum to use hands-free voice commands with the orchestrator."
+        />
+
+        <GlassCard className={`items-center p-6 ${!voice.allowed ? 'opacity-50' : ''}`}>
           <SkiaWaveform level={level} width={300} />
           <Animated.View style={micStyle} className="mt-6">
             <Pressable
               onPress={isRecording ? stop : start}
-              disabled={isProcessing}
+              disabled={isProcessing || !voice.allowed}
               className={`h-20 w-20 items-center justify-center rounded-full ${
                 isRecording ? 'bg-accent-rose' : 'bg-accent'
               } ${isProcessing ? 'opacity-40' : ''}`}

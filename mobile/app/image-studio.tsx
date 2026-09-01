@@ -6,6 +6,8 @@ import { ImagePlus, Loader } from 'lucide-react-native';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useGenerateImage } from '@/hooks/useImage';
+import { useEntitlement } from '@/hooks/useEntitlement';
+import { UpgradeLock } from '@/components/plans/QuotaBanner';
 
 const SIZE_PRESETS = [
   { label: 'Square', width: 1024, height: 1024, aspect: 1 },
@@ -17,11 +19,12 @@ export default function ImageStudioScreen() {
   const [prompt, setPrompt] = useState('');
   const [presetIndex, setPresetIndex] = useState(0);
   const generate = useGenerateImage();
+  const image = useEntitlement('image');
 
   const preset = SIZE_PRESETS[presetIndex];
 
   const submit = () => {
-    if (!prompt.trim() || generate.isPending) return;
+    if (!prompt.trim() || generate.isPending || !image.allowed) return;
     generate.mutate({
       prompt: prompt.trim(),
       width: preset.width,
@@ -39,7 +42,13 @@ export default function ImageStudioScreen() {
         contentContainerClassName="gap-4 px-4 pb-12 pt-1"
         keyboardShouldPersistTaps="handled"
       >
-        <GlassCard className="p-4">
+        <UpgradeLock
+          feature="image"
+          title="Image Studio is a Pro feature"
+          description="Upgrade to Pro or Platinum to generate images with FLUX."
+        />
+
+        <GlassCard className={`p-4 ${!image.allowed ? 'opacity-50' : ''}`}>
           <TextInput
             value={prompt}
             onChangeText={setPrompt}

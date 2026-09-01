@@ -6,6 +6,7 @@ const path = require('path');
 const pool = require('../db');
 const { createCrudRouter } = require('../lib/crud');
 const { authMiddleware } = require('../middleware/auth');
+const { enforceQuota, requirePlan, incrementUsageAfterSuccess } = require('../middleware/plan');
 const { generateImage } = require('../services/imageGenerator');
 const { getNews } = require('../services/news');
 
@@ -146,34 +147,41 @@ router.get('/alerts/pending', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/image/generate', authMiddleware, async (req, res) => {
-  try {
-    const { prompt, width, height, steps, seed } = req.body || {};
+router.post(
+  '/image/generate',
+  authMiddleware,
+  requirePlan(['pro', 'platinum']),
+  enforceQuota('image'),
+  async (req, res) => {
+    try {
+      const { prompt, width, height, steps, seed } = req.body || {};
 
-    if (!prompt || !String(prompt).trim()) {
-      return res.status(400).json({ error: 'Prompt is required.' });
+      if (!prompt || !String(prompt).trim()) {
+        return res.status(400).json({ error: 'Prompt is required.' });
+      }
+
+      const result = await generateImage({
+        prompt,
+        width,
+        height,
+        steps,
+        seed,
+      });
+
+      await incrementUsageAfterSuccess(req, 'image');
+      res.json(result);
+    } catch (err) {
+      console.error('[image/generate] error:', err.message);
+      const upstreamAuthFailure =
+        /NVIDIA image generation authorization failed|Authorization failed|Forbidden/i.test(
+          err.message || ''
+        );
+      res.status(upstreamAuthFailure ? 502 : 500).json({
+        error: err.message || 'Image generation failed.',
+      });
     }
-
-    const result = await generateImage({
-      prompt,
-      width,
-      height,
-      steps,
-      seed,
-    });
-
-    res.json(result);
-  } catch (err) {
-    console.error('[image/generate] error:', err.message);
-    const upstreamAuthFailure =
-      /NVIDIA image generation authorization failed|Authorization failed|Forbidden/i.test(
-        err.message || ''
-      );
-    res.status(upstreamAuthFailure ? 502 : 500).json({
-      error: err.message || 'Image generation failed.',
-    });
   }
-});
+);
 
 // ── System News ───────────────────────────────────────────────────────────────
 router.get('/news', authMiddleware, async (req, res) => {

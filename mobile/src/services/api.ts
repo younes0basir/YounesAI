@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { API_BASE_URL } from '@/lib/apiUrl';
+import { API_BASE_URL, getApiBaseUrl } from '@/lib/apiUrl';
 
 export const TOKEN_KEY = 'younesai.jwt';
 
@@ -10,7 +10,7 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-export { API_BASE_URL };
+export { API_BASE_URL, getApiBaseUrl };
 
 export async function getToken(): Promise<string | null> {
   try {
@@ -31,6 +31,10 @@ export async function clearToken(): Promise<void> {
 api.interceptors.request.use(async (config) => {
   const token = await getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Resolve backend per-request so Settings → Backend switch takes effect without reload
+  try {
+    config.baseURL = getApiBaseUrl();
+  } catch {}
   return config;
 });
 

@@ -34,12 +34,15 @@ import {
   X,
 } from 'lucide-react-native';
 import { useConversations, useSendMessage, useSendVoice } from '@/hooks/useChat';
+import { useEntitlement } from '@/hooks/useEntitlement';
+import { QuotaBanner } from '@/components/plans/QuotaBanner';
 import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { TypingIndicator } from '@/components/ai/TypingIndicator';
 import { AgentStepTracker } from '@/components/ai/AgentStepTracker';
 import { SkiaWaveform } from '@/components/ai/SkiaWaveform';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { hapticSuccess, hapticTap, hapticSelect, hapticWarning } from '@/lib/haptics';
+import { useRouter } from 'expo-router';
 import { api } from '@/services/api';
 
 const SPRING = { damping: 18, stiffness: 220, mass: 0.6 } as const;
@@ -260,12 +263,14 @@ const agentColors: Record<string, string> = {
 };
 
 export default function ChatScreen() {
+  const router = useRouter();
   const [draft, setDraft] = useState('');
   const keyboardVisible = useKeyboardVisible();
   const listRef = useRef<FlatList<ConversationMessage>>(null);
   const conversations = useConversations();
   const sendMessage = useSendMessage();
   const sendVoice = useSendVoice();
+  const aiChat = useEntitlement('ai_chat');
   const { isRecording, setRecording } = useAgentStore();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const level = useSharedValue(0.1);
@@ -276,10 +281,15 @@ export default function ChatScreen() {
   const submit = useCallback(() => {
     const message = draft.trim();
     if (!message || pending) return;
+    if (!aiChat.allowed) {
+      hapticWarning();
+      router.push('/plans');
+      return;
+    }
     setDraft('');
     hapticSuccess();
     sendMessage.mutate({ message });
-  }, [draft, pending, sendMessage]);
+  }, [draft, pending, sendMessage, aiChat.allowed, router]);
 
   const startRec = useCallback(async () => {
     if (!(await ensureMicPermission())) return;
@@ -529,6 +539,7 @@ export default function ChatScreen() {
 
         {/* Composer: glassmorphism with border glow + spring focus */}
         <View className={`px-3 pt-2 ${keyboardVisible ? 'pb-3' : 'pb-28'}`}>
+          <QuotaBanner feature="ai_chat" />
           {isRecording ? (
             <Animated.View
               entering={FadeInDown.duration(260).springify().damping(18)}
@@ -603,9 +614,9 @@ export default function ChatScreen() {
               className="h-10 w-10 items-center justify-center"
             >
               <View
-                className={`h-10 w-10 items-center justify-center rounded-full ${draft.trim() && !pending ? 'bg-ink' : 'bg-slate-200'}`}
+                className={`h-10 w-10 items-center justify-center rounded-full ${draft.trim() && !pending && aiChat.allowed ? 'bg-ink' : 'bg-slate-200'}`}
                 style={
-                  draft.trim() && !pending
+                  draft.trim() && !pending && aiChat.allowed
                     ? {
                         shadowColor: '#0F172A',
                         shadowOpacity: 0.18,

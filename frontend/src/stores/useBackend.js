@@ -12,7 +12,7 @@ export const BACKEND_MODES = {
   },
   local: {
     label: 'Local',
-    url: 'http://localhost:3000/api',
+    url: import.meta.env.VITE_API_URL_LOCAL || 'http://localhost:3000/api',
     short: 'local',
   },
 };

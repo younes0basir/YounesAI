@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-const { authLimiter, apiLimiter, agentLimiter } = require('./middleware/rateLimiter');
+const { authLimiter, apiLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
@@ -29,7 +29,6 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // ── Rate Limiting ─────────────────────────────────────────────────────────────
 app.use('/api/auth', authLimiter);
-app.use('/api/agents', agentLimiter);
 app.use('/api', apiLimiter);
 
 // ── Routes ────────────────────────────────────────────────────────────────────
@@ -42,6 +41,8 @@ const monitoringRouter = require('./routes/monitoring');
 const gmailRouter = require('./routes/integrations/gmail');
 const emailRouter = require('./routes/email');
 const cronRouter = require('./routes/cron');
+const plansRouter = require('./routes/plans');
+const adminRouter = require('./routes/admin');
 const swaggerRouter = require('./swagger');
 
 app.use('/api/health', healthRouter);
@@ -53,6 +54,8 @@ app.use('/api/monitoring', monitoringRouter);
 app.use('/api/integrations/gmail', gmailRouter);
 app.use('/api/email', emailRouter);
 app.use('/api/cron', cronRouter);
+app.use('/api/plans', plansRouter);
+app.use('/api/admin', adminRouter);
 app.use('/api/docs', swaggerRouter);
 
 module.exports = app;

@@ -52,6 +52,8 @@ import {
   releaseAudioMode,
 } from '@/services/voice';
 import { useRouter } from 'expo-router';
+import { useEntitlement } from '@/hooks/useEntitlement';
+import { formatUsage } from '@/lib/plans';
 
 // Premium physics — directive stiffness 260 damping 20
 const SPRING = { damping: 20, stiffness: 260, mass: 0.8 };
@@ -70,6 +72,8 @@ export function FloatingAIHub() {
   const { width: winW, height: winH } = useWindowDimensions();
   const keyboardVisible = useKeyboardVisible();
   const router = useRouter();
+  const aiChat = useEntitlement('ai_chat');
+  const voice = useEntitlement('voice');
 
   const open = useSharedValue(0);
   const micLevel = useSharedValue(0);
@@ -243,6 +247,10 @@ export function FloatingAIHub() {
   }, [isOpen, open, winW, winH, insets.top, insets.bottom, posX, posY, persistPos]);
 
   const startRecording = async () => {
+    if (!voice.allowed) {
+      router.push('/plans');
+      return;
+    }
     if (!(await ensureMicPermission())) return;
     hapticTap();
     await recorder.prepareToRecordAsync();
@@ -261,6 +269,10 @@ export function FloatingAIHub() {
   const submitDraft = () => {
     const message = draft.trim();
     if (!message || isProcessing) return;
+    if (!aiChat.allowed) {
+      router.push('/plans');
+      return;
+    }
     hapticTap();
     setDraft('');
     void sendMessage(message);
@@ -603,6 +615,12 @@ export function FloatingAIHub() {
                   )}
                 </View>
 
+                {aiChat.limit > 0 ? (
+                  <Text className="mt-2 text-[10px] font-semibold text-ink-faint">
+                    AI: {formatUsage(aiChat.used, aiChat.limit)}
+                  </Text>
+                ) : null}
+
                 <View className="mt-3 flex-row items-center gap-2">
                   <View className="flex-1 flex-row items-center rounded-full border border-white/60 bg-white px-3 py-2">
                     <View
@@ -621,7 +639,7 @@ export function FloatingAIHub() {
                     <Pressable
                       onPress={submitDraft}
                       hitSlop={8}
-                      disabled={isProcessing}
+                      disabled={isProcessing || !aiChat.allowed}
                       className="h-7 w-7 items-center justify-center rounded-full bg-accent-soft"
                     >
                       <Send size={14} color={isProcessing ? '#CBD5E1' : '#6366F1'} />
@@ -630,6 +648,7 @@ export function FloatingAIHub() {
                   <Pressable
                     onPress={isRecording ? stopRecording : startRecording}
                     hitSlop={8}
+                    disabled={!voice.allowed && !isRecording}
                     className={`h-10 w-10 items-center justify-center rounded-full border ${isRecording ? 'bg-accent-rose border-rose-200' : 'bg-accent border-accent/20'}`}
                     style={{
                       shadowColor: isRecording ? '#F43F5E' : '#6366F1',
