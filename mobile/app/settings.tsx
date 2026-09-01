@@ -74,15 +74,33 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
-      <ScreenHeader title="Settings" />
-      <ScrollView contentContainerClassName="gap-3 px-4 pb-12 pt-1">
-        <GlassCard className="p-4">
-          <Text className="text-xs font-bold uppercase tracking-widest text-ink-faint">
+    <SafeAreaView className="flex-1 bg-canvas-soft" edges={['top']}>
+      <ScreenHeader title="Settings" subtitle="Account · Privacy · Sync" />
+      <ScrollView
+        contentContainerClassName="gap-3.5 px-4 pb-12 pt-2"
+        showsVerticalScrollIndicator={false}
+      >
+        <GlassCard variant="elevated" className="p-4">
+          <View className="flex-row items-center gap-3">
+            <View className="h-12 w-12 items-center justify-center rounded-2xl bg-ink">
+              <Text className="text-lg font-extrabold text-white">
+                {(user?.display_name ?? 'U').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-[15px] font-bold text-ink" numberOfLines={1}>
+                {user?.display_name}
+              </Text>
+              <Text className="text-xs font-medium text-ink-muted" numberOfLines={1}>
+                {user?.email}
+              </Text>
+            </View>
+            <View className="h-2 w-2 rounded-full bg-emerald-500" />
+          </View>
+          <View className="mt-3 h-px bg-glass-border" />
+          <Text className="mt-3 text-[11px] font-bold uppercase tracking-widest text-ink-faint">
             Account
           </Text>
-          <Text className="mt-2 text-lg font-semibold text-ink">{user?.display_name}</Text>
-          <Text className="text-sm text-ink-soft">{user?.email}</Text>
         </GlassCard>
 
         {bioKind ? (
@@ -136,18 +154,31 @@ export default function SettingsScreen() {
         </GlassCard>
 
         <GlassCard className="p-4">
-          <Text className="text-xs font-bold uppercase tracking-widest text-ink-faint">
-            Backend
-          </Text>
-          <Text className="mt-2 text-sm text-ink" numberOfLines={1}>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-[11px] font-extrabold uppercase tracking-widest text-ink-faint">
+              Backend
+            </Text>
+            {backendStatus ? (
+              <View
+                className={`rounded-full px-2.5 py-1 ${backendStatus === 'Connected' ? 'bg-emerald-50 border border-emerald-200' : backendStatus === 'Checking…' ? 'bg-amber-50 border border-amber-200' : 'bg-accent-roseSoft border border-rose-200'}`}
+              >
+                <Text
+                  className={`text-[10px] font-bold ${backendStatus === 'Connected' ? 'text-emerald-700' : backendStatus === 'Checking…' ? 'text-amber-700' : 'text-accent-rose'}`}
+                >
+                  {backendStatus}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          <Text className="mt-2 text-sm font-medium text-ink" numberOfLines={1}>
             {API_BASE_URL}
           </Text>
           <Pressable
             onPress={testBackend}
-            className="mt-3 self-start rounded-full bg-accent-soft px-3.5 py-2"
+            className="mt-3 self-start rounded-full bg-ink px-4 py-2"
           >
-            <Text className="text-xs font-semibold text-accent">
-              {backendStatus ? `Status: ${backendStatus}` : 'Test connection'}
+            <Text className="text-xs font-bold text-white">
+              {backendStatus ? 'Retest' : 'Test connection'}
             </Text>
           </Pressable>
         </GlassCard>
@@ -192,11 +223,22 @@ export default function SettingsScreen() {
 
         <Pressable
           onPress={() => void logout()}
-          className="mt-3 flex-row items-center justify-center gap-2 rounded-2xl border border-accent-rose/30 bg-accent-rose/5 py-3.5"
+          className="mt-4 flex-row items-center justify-center gap-2 rounded-2xl border border-accent-rose/20 bg-accent-roseSoft py-3.5"
+          style={
+            {
+              shadowColor: '#F43F5E',
+              shadowOpacity: 0.08,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 6 },
+            } as any
+          }
         >
           <LogOut size={16} color="#F43F5E" />
-          <Text className="font-semibold text-accent-rose">Sign out</Text>
+          <Text className="font-bold text-accent-rose">Sign out</Text>
         </Pressable>
+        <Text className="mt-2 text-center text-[11px] font-medium text-ink-faint">
+          You can sign back in with the same account on any device.
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );

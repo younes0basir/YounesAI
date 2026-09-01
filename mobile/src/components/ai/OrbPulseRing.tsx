@@ -6,8 +6,13 @@ import Animated, {
   withTiming,
   withDelay,
   Easing,
+  interpolate,
 } from 'react-native-reanimated';
 import { View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { cssInterop } from 'nativewind';
+
+cssInterop(LinearGradient, { className: 'style' });
 
 interface OrbPulseRingProps {
   active: boolean;
@@ -16,8 +21,8 @@ interface OrbPulseRingProps {
 }
 
 /**
- * Breathing halo behind the collapsed orb when idle.
- * Two rings pulse out-of-phase. Hook-safe: no hook factory indirection.
+ * Premium breathing halo — dual rings with conical gradient wash.
+ * Replaces flat opacity pulse with layered diffuse glow.
  */
 export function OrbPulseRing({ active, size, color = '#6366F1' }: OrbPulseRingProps) {
   const r1 = useSharedValue(0);
@@ -55,12 +60,12 @@ export function OrbPulseRing({ active, size, color = '#6366F1' }: OrbPulseRingPr
   }, [active, r1, o1, r2, o2]);
 
   const s1 = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + r1.value * 0.85 }],
-    opacity: active ? (1 - o1.value) * 0.22 : 0,
+    transform: [{ scale: 1 + r1.value * 0.9 }],
+    opacity: active ? (1 - interpolate(o1.value, [0, 1], [0, 1])) * 0.24 : 0,
   }));
   const s2 = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + r2.value * 0.85 }],
-    opacity: active ? (1 - o2.value) * 0.22 : 0,
+    transform: [{ scale: 1 + r2.value * 0.9 }],
+    opacity: active ? (1 - o2.value) * 0.16 : 0,
   }));
 
   if (!active) return null;
@@ -83,11 +88,18 @@ export function OrbPulseRing({ active, size, color = '#6366F1' }: OrbPulseRingPr
             width: size,
             height: size,
             borderRadius: size / 2,
-            backgroundColor: color,
+            overflow: 'hidden',
           },
           s1,
         ]}
-      />
+      >
+        <LinearGradient
+          colors={[color, '#8B5CF6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ flex: 1, borderRadius: size / 2, opacity: 0.9 }}
+        />
+      </Animated.View>
       <Animated.View
         style={[
           {
@@ -95,11 +107,18 @@ export function OrbPulseRing({ active, size, color = '#6366F1' }: OrbPulseRingPr
             width: size,
             height: size,
             borderRadius: size / 2,
-            backgroundColor: color,
+            overflow: 'hidden',
           },
           s2,
         ]}
-      />
+      >
+        <LinearGradient
+          colors={[color, '#EC4899']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ flex: 1, borderRadius: size / 2, opacity: 0.75 }}
+        />
+      </Animated.View>
     </View>
   );
 }

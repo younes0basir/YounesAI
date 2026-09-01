@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { Email, EmailApproval } from '@/lib/types';
 
 export const AI_INBOX_FILTER = 'AI_INBOX';
@@ -16,8 +17,10 @@ export const EMAIL_CATEGORIES = [
 ] as const;
 
 export function useEmails(category: string) {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: ['emails', category],
+    queryKey: ['emails', userId, category],
+    enabled: !!userId,
     queryFn: async () => {
       const params: Record<string, string | number> = { page: 1, limit: 50 };
       if (category === AI_INBOX_FILTER) params.view = 'ai';
@@ -29,9 +32,10 @@ export function useEmails(category: string) {
 }
 
 export function useEmailDetail(id: string | null) {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: ['email', id],
-    enabled: !!id,
+    queryKey: ['email', userId, id],
+    enabled: !!id && !!userId,
     queryFn: async () => {
       const { data } = await api.get<Email>(`/api/email/${id}`);
       return data;
@@ -63,8 +67,10 @@ export function useEmailAction() {
 }
 
 export function usePendingApprovals() {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: ['email-approvals'],
+    queryKey: ['email-approvals', userId],
+    enabled: !!userId,
     queryFn: async () => {
       const { data } = await api.get<EmailApproval[]>('/api/email/approvals/pending');
       return data;

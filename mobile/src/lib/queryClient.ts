@@ -9,3 +9,15 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * Purge all cached queries (memory) — call on logout / account switch
+ * before the next account loads. The persisted MMKV cache is cleared
+ * separately via clearAccountStorage().
+ */
+export function clearQueryCache(): void {
+  queryClient.clear();
+  // Also cancel any in-flight refetches that might repopulate with the
+  // previous user's data after logout.
+  void queryClient.cancelQueries();
+}

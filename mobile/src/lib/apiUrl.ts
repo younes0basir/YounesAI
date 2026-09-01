@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 
-/** Port 80 via nginx reverse proxy on Oracle VM. */
-const DEFAULT_API_URL = 'http://84.8.220.241';
+/** HTTPS via nginx + Let's Encrypt on Oracle VM (sslip.io). */
+const DEFAULT_API_URL = 'https://84-8-220-241.sslip.io';
 
 /** Resolved once at module load — baked into the APK via app.config.js extra.apiUrl. */
 export const API_BASE_URL: string =

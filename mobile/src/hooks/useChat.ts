@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { mmkvGet, mmkvSet } from '@/services/mmkv';
 import { queryClient } from '@/lib/queryClient';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { AgentChatResult, ConversationMessage } from '@/lib/types';
 
 export const SESSION_KEY = 'chat-session-id';
@@ -16,8 +17,10 @@ export function getChatSessionId(): string {
 }
 
 export function useConversations() {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: ['conversations'],
+    queryKey: ['conversations', userId],
+    enabled: !!userId,
     queryFn: async () => {
       const { data } = await api.get<ConversationMessage[]>('/api/agents/conversations');
       return Array.isArray(data) ? data : [];

@@ -61,9 +61,15 @@ export function startOfflineSync(onFlushed?: (count: number) => void): () => voi
 
   const unsubscribe = NetInfo.addEventListener((state) => {
     if (state.isConnected) {
-      void flushQueue().then((count) => {
+      void (async () => {
+        // Don't flush while logged out — queue is account-scoped and will
+        // be cleared on logout; flushing as anonymous would 401 and drop it.
+        const { getToken } = await import('./api');
+        const token = await getToken();
+        if (!token) return;
+        const count = await flushQueue();
         if (count > 0) onFlushed?.(count);
-      });
+      })();
     }
   });
 
@@ -71,4 +77,9 @@ export function startOfflineSync(onFlushed?: (count: number) => void): () => voi
     listening = false;
     unsubscribe();
   };
+}
+
+/** Clear any queued mutations (called on account switch / logout). */
+export function clearQueue(): void {
+  mmkvSet(QUEUE_KEY, []);
 }

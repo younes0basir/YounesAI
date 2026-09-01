@@ -48,71 +48,119 @@ export default function InboxScreen() {
     if (action !== 'summarize') sheetRef.current?.dismiss();
   };
 
-  const renderEmail = ({ item }: { item: Email }) => (
-    <Pressable onPress={() => openEmail(item.id)}>
-      <GlassCard className="p-4">
-        <View className="flex-row items-center justify-between">
-          <Text className="flex-1 text-[13px] font-medium text-ink-soft" numberOfLines={1}>
-            {item.from_name || item.from_address || 'Unknown sender'}
-          </Text>
-          {item.category ? (
+  const renderEmail = ({ item }: { item: Email }) => {
+    const unread = !item.is_read;
+    return (
+      <Pressable onPress={() => openEmail(item.id)} style={{ opacity: unread ? 1 : 0.92 }}>
+        <GlassCard variant={unread ? 'elevated' : 'regular'} className="p-4">
+          <View className="flex-row items-start gap-2.5">
             <View
-              className="ml-2 rounded-full px-2 py-0.5"
-              style={{ backgroundColor: `${CATEGORY_COLORS[item.category] ?? '#94A3B8'}1A` }}
+              className={`mt-0.5 h-9 w-9 items-center justify-center rounded-xl border ${unread ? 'bg-accent border-accent' : 'bg-white border-glass-border'}`}
             >
               <Text
-                className="text-[9px] font-bold uppercase tracking-wide"
-                style={{ color: CATEGORY_COLORS[item.category] ?? '#94A3B8' }}
+                className={`text-[11px] font-extrabold ${unread ? 'text-white' : 'text-ink-faint'}`}
               >
-                {item.category.replace('_', ' ')}
+                {(item.from_name ?? item.from_address ?? 'U').charAt(0).toUpperCase()}
               </Text>
             </View>
-          ) : null}
-        </View>
-        <Text className="mt-1 text-[15px] font-semibold text-ink" numberOfLines={1}>
-          {item.subject || '(no subject)'}
-        </Text>
-        {item.snippet ? (
-          <Text className="mt-0.5 text-[13px] text-ink-soft" numberOfLines={2}>
-            {item.snippet}
-          </Text>
-        ) : null}
-      </GlassCard>
-    </Pressable>
-  );
+            <View className="flex-1">
+              <View className="flex-row items-center gap-2">
+                <Text
+                  className={`flex-1 text-[13px] ${unread ? 'font-bold text-ink' : 'font-medium text-ink-muted'}`}
+                  numberOfLines={1}
+                >
+                  {item.from_name || item.from_address || 'Unknown sender'}
+                </Text>
+                {item.category ? (
+                  <View
+                    className="rounded-full px-2 py-0.5 border"
+                    style={{
+                      backgroundColor: `${CATEGORY_COLORS[item.category] ?? '#94A3B8'}12`,
+                      borderColor: `${CATEGORY_COLORS[item.category] ?? '#94A3B8'}22`,
+                    }}
+                  >
+                    <Text
+                      className="text-[9px] font-extrabold uppercase tracking-widest"
+                      style={{ color: CATEGORY_COLORS[item.category] ?? '#94A3B8' }}
+                    >
+                      {item.category.replace('_', ' ')}
+                    </Text>
+                  </View>
+                ) : null}
+                {unread ? <View className="h-2 w-2 rounded-full bg-accent" /> : null}
+              </View>
+              <Text
+                className={`mt-1 text-[15px] leading-5 ${unread ? 'font-semibold text-ink' : 'font-medium text-ink-soft'}`}
+                numberOfLines={1}
+              >
+                {item.subject || '(no subject)'}
+              </Text>
+              {item.snippet ? (
+                <Text className="mt-0.5 text-[13px] leading-4 text-ink-muted" numberOfLines={2}>
+                  {item.snippet}
+                </Text>
+              ) : null}
+              {item.received_at ? (
+                <Text className="mt-1.5 text-[11px] font-medium text-ink-faint">
+                  {new Date(item.received_at).toLocaleDateString([], {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        </GlassCard>
+      </Pressable>
+    );
+  };
 
   const pendingApprovals = approvals.data ?? [];
 
   return (
-    <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
-      <View className="px-4 pb-2 pt-4">
-        <Text className="text-[28px] font-bold text-ink">Inbox</Text>
-        <Text className="text-sm text-ink-soft">AI-triaged email</Text>
+    <SafeAreaView className="flex-1 bg-canvas-soft" edges={['top']}>
+      <View className="px-4 pb-3 pt-3">
+        <View className="flex-row items-end justify-between">
+          <View>
+            <Text className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink-faint">
+              Inbox
+            </Text>
+            <Text className="text-hero text-ink -mt-1">AI triaged</Text>
+            <Text className="text-xs text-ink-muted">
+              {emails.data?.length ?? 0} threads ·{' '}
+              {category === 'AI_INBOX'
+                ? 'AI Inbox'
+                : EMAIL_CATEGORIES.find((c) => c.id === category)?.label}
+            </Text>
+          </View>
+          <View className="h-9 w-9 items-center justify-center rounded-xl bg-white border border-glass-border">
+            <Text className="text-xs font-bold text-ink-muted">{emails.data?.length ?? 0}</Text>
+          </View>
+        </View>
       </View>
 
-      <View className="pb-2">
+      <View className="mx-4 mb-3 rounded-full bg-white border border-glass-border p-1 flex-row">
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-2 px-4"
+          contentContainerClassName="gap-1"
         >
-          {EMAIL_CATEGORIES.map((c) => (
-            <Pressable
-              key={c.id}
-              onPress={() => setCategory(c.id)}
-              className={`rounded-full px-3.5 py-1.5 ${
-                category === c.id ? 'bg-accent' : 'border border-glass-border bg-white'
-              }`}
-            >
-              <Text
-                className={`text-xs font-semibold ${
-                  category === c.id ? 'text-white' : 'text-ink-soft'
-                }`}
+          {EMAIL_CATEGORIES.slice(0, 5).map((c) => {
+            const active = category === c.id;
+            return (
+              <Pressable
+                key={c.id}
+                onPress={() => setCategory(c.id)}
+                className={`rounded-full px-3 py-1.5 ${active ? 'bg-ink' : 'bg-transparent'}`}
               >
-                {c.label}
-              </Text>
-            </Pressable>
-          ))}
+                <Text
+                  className={`text-[11px] font-bold tracking-wide ${active ? 'text-white' : 'text-ink-muted'}`}
+                >
+                  {c.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </View>
 

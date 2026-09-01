@@ -51,21 +51,27 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-canvas-soft" edges={['top']}>
       <ScreenHeader
         title="Notifications"
         subtitle={
-          unread > 0
-            ? `${unread} unread · voice alerts on for reminders & tasks`
-            : 'Voice alerts for reminders and tasks'
+          unread > 0 ? `${unread} unread · tap to dismiss · speaker to preview` : 'All caught up'
         }
         right={
           unread > 0 ? (
             <Pressable
               onPress={() => markAllRead.mutate()}
-              className="rounded-full bg-accent-soft px-3 py-1.5"
+              className="rounded-full bg-ink px-3.5 py-2"
+              style={
+                {
+                  shadowColor: '#0F172A',
+                  shadowOpacity: 0.12,
+                  shadowRadius: 10,
+                  shadowOffset: { width: 0, height: 4 },
+                } as any
+              }
             >
-              <Text className="text-xs font-semibold text-accent">Mark all read</Text>
+              <Text className="text-xs font-bold text-white">Mark all read</Text>
             </Pressable>
           ) : undefined
         }
@@ -74,60 +80,83 @@ export default function NotificationsScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
-        contentContainerClassName="gap-3 px-4 pb-12 pt-1"
+        contentContainerClassName="gap-3 px-4 pb-12 pt-2"
+        showsVerticalScrollIndicator={false}
         refreshing={notifications.isRefetching}
         onRefresh={() => void notifications.refetch()}
         ListEmptyComponent={
-          <View className="items-center pt-16">
-            <Text className="text-center text-ink-soft">
-              {notifications.isLoading
-                ? 'Loading…'
-                : 'No notifications yet.\nReminders and tasks will speak aloud when due.'}
+          <View className="items-center pt-14 px-8">
+            <View className="h-14 w-14 items-center justify-center rounded-2xl bg-white border border-glass-border">
+              <Bell size={22} color="#94A3B8" />
+            </View>
+            <Text className="mt-4 text-sm font-semibold text-ink">
+              {notifications.isLoading ? 'Loading…' : 'No notifications yet'}
+            </Text>
+            <Text className="mt-1 text-center text-xs leading-4 text-ink-muted">
+              Reminders and tasks will speak aloud when due. Pull to refresh.
             </Text>
           </View>
         }
         renderItem={({ item }) => {
           const isUnread = !item.read_at;
           return (
-            <GlassCard className={`p-4 ${isUnread ? '' : 'opacity-70'}`}>
+            <GlassCard
+              variant={isUnread ? 'elevated' : 'subtle'}
+              className={`p-4 ${isUnread ? '' : 'opacity-90'}`}
+            >
               <View className="flex-row items-start gap-3">
                 <Pressable
                   onPress={() => openNotification(item)}
                   className="flex-1 flex-row items-start gap-3"
+                  style={{ opacity: isUnread ? 1 : 0.96 }}
                 >
                   <View
-                    className={`mt-0.5 h-9 w-9 items-center justify-center rounded-xl ${
-                      isUnread ? 'bg-accent-soft' : 'bg-slate-100'
-                    }`}
+                    className={`mt-0.5 h-10 w-10 items-center justify-center rounded-xl border ${isUnread ? 'bg-accent border-accent' : 'bg-white border-glass-border'}`}
                   >
-                    <Bell size={16} color={isUnread ? '#6366F1' : '#94A3B8'} />
+                    <Bell size={16} color={isUnread ? '#FFFFFF' : '#94A3B8'} />
                   </View>
                   <View className="flex-1">
+                    <View className="flex-row items-center gap-2">
+                      <Text
+                        className={`text-[10px] font-extrabold uppercase tracking-widest ${typeTone(item.type)}`}
+                      >
+                        {typeLabel(item.type)}
+                      </Text>
+                      {isUnread ? <View className="h-1.5 w-1.5 rounded-full bg-accent" /> : null}
+                      <Text className="ml-auto text-[11px] font-medium text-ink-faint">
+                        {item.created_at
+                          ? new Date(item.created_at).toLocaleDateString([], {
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : ''}
+                      </Text>
+                    </View>
                     <Text
-                      className={`text-[10px] font-bold uppercase tracking-widest ${typeTone(item.type)}`}
+                      className={`mt-1 text-[15px] leading-5 ${isUnread ? 'font-semibold text-ink' : 'font-medium text-ink-soft'}`}
+                      numberOfLines={2}
                     >
-                      {typeLabel(item.type)}
-                    </Text>
-                    <Text className="mt-1 text-[15px] font-semibold text-ink" numberOfLines={2}>
                       {item.title || 'Notification'}
                     </Text>
                     {item.body || item.message ? (
-                      <Text className="mt-0.5 text-[13px] text-ink-soft" numberOfLines={3}>
+                      <Text className="mt-1 text-[13px] leading-4 text-ink-muted" numberOfLines={2}>
                         {item.body || item.message}
                       </Text>
                     ) : null}
-                    {item.created_at ? (
-                      <Text className="mt-1 text-[11px] text-ink-faint">
-                        {new Date(item.created_at).toLocaleString()}
-                      </Text>
-                    ) : null}
                   </View>
-                  {isUnread ? <View className="mt-1.5 h-2 w-2 rounded-full bg-accent" /> : null}
                 </Pressable>
 
                 <Pressable
                   onPress={() => void previewVoiceAlert(item)}
-                  className="mt-0.5 h-9 w-9 items-center justify-center rounded-full bg-slate-100"
+                  className="mt-0.5 h-10 w-10 items-center justify-center rounded-full bg-white border border-glass-border"
+                  style={
+                    {
+                      shadowColor: '#0F172A',
+                      shadowOpacity: 0.06,
+                      shadowRadius: 8,
+                      shadowOffset: { width: 0, height: 4 },
+                    } as any
+                  }
                   accessibilityLabel="Read aloud"
                 >
                   <Volume2 size={16} color="#6366F1" />

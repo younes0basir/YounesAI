@@ -12,10 +12,17 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  FadeIn,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import {
   AlertTriangle,
-  Download,
   Expand,
   Image as ImageIcon,
   Loader,
@@ -31,9 +38,12 @@ import { useKeyboardVisible } from '@/hooks/useKeyboardVisible';
 import { TypingIndicator } from '@/components/ai/TypingIndicator';
 import { AgentStepTracker } from '@/components/ai/AgentStepTracker';
 import { SkiaWaveform } from '@/components/ai/SkiaWaveform';
-import { hapticSuccess, hapticTap } from '@/lib/haptics';
+import { PressableScale } from '@/components/ui/PressableScale';
+import { hapticSuccess, hapticTap, hapticSelect, hapticWarning } from '@/lib/haptics';
 import { api } from '@/services/api';
-import { useSharedValue, withSpring } from 'react-native-reanimated';
+
+const SPRING = { damping: 18, stiffness: 220, mass: 0.6 } as const;
+const SPRING_SOFT = { damping: 20, stiffness: 160, mass: 0.7 } as const;
 import {
   useAudioRecorder,
   RecordingPresets,
@@ -277,13 +287,13 @@ export default function ChatScreen() {
     await recorder.prepareToRecordAsync();
     recorder.record();
     setRecording(true);
-    level.value = withSpring(0.85, { damping: 15, stiffness: 120 });
+    level.value = withSpring(0.85, SPRING);
   }, [recorder, setRecording, level]);
 
   const stopRec = useCallback(async () => {
     hapticSuccess();
     setRecording(false);
-    level.value = withSpring(0.12, { damping: 15, stiffness: 120 });
+    level.value = withSpring(0.12, SPRING_SOFT);
     await recorder.stop();
     await releaseAudioMode();
     if (recorder.uri) {
@@ -293,24 +303,53 @@ export default function ChatScreen() {
 
   const clearChat = useCallback(async () => {
     try {
+      hapticWarning();
       await api.delete('/api/agents/conversations');
       conversations.refetch();
       hapticTap();
     } catch {}
   }, [conversations]);
 
-  const renderMessage = ({ item }: { item: ConversationMessage }) => {
+  const renderMessage = ({ item, index }: { item: ConversationMessage; index: number }) => {
     const isUser = item.role === 'user';
     const parsed = parseEntities(item.entities);
     const hasImage = parsed?.attachments?.some((a) => a.type === 'image');
     return (
       <Animated.View
-        entering={FadeInDown.duration(250)}
+        entering={FadeInDown.delay(Math.min(index * 18, 120))
+          .duration(360)
+          .springify()
+          .damping(18)}
+        layout={LinearTransition.springify().damping(18).stiffness(220)}
         className={`max-w-[85%] ${isUser ? 'self-end' : 'self-start'}`}
       >
         <View
-          className={`rounded-3xl px-4 py-3 ${isUser ? 'rounded-br-md bg-accent' : 'rounded-bl-md border border-glass-border bg-white'}`}
+          className={`rounded-3xl px-4 py-3 ${isUser ? 'rounded-br-md bg-accent border border-accent' : 'rounded-bl-md border border-glass-border bg-white'}`}
+          style={
+            isUser
+              ? {
+                  shadowColor: '#6366F1',
+                  shadowOpacity: 0.16,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 2,
+                }
+              : {
+                  shadowColor: '#0F172A',
+                  shadowOpacity: 0.05,
+                  shadowRadius: 10,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 1,
+                }
+          }
         >
+          {/* glass highlight on assistant bubbles */}
+          {!isUser ? (
+            <View
+              pointerEvents="none"
+              className="absolute inset-x-3 top-0 h-px bg-white/70 rounded-full"
+            />
+          ) : null}
           <Text className={`text-[15px] leading-5 ${isUser ? 'text-white' : 'text-ink'}`}>
             {item.content}
           </Text>
@@ -323,7 +362,9 @@ export default function ChatScreen() {
           {!isUser && hasImage ? (
             <View className="mt-1.5 flex-row items-center gap-1 opacity-60">
               <ImageIcon size={10} color="#6366F1" />
-              <Text className="text-[10px] text-accent">Image generated</Text>
+              <Text className="text-[10px] font-bold tracking-wide text-accent">
+                Image generated
+              </Text>
             </View>
           ) : null}
         </View>
@@ -348,43 +389,66 @@ export default function ChatScreen() {
   const pendingSteps = useAgentStore((s) => s.steps);
   const isProcessing = useAgentStore((s) => s.isProcessing);
 
+  // composer focus spring — subtle lift + glow
+  const inputFocused = useSharedValue(0);
+  const composerStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: withSpring(inputFocused.value ? 1.01 : 1, SPRING) }],
+    borderColor: withTiming(
+      inputFocused.value ? 'rgba(99,102,241,0.22)' : 'rgba(148,163,184,0.18)',
+      { duration: 180 }
+    ) as any,
+  }));
+
   return (
-    <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-canvas-soft" edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <View className="flex-row items-center justify-between px-4 pb-2 pt-4">
-          <View>
-            <Text className="text-[28px] font-bold text-ink">Assistant</Text>
-            <Text className="text-sm text-ink-soft">
-              Text · Voice · Image · Tasks · Files · Memory
+        <Animated.View
+          entering={FadeIn.duration(320)}
+          className="flex-row flex-wrap items-end justify-between gap-3 px-4 pb-3 pt-3"
+        >
+          <View className="min-w-[160px] flex-1">
+            <Text className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink-faint">
+              YounesAI
             </Text>
+            <Text className="text-hero text-ink -mt-1">Assistant</Text>
+            <Text className="text-xs font-medium text-ink-muted">Text · Voice · Image · Tasks</Text>
           </View>
           {messages.length > 0 ? (
-            <Pressable
-              onPress={clearChat}
-              hitSlop={10}
-              className="h-9 w-9 items-center justify-center rounded-full bg-white border border-glass-border"
-            >
-              <Trash2 size={16} color="#94A3B8" />
-            </Pressable>
+            <PressableScale onPress={clearChat}>
+              <View
+                className="h-9 w-9 items-center justify-center rounded-full bg-white border border-glass-border"
+                style={{
+                  shadowColor: '#0F172A',
+                  shadowOpacity: 0.06,
+                  shadowRadius: 10,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 2,
+                }}
+              >
+                <Trash2 size={16} color="#94A3B8" />
+              </View>
+            </PressableScale>
           ) : null}
-        </View>
+        </Animated.View>
 
-        {/* quick prompts when empty */}
         <FlatList
           ref={listRef}
           data={messages}
           keyExtractor={(item) => String(item.id)}
-          renderItem={renderMessage}
+          renderItem={renderMessage as any}
           contentContainerClassName="gap-3 px-4 pb-6 pt-3"
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           ListEmptyComponent={
-            <View className="items-center pt-10 px-6">
-              <View className="h-14 w-14 items-center justify-center rounded-3xl bg-accent-soft">
+            <Animated.View
+              entering={FadeInDown.delay(120).duration(420).springify().damping(18)}
+              className="items-center pt-10 px-6"
+            >
+              <View className="h-14 w-14 items-center justify-center rounded-3xl bg-accent-soft border border-accent/10">
                 <Sparkles size={26} color="#6366F1" />
               </View>
               <Text className="mt-4 text-center text-sm leading-5 text-ink-soft">
@@ -399,18 +463,29 @@ export default function ChatScreen() {
                   'Find documents that mention budget',
                   'Schedule a meeting tomorrow at 10am with team',
                   'Remember that I prefer dark mode',
-                ].map((s) => (
-                  <Pressable
+                ].map((s, i) => (
+                  <Animated.View
                     key={s}
-                    onPress={() => setDraft(s)}
-                    className="rounded-full border border-glass-border bg-white/80 px-3 py-2"
+                    entering={FadeInDown.delay(180 + i * 40)
+                      .duration(360)
+                      .springify()
+                      .damping(18)}
                   >
-                    <Text className="text-xs text-ink-soft">{s}</Text>
-                  </Pressable>
+                    <PressableScale
+                      onPress={() => {
+                        hapticSelect();
+                        setDraft(s);
+                      }}
+                    >
+                      <View className="rounded-full border border-glass-border bg-white/90 px-3 py-2">
+                        <Text className="text-xs font-medium text-ink-soft">{s}</Text>
+                      </View>
+                    </PressableScale>
+                  </Animated.View>
                 ))}
               </View>
               <View className="mt-6 w-full rounded-2xl bg-amber-50 border border-amber-200/60 p-3">
-                <Text className="text-xs font-semibold text-amber-700">
+                <Text className="text-xs font-bold tracking-wide text-amber-700">
                   Voice + Image in one input
                 </Text>
                 <Text className="mt-1 text-xs leading-4 text-amber-700/80">
@@ -418,71 +493,138 @@ export default function ChatScreen() {
                   tasks/events/files — orchestrator routes automatically.
                 </Text>
               </View>
-            </View>
+            </Animated.View>
           }
           ListFooterComponent={
             pending || isProcessing ? (
-              <View className="gap-2">
+              <Animated.View entering={FadeIn.duration(220)} className="gap-2 pt-2">
                 {isRecording ? (
                   <View className="items-center py-2">
                     <SkiaWaveform level={level} width={260} />
-                    <Text className="mt-2 text-xs font-semibold text-accent-rose">Listening…</Text>
+                    <Text className="mt-2 text-xs font-bold tracking-wide text-accent-rose">
+                      Listening…
+                    </Text>
                   </View>
                 ) : null}
                 {pendingSteps.length > 0 ? (
-                  <View className="rounded-2xl border border-glass-border bg-white px-4 py-3">
+                  <View
+                    className="rounded-2xl border border-glass-border bg-white px-4 py-3"
+                    style={{
+                      shadowColor: '#0F172A',
+                      shadowOpacity: 0.04,
+                      shadowRadius: 12,
+                      shadowOffset: { width: 0, height: 4 },
+                      elevation: 1,
+                    }}
+                  >
                     <AgentStepTracker steps={pendingSteps} />
                   </View>
                 ) : (
                   <TypingIndicator />
                 )}
-              </View>
+              </Animated.View>
             ) : null
           }
         />
 
-        {/* Composer: text + audio + image-friendly */}
+        {/* Composer: glassmorphism with border glow + spring focus */}
         <View className={`px-3 pt-2 ${keyboardVisible ? 'pb-3' : 'pb-28'}`}>
           {isRecording ? (
-            <View className="mb-2 items-center">
-              <SkiaWaveform level={level} width={320} />
-            </View>
+            <Animated.View
+              entering={FadeInDown.duration(260).springify().damping(18)}
+              className="mb-2 items-center rounded-2xl bg-accent-roseSoft border border-rose-200 px-3 py-2"
+            >
+              <SkiaWaveform level={level} width={300} />
+              <Text className="mt-1 text-[11px] font-bold tracking-widest text-accent-rose">
+                Listening — tap square to stop
+              </Text>
+            </Animated.View>
           ) : null}
-          <View className="flex-row items-end gap-2 rounded-3xl border border-glass-border bg-white px-2 py-2">
-            <Pressable
+          <Animated.View
+            style={[
+              {
+                shadowColor: '#0F172A',
+                shadowOpacity: 0.08,
+                shadowRadius: 18,
+                shadowOffset: { width: 0, height: 8 },
+                elevation: 4,
+              } as any,
+              composerStyle,
+            ]}
+            className="flex-row items-end gap-2 rounded-[28px] border bg-white px-2 py-2"
+          >
+            {/* top highlight */}
+            <View
+              pointerEvents="none"
+              className="absolute inset-x-6 top-0 h-px bg-white/80 rounded-full"
+            />
+            <PressableScale
               onPress={isRecording ? stopRec : startRec}
-              disabled={pending}
+              haptic={false}
+              intensity="subtle"
               className={`h-10 w-10 items-center justify-center rounded-full ${isRecording ? 'bg-accent-rose' : 'bg-accent'} ${pending ? 'opacity-50' : ''}`}
             >
-              {isRecording ? (
-                <Square size={16} color="#FFFFFF" fill="#FFFFFF" />
-              ) : (
-                <Mic size={18} color="#FFFFFF" />
-              )}
-            </Pressable>
+              <View
+                className={`h-10 w-10 items-center justify-center rounded-full ${isRecording ? 'bg-accent-rose' : 'bg-accent'}`}
+                style={
+                  isRecording
+                    ? undefined
+                    : ({
+                        shadowColor: '#6366F1',
+                        shadowOpacity: 0.28,
+                        shadowRadius: 10,
+                        shadowOffset: { width: 0, height: 4 },
+                      } as any)
+                }
+              >
+                {isRecording ? (
+                  <Square size={16} color="#FFFFFF" fill="#FFFFFF" />
+                ) : (
+                  <Mic size={18} color="#FFFFFF" />
+                )}
+              </View>
+            </PressableScale>
             <TextInput
               value={draft}
               onChangeText={setDraft}
-              placeholder={
-                isRecording ? 'Listening…' : 'Message • "generate an image of…" • voice or text'
-              }
+              onFocus={() => (inputFocused.value = 1)}
+              onBlur={() => (inputFocused.value = 0)}
+              placeholder={isRecording ? 'Listening…' : 'Message • "generate an image of…"'}
               placeholderTextColor="#94A3B8"
-              className="max-h-28 flex-1 text-[15px] text-ink"
+              className="max-h-28 flex-1 py-2 text-[15px] leading-5 text-ink"
               onSubmitEditing={submit}
               returnKeyType="send"
               multiline
               editable={!isRecording}
             />
-            <Pressable
+            <PressableScale
               onPress={submit}
-              disabled={(!draft.trim() && !isRecording) || pending}
-              className={`h-10 w-10 items-center justify-center rounded-full ${draft.trim() && !pending ? 'bg-accent' : 'bg-slate-200'}`}
+              haptic={false}
+              className="h-10 w-10 items-center justify-center"
             >
-              {pending ? <Loader size={16} color="#FFFFFF" /> : <Send size={17} color="#FFFFFF" />}
-            </Pressable>
-          </View>
-          <Text className="pt-1.5 text-center text-[10px] text-ink-faint">
-            Audio is transcribed via Groq Whisper · Images via NVIDIA FLUX
+              <View
+                className={`h-10 w-10 items-center justify-center rounded-full ${draft.trim() && !pending ? 'bg-ink' : 'bg-slate-200'}`}
+                style={
+                  draft.trim() && !pending
+                    ? {
+                        shadowColor: '#0F172A',
+                        shadowOpacity: 0.18,
+                        shadowRadius: 8,
+                        shadowOffset: { width: 0, height: 4 },
+                      }
+                    : undefined
+                }
+              >
+                {pending ? (
+                  <Loader size={16} color="#FFFFFF" />
+                ) : (
+                  <Send size={16} color="#FFFFFF" />
+                )}
+              </View>
+            </PressableScale>
+          </Animated.View>
+          <Text className="pt-1.5 text-center text-[10px] font-medium tracking-wide text-ink-faint">
+            Groq Whisper · NVIDIA FLUX · Swipe task to archive
           </Text>
         </View>
       </KeyboardAvoidingView>

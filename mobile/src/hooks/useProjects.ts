@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { Project } from '@/lib/types';
 
 const KEY = ['projects'];
 
 export function useProjects() {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: KEY,
+    queryKey: [...KEY, userId],
+    enabled: !!userId,
     queryFn: async () => {
       const { data } = await api.get<Project[]>('/api/projects');
       return data;
@@ -15,9 +18,10 @@ export function useProjects() {
 }
 
 export function useProject(id: string | null) {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: [...KEY, id],
-    enabled: !!id,
+    queryKey: [...KEY, userId, id],
+    enabled: !!id && !!userId,
     queryFn: async () => {
       const { data } = await api.get<Project>(`/api/projects/${id}`);
       return data;

@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { Reminder } from '@/lib/types';
 
 const KEY = ['reminders'];
 
 export function useReminders() {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: KEY,
+    queryKey: [...KEY, userId],
+    enabled: !!userId,
     queryFn: async () => {
       const { data } = await api.get<Reminder[]>('/api/reminders');
       return data;

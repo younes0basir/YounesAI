@@ -107,43 +107,70 @@ export default function MoreScreen() {
   const user = useAuthStore((s) => s.user);
 
   return (
-    <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
-      <ScrollView contentContainerClassName="px-4 pb-40 pt-4">
-        <Pressable onPress={() => router.push('/settings')}>
-          <GlassCard className="flex-row items-center gap-3 p-4">
-            <View className="h-12 w-12 items-center justify-center rounded-full bg-accent">
-              <Text className="text-lg font-bold text-white">
+    <SafeAreaView className="flex-1 bg-canvas-soft" edges={['top']}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Pressable onPress={() => router.push('/settings')} className="mb-1">
+          <GlassCard variant="elevated" className="flex-row items-center gap-3 p-4">
+            <View className="h-12 w-12 items-center justify-center rounded-full bg-ink border border-white/10">
+              <Text className="text-lg font-extrabold text-white">
                 {(user?.display_name ?? 'U').charAt(0).toUpperCase()}
               </Text>
             </View>
             <View className="flex-1">
-              <Text className="text-base font-bold text-ink">{user?.display_name}</Text>
-              <Text className="text-xs text-ink-soft">{user?.email}</Text>
+              <Text className="text-[15px] font-bold text-ink" numberOfLines={1}>
+                {user?.display_name}
+              </Text>
+              <Text className="text-xs font-medium text-ink-muted" numberOfLines={1}>
+                {user?.email}
+              </Text>
+            </View>
+            <View className="h-8 w-8 items-center justify-center rounded-full bg-accent-soft border border-accent/10">
+              <Settings size={14} color="#6366F1" />
             </View>
           </GlassCard>
         </Pressable>
 
-        <Text className="mb-3 mt-6 text-xs font-bold uppercase tracking-widest text-ink-faint">
-          All modules
-        </Text>
+        <View className="mt-5 mb-3 flex-row items-center justify-between">
+          <Text className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-ink-muted">
+            All modules
+          </Text>
+          <Text className="text-[11px] font-semibold text-ink-faint">{MODULES.length} tools</Text>
+        </View>
 
         <View className="flex-row flex-wrap justify-between gap-y-3">
           {MODULES.map((mod, i) => (
             <Animated.View
               key={mod.label}
-              entering={FadeInDown.delay(i * 50).duration(300)}
-              className="w-[48%]"
+              entering={FadeInDown.delay(i * 40).duration(340)}
+              className="w-[48.8%]"
             >
               <PressableScale onPress={() => router.push(mod.href)}>
-                <GlassCard className="p-4">
+                <GlassCard className="p-3.5" style={{ minHeight: 122 }}>
                   <View
-                    className="h-10 w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: mod.bg }}
+                    className="h-9 w-9 items-center justify-center rounded-xl border"
+                    style={{ backgroundColor: mod.bg, borderColor: `${mod.color}18` }}
                   >
-                    <mod.icon size={19} color={mod.color} />
+                    <mod.icon size={17} color={mod.color} />
                   </View>
-                  <Text className="mt-3 text-[15px] font-bold text-ink">{mod.label}</Text>
-                  <Text className="mt-0.5 text-xs text-ink-soft">{mod.description}</Text>
+                  <View className="mt-2.5 flex-1">
+                    <Text
+                      className="text-[14px] font-bold leading-4 text-ink"
+                      numberOfLines={2}
+                      style={{ flexWrap: 'wrap' }}
+                    >
+                      {mod.label}
+                    </Text>
+                    <Text
+                      className="mt-1 text-[11px] leading-[13px] font-medium text-ink-muted"
+                      numberOfLines={2}
+                      style={{ flexWrap: 'wrap' }}
+                    >
+                      {mod.description}
+                    </Text>
+                  </View>
                 </GlassCard>
               </PressableScale>
             </Animated.View>

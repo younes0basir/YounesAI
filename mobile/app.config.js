@@ -1,8 +1,8 @@
 const appJson = require('./app.json');
+const withAndroidCleartext = require('./plugins/withAndroidCleartext');
 
-/** Production Oracle VM — used when env vars are missing from EAS cloud builds. */
-/** Port 80 — mobile carriers often block non-standard ports like :3000. */
-const DEFAULT_API_URL = 'http://84.8.220.241';
+/** HTTPS via sslip.io — plain HTTP to a raw IP is blocked on many Android builds. */
+const DEFAULT_API_URL = 'https://84-8-220-241.sslip.io';
 
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = () => ({
@@ -11,6 +11,7 @@ module.exports = () => ({
     ...appJson.expo.android,
     usesCleartextTraffic: true,
   },
+  plugins: [...(appJson.expo.plugins ?? []), withAndroidCleartext],
   extra: {
     ...appJson.expo.extra,
     apiUrl: process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_URL,

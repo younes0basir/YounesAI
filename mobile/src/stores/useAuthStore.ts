@@ -1,7 +1,27 @@
 import { create } from 'zustand';
 import { api, getToken, setToken, clearToken, setUnauthorizedHandler } from '@/services/api';
 import { authenticate, biometricsEnabled } from '@/services/biometrics';
+import { clearAccountStorage } from '@/services/mmkv';
+import { clearQueryCache } from '@/lib/queryClient';
+import { useAgentStore } from './useAgentStore';
 import type { User } from '@/lib/types';
+
+/**
+ * Purge all account-scoped state so the next login never sees the previous
+ * user's cached notifications, tasks, chat session, offline queue, etc.
+ * Called on logout, login (to wipe prior account), and on 401.
+ */
+function purgeAccountCaches(): void {
+  try {
+    clearAccountStorage();
+  } catch {}
+  try {
+    clearQueryCache();
+  } catch {}
+  try {
+    useAgentStore.getState().reset();
+  } catch {}
+}
 
 interface AuthState {
   user: User | null;
@@ -21,12 +41,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   biometricLocked: false,
 
   async login(email, password) {
+    // Wipe previous account's persisted cache before storing the new JWT.
+    purgeAccountCaches();
     const { data } = await api.post('/api/auth/login', { email, password });
     await setToken(data.token);
     set({ user: data.user });
   },
 
   async register(email, password, displayName) {
+    purgeAccountCaches();
     const { data } = await api.post('/api/auth/register', {
       email,
       password,
@@ -38,6 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async logout() {
     await clearToken();
+    purgeAccountCaches();
     set({ user: null });
   },
 
@@ -66,13 +90,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return true;
     } catch {
       await clearToken();
+      purgeAccountCaches();
       set({ user: null, hydrated: true, biometricLocked: false });
       return false;
     }
   },
 }));
 
-// A 401 anywhere in the app means the JWT is dead — drop back to login.
+// A 401 anywhere in the app means the JWT is dead — drop back to login
+// and purge cached data so the next account doesn't see stale rows.
 setUnauthorizedHandler(() => {
+  purgeAccountCaches();
   useAuthStore.setState({ user: null });
 });

@@ -1,13 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, isNetworkError } from '@/services/api';
 import { enqueueMutation } from '@/services/offlineQueue';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { Task } from '@/lib/types';
 
 const TASKS_KEY = ['tasks'];
 
 export function useTasks(filter?: Record<string, string>) {
+  const userId = useAuthStore((s) => s.user?.id);
   return useQuery({
-    queryKey: [...TASKS_KEY, filter ?? {}],
+    queryKey: [...TASKS_KEY, userId, filter ?? {}],
+    enabled: !!userId,
     queryFn: async () => {
       const { data } = await api.get<Task[]>('/api/tasks', { params: filter });
       return data;

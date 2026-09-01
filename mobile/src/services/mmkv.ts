@@ -87,6 +87,28 @@ export function mmkvDelete(key: string): void {
   storage.delete(key);
 }
 
+/** Persisted TanStack Query cache key — must stay in sync with app/_layout.tsx */
+export const PERSISTED_QUERY_KEY = 'younesai-query-cache';
+
+/** Account-scoped keys that must be wiped on logout / account switch. */
+export const ACCOUNT_MMKV_KEYS = ['chat-session-id', 'offline-mutation-queue'] as const;
+
+/**
+ * Delete all account-scoped MMKV / AsyncStorage state plus the persisted
+ * query cache so the next account never sees the previous one's data.
+ */
+export function clearAccountStorage(): void {
+  for (const key of ACCOUNT_MMKV_KEYS) storage.delete(key);
+  storage.delete(PERSISTED_QUERY_KEY);
+  // Expo Go fallback — ensure AsyncStorage is also cleared (shim already
+  // fires async remove, but be explicit for the next cold start).
+  if (usingAsyncFallback) {
+    for (const key of [...ACCOUNT_MMKV_KEYS, PERSISTED_QUERY_KEY]) {
+      void AsyncStorage.removeItem(ASYNC_PREFIX + key).catch(() => {});
+    }
+  }
+}
+
 /** Adapter so TanStack Query's persistQueryClient can cache into MMKV. */
 export const mmkvQueryStorage: SyncStorage = {
   getItem: (key) => storage.getString(key) ?? null,

@@ -9,7 +9,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { mmkvQueryStorage, hydrateMmkv } from '@/services/mmkv';
+import { mmkvQueryStorage, hydrateMmkv, PERSISTED_QUERY_KEY } from '@/services/mmkv';
 import { startOfflineSync } from '@/services/offlineQueue';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { FloatingAIHub } from '@/components/ai/FloatingAIHub';
@@ -21,7 +21,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const persister = createSyncStoragePersister({
   storage: mmkvQueryStorage,
-  key: 'younesai-query-cache',
+  key: PERSISTED_QUERY_KEY,
 });
 
 function AuthGate({ children }: { children: React.ReactNode }) {
